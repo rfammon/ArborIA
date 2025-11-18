@@ -35,7 +35,6 @@ function handleMainNavigation(event) {
   state.saveActiveTab(targetId);
 
   // 1. Desliga recursos pesados (Câmeras/Sensores) ao sair das abas específicas
-  // Isso evita que a câmera continue rodando no fundo consumindo bateria
   if (targetId !== 'clinometro-view') clinometer.stopClinometer();
   if (targetId !== 'dap-estimator-view') dapEstimator.stopDAPEstimator();
 
