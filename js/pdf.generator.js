@@ -1,311 +1,266 @@
-// js/pdf.generator.js (v5.0 - Rebranding ArborIA)
+// js/pdf.generator.js (v54.0 - Com Verificação de Biblioteca)
 
-// Assume que window.jsPDF e window.html2canvas já estão carregados via <script> tags no index.html
+import * as state from './state.js';
+import { getImageFromDB } from './database.js';
+import { showToast } from './utils.js';
+import { prepareMapForScreenshot, initializeMap, currentLayerType, toggleMapLayer } from './map.ui.js'; 
+import { checklistData } from './content.js'; 
 
-/**
- * Gera um relatório PDF a partir dos dados das árvores cadastradas.
- * @param {Array<Object>} treeData Array de objetos de árvores.
- * @param {Array<Object>} glossaryData Array de objetos do glossário para tooltips.
- */
-export async function generatePDF(treeData, glossaryData) {
-    if (!treeData || treeData.length === 0) {
-        showToast("Nenhuma árvore cadastrada para gerar o PDF.", "warning");
+const RISK_LABELS = checklistData.map(item => item.term); // Tenta mapear se for array, ou usa lista fixa abaixo
+
+// Fallback caso checklistData não seja um array iterável direto
+const SAFE_RISK_LABELS = [
+    "1. Galhos Mortos > 5cm", "2. Rachaduras/Fendas", "3. Sinais de Apodrecimento",
+    "4. Casca Inclusa (União em V)", "5. Galhos Cruzados", "6. Copa Assimétrica",
+    "7. Inclinação Anormal", "8. Próxima a Vias Públicas", "9. Risco de Queda sobre Alvos",
+    "10. Interferência em Redes", "11. Espécie com Histórico de Falhas", "12. Poda Drástica/Brotação",
+    "13. Calçadas Rachadas", "14. Perda de Raízes", "15. Compactação/Asfixia", "16. Apodrecimento Raízes"
+];
+
+const blobToDataURL = (blob) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+};
+
+export async function generatePDF() {
+    if (state.registeredTrees.length === 0) {
+        showToast("Sem dados para gerar relatório.", "error");
         return;
     }
 
-    const doc = new window.jsPDF.jsPDF();
+    // [CORREÇÃO CRÍTICA] Verificação segura da biblioteca
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        console.error("Biblioteca jsPDF não encontrada em window.jspdf");
+        showToast("Erro: Bibliotecas PDF não carregadas. Recarregue a página com internet.", "error");
+        return;
+    }
+    
+    if (!window.html2canvas) {
+        showToast("Erro: Biblioteca html2canvas não carregada.", "error");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf; // Agora é seguro extrair
+
+    showToast("Preparando mapa e gerando PDF...", "success");
+
+    // COLE SUA LOGO BASE64 AQUI
+    const logoBase64 = ""; 
+
+    const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 15;
-    let yOffset = margin;
+    const margin = 14;
+    let cursorY = 20;
 
-    // --- Paleta de Cores ArborIA para o PDF ---
-    const arborBlue = '#0A3289'; // Cor para 'Arbor'
-    const iaGreen = '#2E7D32';   // Cor para 'IA'
-    const primaryDark = '#004d40'; // Títulos
-    const accentColor = '#ffb300'; // Destaques (se necessário)
-    const grayText = '#555555';    // Texto geral
-    const lightGray = '#dddddd';  // Linhas de tabela
+    // === 1. CAPTURA DO MAPA ===
+    let mapImageParams = null;
+    const mapTabContent = document.getElementById('tab-content-mapa');
+    const summaryTabContent = document.getElementById('tab-content-summary');
+    const mapContainer = document.getElementById('map-container');
+    
+    const originalWidth = mapContainer.style.width;
+    const originalHeight = mapContainer.style.height;
+    let wasSummaryActive = false;
+    let originalLayerType = window.currentLayerType || 'satellite';
 
-    // Função para adicionar cabeçalho e rodapé em cada página
-    const addHeaderFooter = (pageNumber) => {
-        // --- CABEÇALHO ---
-        // Logo ArborIA (garanta que img/icons/favicon.png exista e seja PNG)
-        try {
-            // A imagem precisa estar em Base64 ou um caminho acessível pelo navegador
-            // No Node.js ou em um ambiente de build, você pode pré-processar.
-            // Para o navegador, um caminho relativo direto pode funcionar se o servidor web o servir.
-            doc.addImage('img/icons/favicon.png', 'PNG', 15, 10, 20, 20); // x, y, width, height
-        } catch (e) {
-            console.warn("Não foi possível carregar a imagem da logo para o PDF.", e);
-            // Fallback para texto se a imagem falhar
-            doc.setFontSize(10);
-            doc.setTextColor(primaryDark);
-            doc.text("ArborIA", 15, 15);
+    try {
+        if (mapTabContent && summaryTabContent) {
+            wasSummaryActive = summaryTabContent.classList.contains('active');
+            summaryTabContent.classList.remove('active');
+            summaryTabContent.style.display = 'none';
+            mapTabContent.classList.add('active');
+            mapTabContent.style.display = 'block'; 
+        }
+        
+        mapContainer.style.width = "800px";
+        mapContainer.style.height = "600px";
+
+        initializeMap();
+        await prepareMapForScreenshot();
+        
+        const canvas = await html2canvas(mapContainer, {
+            useCORS: true, scale: 1.5, logging: false, backgroundColor: '#ffffff'
+        });
+        
+        mapImageParams = { data: canvas.toDataURL('image/jpeg', 0.8), w: 180, h: 120 }; 
+        
+    } catch (e) {
+        console.error("Erro ao capturar mapa:", e);
+        showToast("Aviso: O mapa não pôde ser gerado.", "warning");
+    } finally {
+        mapContainer.style.width = originalWidth;
+        mapContainer.style.height = originalHeight;
+
+        if (originalLayerType !== 'satellite' && window.toggleMapLayer) { 
+             window.toggleMapLayer(); 
         }
 
-        // Título estilizado "ArborIA"
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(22);
-        doc.setTextColor(arborBlue);
-        doc.text("Arbor", 40, 25);
-        doc.setTextColor(iaGreen);
-        doc.text("IA", doc.getStringUnitWidth("Arbor", { font: 'helvetica', fontStyle: 'bold', fontSize: 22 }) * doc.internal.scaleFactor + 40, 25);
-        
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(grayText);
-        doc.text("Sistema de Manejo Integrado Arbóreo", 40, 30);
-        
-        // Data e Hora
-        doc.setFontSize(9);
-        doc.setTextColor(grayText);
-        const now = new Date();
-        doc.text(`Gerado em: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`, pageWidth - margin, 15, { align: 'right' });
-        doc.text(`Página ${pageNumber} de ${doc.internal.getNumberOfPages()}`, pageWidth - margin, 20, { align: 'right' });
+        if (mapTabContent && summaryTabContent) {
+            mapTabContent.style.display = ''; 
+            summaryTabContent.style.display = '';
+            
+            if (wasSummaryActive) {
+                mapTabContent.classList.remove('active');
+                summaryTabContent.classList.add('active');
+            } else {
+                mapTabContent.classList.add('active');
+                summaryTabContent.classList.remove('active');
+            }
+        }
+        if (state.mapInstance) state.mapInstance.invalidateSize();
+    }
 
-        // Linha divisória
-        doc.setDrawColor(primaryDark);
-        doc.setLineWidth(0.5);
-        doc.line(margin, 35, pageWidth - margin, 35);
+    // === CABEÇALHO ===
+    const printHeader = (isCover) => {
+        if (logoBase64) { try { doc.addImage(logoBase64, 'PNG', 14, 10, 25, 25); } catch(e){} }
+        const textX = logoBase64 ? 45 : pageWidth/2;
+        const align = logoBase64 ? "left" : "center";
 
-
-        // --- RODAPÉ ---
-        doc.setFontSize(9);
-        doc.setTextColor(grayText);
-        doc.text("ArborIA - Soluções em Tecnologia Florestal", pageWidth / 2, pageHeight - 10, { align: 'center' });
+        if (isCover) {
+            doc.setFontSize(16); doc.setTextColor(0, 77, 64);
+            doc.text("RAFAEL AMMON", textX, 18, { align: align });
+            doc.setFontSize(10); doc.setTextColor(100);
+            doc.text("ENGENHEIRO FLORESTAL", textX, 24, { align: align });
+            doc.setFontSize(14); doc.setTextColor(0);
+            doc.text("Relatório Técnico de Avaliação Arbórea", textX, 32, { align: align });
+            doc.setLineWidth(0.5); doc.setDrawColor(0, 77, 64);
+            doc.line(margin, 38, pageWidth - margin, 38);
+            return 55;
+        } else {
+            doc.setFontSize(12); doc.setTextColor(0, 77, 64);
+            doc.text("Relatório Técnico de Avaliação Arbórea", textX, 25, { align: align });
+            doc.setFontSize(9); doc.setTextColor(100);
+            doc.text(`Pág. ${doc.internal.getCurrentPageInfo().pageNumber}`, pageWidth - margin, 25, { align: 'right' });
+            doc.setLineWidth(0.2); doc.setDrawColor(0, 77, 64);
+            doc.line(margin, 40, pageWidth - margin, 40);
+            return 50; 
+        }
     };
 
-    // Adiciona a primeira página (vazia para o header/footer serem adicionados depois)
-    doc.addPage(); 
-    doc.deletePage(1); // Remove a página em branco inicial
+    cursorY = printHeader(true);
 
-    for (const [index, tree] of treeData.entries()) {
-        if (yOffset > pageHeight - margin - 80) { // Verifica espaço para adicionar nova árvore
-            doc.addPage();
-            yOffset = margin;
-        }
-        
-        doc.addPage(); // Adiciona uma nova página para cada árvore para melhor organização
-        yOffset = margin + 30; // Ajusta yOffset para o conteúdo começar abaixo do cabeçalho
+    doc.setFontSize(11); doc.setTextColor(50);
+    doc.text(`Emissão: ${new Date().toLocaleDateString('pt-BR')}`, margin, 45);
+    doc.text(`Total Avaliado: ${state.registeredTrees.length} árvores`, pageWidth-margin, 45, {align:'right'});
 
-        addHeaderFooter(doc.internal.getNumberOfPages()); // Adiciona header/footer à nova página
+    // === TABELA ===
+    const tableHeaders = [['ID', 'Data', 'Espécie', 'DAP', 'Local', 'Risco', 'Observações']];
+    const tableData = state.registeredTrees.map(t => [
+        t.id, t.data.split('-').reverse().join('/'), t.especie, 
+        t.dap, t.local, t.risco, t.observacoes || '-'
+    ]);
 
-        // --- TÍTULO DA ÁRVORE ---
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.setTextColor(primaryDark);
-        doc.text(`Árvore #${index + 1}: ${tree.especie || 'Não Identificada'}`, margin, yOffset);
-        yOffset += 10;
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(grayText);
-
-        // --- INFORMAÇÕES GERAIS ---
-        doc.text(`Local: ${tree.local || 'N/A'}`, margin, yOffset);
-        doc.text(`Data da Coleta: ${tree.data || 'N/A'}`, pageWidth / 2, yOffset);
-        yOffset += 7;
-        doc.text(`Avaliador: ${tree.avaliador || 'N/A'}`, margin, yOffset);
-        doc.text(`Altura: ${tree.altura || 'N/A'}m`, pageWidth / 2, yOffset);
-        yOffset += 7;
-        doc.text(`DAP: ${tree.dap || 'N/A'}cm`, margin, yOffset);
-        doc.text(`Coordenadas: ${tree.coordX || 'N/A'}, ${tree.coordY || 'N/A'}`, pageWidth / 2, yOffset);
-        yOffset += 10;
-        
-        doc.setDrawColor(lightGray);
-        doc.setLineWidth(0.2);
-        doc.line(margin, yOffset, pageWidth - margin, yOffset);
-        yOffset += 5;
-
-        // --- OBSERVAÇÕES ---
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.setTextColor(primaryDark);
-        doc.text('Observações:', margin, yOffset);
-        yOffset += 7;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(grayText);
-        const obsLines = doc.splitTextToSize(tree.obs || 'Nenhuma observação.', pageWidth - 2 * margin);
-        doc.text(obsLines, margin, yOffset);
-        yOffset += (obsLines.length * 5) + 5; // Ajusta yOffset com base no número de linhas
-
-        // --- FOTO DA ÁRVORE ---
-        if (tree.photo) {
-            if (yOffset > pageHeight - margin - 70) { // Verifica se há espaço para a foto
-                doc.addPage();
-                yOffset = margin + 30;
-                addHeaderFooter(doc.internal.getNumberOfPages());
+    doc.autoTable({
+        startY: cursorY, head: tableHeaders, body: tableData, theme: 'striped', headStyles: { fillColor: [0, 121, 107] },
+        styles: { fontSize: 8, cellPadding: 2 }, margin: { left: margin, right: margin },
+        columnStyles: { 0: {cellWidth: 10}, 1: {cellWidth: 20}, 2: {cellWidth: 30}, 3: {cellWidth: 12}, 4: {cellWidth: 30}, 5: {cellWidth: 20}, 6: {cellWidth: 'auto'} },
+        didParseCell: function(data) {
+            if (data.section === 'body' && data.column.index === 5) {
+                if (data.cell.text[0].includes('Alto')) data.cell.styles.textColor = [198, 40, 40];
+                else if (data.cell.text[0].includes('Médio')) data.cell.styles.textColor = [230, 81, 0];
+                else data.cell.styles.textColor = [46, 125, 50];
             }
+        },
+        didDrawPage: function (data) { if (doc.internal.getCurrentPageInfo().pageNumber > 1) printHeader(false); }
+    });
+    cursorY = doc.lastAutoTable.finalY + 15;
 
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setTextColor(primaryDark);
-            doc.text('Foto:', margin, yOffset);
-            yOffset += 5;
+    // === MAPA ===
+    if (mapImageParams) {
+        if (cursorY + mapImageParams.h + 25 > pageHeight - 20) { doc.addPage(); cursorY = printHeader(false); }
+        doc.setFontSize(12); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+        doc.text("Mapa de Localização (Satélite)", margin, cursorY);
+        cursorY += 5;
+        const mapX = (pageWidth - mapImageParams.w) / 2;
+        doc.addImage(mapImageParams.data, 'PNG', mapX, cursorY, mapImageParams.w, mapImageParams.h);
+        cursorY += mapImageParams.h + 5;
+        doc.setFontSize(9); doc.setFont(undefined, 'normal');
+        let lx = mapX; const dSz = 2; const spc = 25;
+        doc.setFillColor(198, 40, 40); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.setTextColor(0); doc.text("Alto Risco", lx+6, cursorY+dSz+1); lx += spc + 10;
+        doc.setFillColor(230, 81, 0); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.text("Médio Risco", lx+6, cursorY+dSz+1); lx += spc + 15;
+        doc.setFillColor(46, 125, 50); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.text("Baixo Risco", lx+6, cursorY+dSz+1);
+        cursorY += 15;
+    }
 
+    // === FICHAS ===
+    doc.addPage(); cursorY = printHeader(false);
+    doc.setFontSize(14); doc.setTextColor(0, 77, 64); doc.setFont(undefined, 'bold');
+    doc.text("Detalhamento Técnico Individual", margin, cursorY);
+    cursorY += 10;
+
+    for (let i = 0; i < state.registeredTrees.length; i++) {
+        const tree = state.registeredTrees[i];
+        
+        const alturaNum = parseFloat(tree.altura) || 0;
+        const dapNum = parseFloat(tree.dap) || 0;
+        const dapM = dapNum / 100;
+        const rcq = (alturaNum * 1.5).toFixed(1); 
+        const rcr = (dapM * 1.5).toFixed(1);       
+        
+        let bgColor, riskColor;
+        if (tree.risco === 'Alto Risco') { bgColor = [255, 235, 238]; riskColor = [198, 40, 40]; }
+        else if (tree.risco === 'Médio Risco') { bgColor = [255, 243, 224]; riskColor = [230, 81, 0]; }
+        else { bgColor = [232, 245, 233]; riskColor = [46, 125, 50]; }
+
+        const risksList = (tree.riskFactors || []).map((val, idx) => val === 1 ? SAFE_RISK_LABELS[idx] : null).filter(v => v !== null);
+        
+        const leftHeight = 50 + (risksList.length > 0 ? risksList.length * 5 : 10);
+        const rightColX = margin + 85; const obsWidth = pageWidth - rightColX - margin - 2; 
+        const obsLines = doc.splitTextToSize(tree.observacoes || '—', obsWidth);
+        let rightHeight = 20 + 10 + (obsLines.length * 4) + 10;
+        if (tree.hasPhoto) rightHeight += 50; 
+
+        const boxHeight = Math.max(leftHeight, rightHeight, 60) + 5;
+
+        if (cursorY + boxHeight + 10 > pageHeight - 10) { doc.addPage(); cursorY = printHeader(false); }
+
+        doc.setDrawColor(200); doc.setFillColor(...bgColor);
+        doc.rect(margin, cursorY, pageWidth - (margin*2), boxHeight, 'FD');
+        doc.setFillColor(...riskColor); doc.rect(margin, cursorY, 2, boxHeight, 'F');
+
+        doc.setFontSize(11); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+        doc.text(`ID: ${tree.id} - ${tree.especie}`, margin + 6, cursorY + 8);
+        doc.setTextColor(...riskColor);
+        doc.text(tree.risco.toUpperCase(), pageWidth - margin - 5, cursorY + 8, { align: 'right' });
+
+        doc.setTextColor(50); doc.setFont(undefined, 'normal'); doc.setFontSize(9);
+        const col1X = margin + 6; let lineY = cursorY + 16;
+        doc.text(`Data: ${tree.data.split('-').reverse().join('/')}`, col1X, lineY);
+        doc.text(`DAP: ${tree.dap} cm`, col1X + 40, lineY); lineY += 5;
+        doc.text(`Local: ${tree.local}`, col1X, lineY); lineY += 5;
+        doc.text(`Coord: ${tree.coordX} E / ${tree.coordY} N`, col1X, lineY);
+        doc.text(`Raio Queda: ${rcq}m | Raio Raízes: ${rcr}m`, col1X, lineY + 5); // Métricas
+        lineY += 12;
+
+        doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+        doc.text("Fatores de Risco:", col1X, lineY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); lineY += 5;
+        if (risksList.length > 0) { risksList.forEach(risk => { doc.text(`• ${risk}`, col1X, lineY); lineY += 5; }); } 
+        else { doc.text("• Nenhum fator crítico.", col1X, lineY); }
+
+        let contentY = cursorY + 16;
+        if (tree.hasPhoto) {
             try {
-                const img = new Image();
-                img.src = tree.photo;
-                await new Promise((resolve) => { img.onload = resolve; });
-
-                const imgWidth = img.width;
-                const imgHeight = img.height;
-                const maxWidth = pageWidth - 2 * margin;
-                const maxHeight = 80; // Altura máxima para a imagem no PDF
-
-                let finalWidth = imgWidth;
-                let finalHeight = imgHeight;
-
-                if (imgWidth > maxWidth) {
-                    finalWidth = maxWidth;
-                    finalHeight = (imgHeight * maxWidth) / imgWidth;
+                const imageBlob = await new Promise(resolve => getImageFromDB(tree.id, resolve));
+                if (imageBlob) {
+                    const imgData = await blobToDataURL(imageBlob);
+                    const imgFormat = imageBlob.type === 'image/png' ? 'PNG' : 'JPEG';
+                    doc.addImage(imgData, imgFormat, pageWidth - margin - 48, contentY - 4, 45, 45);
+                    contentY += 50;
                 }
-                if (finalHeight > maxHeight) {
-                    finalHeight = maxHeight;
-                    finalWidth = (imgWidth * maxHeight) / imgHeight;
-                }
-                
-                // Centraliza a imagem
-                const imgX = margin + (maxWidth - finalWidth) / 2;
-
-                doc.addImage(tree.photo, 'JPEG', imgX, yOffset, finalWidth, finalHeight);
-                yOffset += finalHeight + 10;
-
-            } catch (e) {
-                console.warn("Erro ao adicionar foto ao PDF:", e);
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10);
-                doc.setTextColor(grayText);
-                doc.text("Erro ao carregar imagem.", margin, yOffset);
-                yOffset += 10;
-            }
+            } catch (e) { console.warn(e); }
         }
-        
-        // --- RESULTADO DO RISCO ---
-        if (yOffset > pageHeight - margin - 70) { // Verifica se há espaço para o risco
-            doc.addPage();
-            yOffset = margin + 30;
-            addHeaderFooter(doc.internal.getNumberOfPages());
-        }
+        doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+        doc.text("Observações:", rightColX, contentY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); contentY += 5;
+        doc.text(obsLines, rightColX, contentY);
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        doc.setTextColor(primaryDark);
-        doc.text('Avaliação de Risco:', margin, yOffset);
-        yOffset += 7;
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(grayText);
-        doc.text(`Risco Total: ${tree.riskScore || '0'} pontos`, margin, yOffset);
-        const riskLevelText = `Nível de Risco: ${tree.riskLevel || 'N/A'}`;
-        const riskColor = getRiskColor(tree.riskLevel);
-        
-        doc.setTextColor(riskColor);
-        doc.text(riskLevelText, pageWidth / 2, yOffset);
-        yOffset += 10;
-        
-        doc.setTextColor(grayText); // Volta à cor padrão para o resto do texto
-        
-        // --- TABELA DE ITENS DE VERIFICAÇÃO ---
-        const checklistColumns = [
-            { header: 'Nº', dataKey: 'num', width: 10 },
-            { header: 'Item de Verificação', dataKey: 'pergunta', width: 100 },
-            { header: 'Peso', dataKey: 'peso', width: 15 },
-            { header: 'Sim', dataKey: 'sim', width: 15 }
-        ];
-
-        const checklistRows = tree.checklist.map((item, i) => ({
-            num: i + 1,
-            pergunta: item.pergunta,
-            peso: item.peso,
-            sim: item.sim ? '✔' : ''
-        }));
-
-        doc.autoTable({
-            startY: yOffset,
-            head: [checklistColumns.map(col => col.header)],
-            body: checklistRows.map(row => checklistColumns.map(col => row[col.dataKey])),
-            styles: {
-                fontSize: 8,
-                cellPadding: 2,
-                textColor: grayText,
-                lineColor: lightGray,
-                lineWidth: 0.1,
-                overflow: 'linebreak',
-            },
-            headStyles: {
-                fillColor: primaryDark,
-                textColor: [255, 255, 255],
-                fontStyle: 'bold',
-                halign: 'center',
-                valign: 'middle',
-            },
-            bodyStyles: {
-                halign: 'center',
-                valign: 'middle',
-            },
-            columnStyles: {
-                0: { halign: 'center', cellWidth: checklistColumns[0].width },
-                1: { halign: 'left', cellWidth: checklistColumns[1].width },
-                2: { halign: 'center', cellWidth: checklistColumns[2].width },
-                3: { halign: 'center', cellWidth: checklistColumns[3].width },
-            },
-            didDrawPage: (data) => {
-                // Adiciona cabeçalho e rodapé em páginas subsequentes da tabela
-                if (data.pageNumber > 1) { // Só a partir da 2ª página da tabela
-                    addHeaderFooter(doc.internal.getNumberOfPages());
-                }
-            },
-            didParseCell: (data) => {
-                // Adiciona tooltip (se houver) para termos do checklist
-                if (data.section === 'body' && data.column.dataKey === 'pergunta') {
-                    const originalText = checklistRows[data.row.index].pergunta;
-                    const regex = /<span class="checklist-term" data-term-key="([^"]+)">([^<]+)<\/span>/g;
-                    let match;
-                    let plainText = originalText;
-                    let tooltipFound = false;
-
-                    while ((match = regex.exec(originalText)) !== null) {
-                        const termKey = match[1];
-                        const termText = match[2];
-                        const glossaryTerm = glossaryData.find(g => g.key === termKey);
-                        if (glossaryTerm) {
-                            plainText = plainText.replace(match[0], termText); // Remove a tag, mantém o texto
-                            data.cell.text.push(`(Ver: ${glossaryTerm.term})`);
-                            tooltipFound = true;
-                        }
-                    }
-                    if (tooltipFound) {
-                        data.cell.text = doc.splitTextToSize(plainText, data.column.width - 5);
-                    } else {
-                        data.cell.text = doc.splitTextToSize(plainText, data.column.width - 5);
-                    }
-                }
-            },
-            margin: { top: yOffset + 5, right: margin, bottom: margin, left: margin }
-        });
-
-        // Atualiza o yOffset após a tabela
-        yOffset = doc.autoTable.previous.finalY + 15;
+        cursorY += boxHeight + 8; 
     }
-
-    doc.save(`ArborIA_Relatorio_Vistoria_${new Date().toISOString().slice(0, 10)}.pdf`);
-    showToast("PDF gerado com sucesso!", "success");
-}
-
-/**
- * Retorna a cor correspondente ao nível de risco para o PDF.
- * @param {string} riskLevel Nível de risco (Alto Risco, Médio Risco, Baixo Risco).
- * @returns {string} Código hexadecimal da cor.
- */
-function getRiskColor(riskLevel) {
-    switch (riskLevel) {
-        case 'Alto Risco': return '#C62828'; // Vermelho
-        case 'Médio Risco': return '#E65100'; // Laranja
-        case 'Baixo Risco': return '#2E7D32'; // Verde
-        default: return '#555555'; // Cinza
-    }
+    const filename = `Relatorio_Arboreo_${new Date().toISOString().slice(0,10)}.pdf`;
+    doc.save(filename);
+    showToast("PDF Gerado com Sucesso!", "success");
 }
