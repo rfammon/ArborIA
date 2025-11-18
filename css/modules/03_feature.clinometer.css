@@ -1,30 +1,40 @@
-/* css/modules/03_feature.clinometer.css (v5.0 - Final) */
+/* css/modules/03_feature.clinometer.css (v6.0 - Fix DAP HUD) */
 
-/* Container Principal */
-#clinometro-view {
+/* Container Principal das Ferramentas (Altura e DAP) */
+#clinometro-view, #dap-estimator-view {
     width: 100%;
     height: 85vh; /* Altura fixa para ocupar a tela */
-    position: relative;
+    position: relative; /* Vital para os filhos absolutos */
     background-color: #000;
     border-radius: var(--border-radius-lg);
     overflow: hidden;
     display: none; 
     margin-top: 10px;
+    padding: 0;
 }
 
 /* Container Interno (Câmera + HUD) */
-#camera-container {
-    position: relative;
+#camera-container, #dap-camera-container {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Vídeo */
-#camera-feed {
+#camera-feed, #dap-camera-feed {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
+    z-index: 1;
 }
 
 /* MIRA (Crosshair) */
@@ -70,7 +80,7 @@
     width: 100%;
 }
 
-#clinometer-angle {
+#clinometer-angle, #dap-current-angle {
     font-size: 1.5rem;
     font-family: monospace;
     color: #FFEB3B;
@@ -118,9 +128,10 @@
     color: #eee;
 }
 .hud-step strong { color: #FFEB3B; font-size: 1.2rem; }
+.instruction-text { font-size: 0.9rem !important; color: #ccc !important; margin-bottom: 15px; }
 
 /* Inputs e Botões */
-#clino-distance {
+#clino-distance, #dap-distance-input {
     font-size: 1.3rem;
     padding: 8px;
     width: 80px;
@@ -156,7 +167,7 @@
 .hud-capture-btn:active { background-color: white; color: black; }
 
 /* Resultado */
-#tree-height-result {
+#tree-height-result, #dap-estimated-result {
     font-size: 3rem;
     color: #69F0AE;
     margin: 10px 0;
