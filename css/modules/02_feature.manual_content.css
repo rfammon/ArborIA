@@ -1,0 +1,71 @@
+/* css/modules/02_feature.manual_content.css */
+
+/* -------------------------------------- */
+/* 5. ESTILOS DE CONTEÚDO (CARD PRINCIPAL) */
+/* -------------------------------------- */
+
+.conteudo-detalhe,
+.app-view {
+  background-color: var(--bg-surface);
+  border: none;
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  box-shadow: var(--shadow-md);
+}
+
+#detalhe-view h3 {
+  color: var(--color-primary-dark);
+  margin-bottom: var(--space-md);
+  border-bottom: 3px solid var(--color-accent);
+  padding-bottom: var(--space-sm);
+  font-size: 1.4rem;
+}
+
+#detalhe-view p {
+  margin-bottom: var(--space-md);
+  font-size: 1em;
+}
+
+#detalhe-view ul,
+#detalhe-view ol {
+  padding-left: 25px;
+  margin-bottom: var(--space-md);
+}
+
+#detalhe-view li {
+  margin-bottom: var(--space-sm);
+  font-size: 1em;
+}
+
+.manual-img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--border-radius-md);
+  margin: var(--space-md) 0;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Estilos da Tabela de Glossário */
+.glossary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-md);
+  font-size: 0.9em;
+}
+.glossary-table th, .glossary-table td {
+  border: 1px solid var(--gray-300);
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  vertical-align: middle;
+}
+.glossary-table th {
+  background-color: var(--gray-100);
+}
+.glossary-category-header {
+  background-color: var(--color-primary-medium);
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1em;
+  text-align: center !important;
+}

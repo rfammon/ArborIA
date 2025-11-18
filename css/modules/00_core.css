@@ -1,0 +1,193 @@
+/* css/modules/00_core.css (v76.0 - Rebranding ArborIA) */
+
+/* -------------------------------------- */
+/* 1. VARIÁVEIS GLOBAIS (RAIZ) */
+/* -------------------------------------- */
+:root {
+  /* Paleta de Cores Primária (Verde/Tema) */
+  --color-primary-dark: #004d40;
+  --color-primary-medium: #00796b;
+  --color-primary-light: #B2DFDB;
+  --color-primary-lightest: #E0F2F1;
+
+  /* Paleta de Acento (Amarelo/Laranja) */
+  --color-accent: #ffb300;
+  --color-accent-dark: #ffa000;
+  --color-accent-hover: #ffc107;
+
+  /* Paleta de Risco/Destrutivo */
+  --color-danger: #C62828;
+  --color-danger-dark: #B71C1C;
+  --color-danger-light: #FFCDD2;
+
+  /* Paleta Neutra */
+  --color-dark: #212121;
+  --color-text: #333;
+  --color-text-light: #555;
+  --gray-100: #f4f4f9;
+  --gray-200: #eeeeee;
+  --gray-300: #dddddd;
+  --gray-400: #cccccc;
+  
+  /* Fundo */
+  --bg-body: #f4f7f6;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #fcfcfc;
+
+  /* [NOVO] Cores da Marca ArborIA */
+  --color-arbor-blue: #0A3289;
+  --color-ia-green: #2E7D32;
+  --color-separator-blue: #025091;
+
+  /* Tipografia */
+  --font-primary: 'Segoe UI', Roboto, "Helvetica Neue", Arial, sans-serif;
+  
+  /* Espaçamento */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  /* Bordas e Sombras */
+  --border-radius-md: 6px;
+  --border-radius-lg: 10px;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* -------------------------------------- */
+/* 2. RESET, BASE E LAYOUT PRINCIPAL */
+/* -------------------------------------- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-primary);
+  line-height: 1.6;
+  background-color: var(--bg-body);
+  color: var(--color-text);
+  position: relative;
+  min-height: 100vh;
+  overflow-wrap: break-word;
+}
+
+html { scroll-behavior: smooth; }
+
+main {
+  padding: var(--space-md);
+  width: 100%;
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 0 15px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+a { color: var(--color-primary-medium); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* -------------------------------------- */
+/* 3. LAYOUT (HEADER, FOOTER) */
+/* -------------------------------------- */
+
+/* [REBRANDING] Novo Cabeçalho Branco */
+.header-main {
+    background-color: var(--bg-surface);
+    color: var(--color-text);
+    padding: 10px 20px;
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 4px solid var(--color-separator-blue);
+}
+
+.header-main .logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.header-main .arboria-text {
+    font-size: 2.2em;
+    font-weight: bold;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.header-main .arboria-text .blue { color: var(--color-arbor-blue); }
+.header-main .arboria-text .green { color: var(--color-ia-green); }
+
+.header-main .header-logo {
+    height: 45px;
+    width: auto;
+}
+
+.header-main .app-description {
+    font-size: 0.9em;
+    color: var(--color-text-light);
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Rodapé Atualizado */
+.footer-manual {
+  margin-top: var(--space-xl);
+  padding: var(--space-lg);
+  background-color: var(--bg-surface);
+  text-align: center;
+  font-size: 0.9rem;
+  border-top: 1px solid var(--gray-300);
+  color: var(--color-text-light);
+}
+
+/* Layout de Colunas (Sidebar + Conteúdo) */
+#app-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Sidebar de Navegação */
+.mapa-navegacao {
+    background-color: var(--bg-surface);
+    padding: 20px;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+}
+
+.mapa-navegacao h2 {
+    margin-top: 0;
+    font-size: 1.3em;
+    color: var(--color-primary-dark);
+    border-bottom: 1px solid var(--gray-300);
+    padding-bottom: 10px;
+}
+
+/* Responsividade para Desktop (Sidebar lateral) */
+@media (min-width: 992px) {
+    #app-content {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    .mapa-navegacao {
+        flex: 0 0 280px; /* Largura fixa da sidebar */
+        position: sticky;
+        top: 100px; /* Fica fixa ao rolar */
+    }
+    .conteudo-detalhe {
+        flex: 1; /* Ocupa o resto */
+    }
+}

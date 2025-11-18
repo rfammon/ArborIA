@@ -1,0 +1,183 @@
+/* css/modules/02_feature.map.css (v56.0 - Fix Botão GPS Visível) */
+
+/* -------------------------------------- */
+/* 14. MAPA WEBGIS */
+/* -------------------------------------- */
+#map-container {
+  height: 60vh;
+  width: 100%;
+  border-radius: var(--border-radius-lg);
+  margin-top: var(--space-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  border: 1px solid var(--gray-300);
+  position: relative;
+  z-index: 1;
+}
+
+#zoom-to-extent-btn {
+  flex-grow: 0;
+  min-width: 200px;
+  background-color: var(--color-primary-dark);
+  color: white;
+  align-self: end;
+  height: 42px;
+  padding: var(--space-sm) var(--space-md);
+  font-size: 1rem;
+}
+#zoom-to-extent-btn:hover { background-color: var(--color-primary-medium); }
+
+/* --- BOTÃO DE SATÉLITE --- */
+#toggle-map-layer-btn {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  
+  align-self: end;
+  height: 42px;
+  border: 2px solid #2E7D32;
+  color: #2E7D32;
+  background-color: white;
+  font-weight: 600;
+  z-index: 10;
+}
+
+#toggle-map-layer-btn:hover {
+  background-color: #E8F5E9;
+  border-color: #1B5E20;
+  color: #1B5E20;
+}
+
+/* --- BOTÃO MINHA POSIÇÃO (GPS) --- */
+.map-geolocation-btn {
+  /* [CORREÇÃO] Agora visível sempre (Desktop e Mobile) */
+  display: inline-flex; 
+  
+  align-self: end;
+  height: 42px;
+  border-color: #1565C0; 
+  color: #1565C0;
+}
+.map-geolocation-btn:hover {
+  background-color: #BBDEFB; 
+}
+
+/* -------------------------------------- */
+/* 17. LEGENDA E INFOBOX DO MAPA */
+/* -------------------------------------- */
+
+#map-legend-filter {
+  background: var(--gray-100);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--space-md);
+}
+#map-legend-filter h4 {
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--color-primary-dark);
+  font-size: 1rem;
+}
+.legend-filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+.legend-filter {
+  display: flex;
+  align-items: center;
+}
+.legend-filter label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+.legend-filter input[type="radio"] {
+  margin-right: var(--space-sm);
+  accent-color: var(--color-primary-medium);
+}
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: var(--space-sm);
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+/* INFOBOX */
+#map-info-box {
+  position: fixed;
+  top: 120px;
+  right: 20px;
+  width: 280px; 
+  background: var(--bg-surface);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 998;
+  padding: var(--space-md);
+  transition: opacity 0.2s, visibility 0.2s, transform 0.2s, width 0.3s ease-in-out;
+  
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.95);
+}
+#map-info-box.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.95);
+}
+#map-info-box:not(.hidden) {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+#map-info-box strong { font-size: 1.1rem; color: var(--color-primary-dark); }
+#map-info-box p { font-size: 0.9em; margin-bottom: var(--space-xs); line-height: 1.4; }
+#map-info-box #close-info-box { position: absolute; top: 5px; right: 8px; background: none; border: none; font-size: 1.5rem; color: var(--color-text-light); cursor: pointer; padding: 0; line-height: 1; }
+#map-info-box #close-info-box:hover { color: var(--color-dark); }
+#map-info-photo { margin-top: var(--space-sm); position: relative; }
+#map-info-photo.loading-photo { font-style: italic; color: var(--color-text-light); }
+#map-info-box .manual-img { width: 100%; max-width: 100%; height: auto; object-fit: cover; margin-top: var(--space-sm); transition: none; }
+
+.map-photo-zoom { display: flex; gap: 5px; margin-top: 5px; position: absolute; bottom: 5px; right: 5px; background: rgba(255,255,255,0.8); padding: 3px; border-radius: 4px; }
+.map-photo-zoom button { background-color: var(--gray-200); border: 1px solid var(--gray-300); border-radius: 4px; font-weight: bold; cursor: pointer; width: 25px; height: 25px; line-height: 25px; }
+.map-photo-zoom button:hover { background-color: var(--gray-300); }
+
+/* === RÓTULOS DE ID NO MAPA === */
+.map-id-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.map-label-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: white;
+  font-weight: 700;
+  font-size: 10px;
+  font-family: 'Inter', sans-serif;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  margin-left: -2px; 
+  margin-top: -2px;
+}
+.lbl-high { background-color: #C62828; } /* Vermelho */
+.lbl-med  { background-color: #E65100; } /* Laranja */
+.lbl-low  { background-color: #2E7D32; } /* Verde */
+
+.leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before { display: none !important; }
+
+/* Responsividade */
+@media (max-width: 768px) {
+  #map-info-box { top: auto; bottom: 0; left: 0; right: 0; width: 100%; border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0; z-index: 1001; }
+  #map-info-box .manual-img { height: auto; width: 100%; max-width: 100%; object-fit: contain; max-height: 40vh; }
+  .legend-filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); }
+  .map-photo-zoom { display: none; }
+  
+  /* [CORREÇÃO] Regra removida daqui pois agora é padrão global */
+}

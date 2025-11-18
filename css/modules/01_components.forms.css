@@ -1,0 +1,86 @@
+/* css/modules/01_components.forms.css */
+
+/* -------------------------------------- */
+/* 7. FORMULÁRIOS (CHAT & CONTATO) */
+/* -------------------------------------- */
+
+#fale-conosco,
+#gemini-chat {
+  padding: var(--space-lg);
+  background-color: var(--bg-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  border-top: 5px solid var(--color-primary-medium);
+  margin-top: var(--space-lg);
+}
+
+#gemini-chat {
+  background-color: var(--color-primary-lightest);
+  border-top-color: var(--color-primary-medium);
+}
+
+#fale-conosco h2,
+#gemini-chat h2 {
+  color: var(--color-primary-dark);
+  margin-bottom: var(--space-md);
+  font-size: 1.4rem;
+}
+
+.contact-form label,
+.chat-container label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Inputs e Textareas Padronizados */
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea,
+#chat-input,
+.form-grid input[type="text"],
+.form-grid input[type="number"],
+.form-grid input[type="date"],
+.risk-fieldset textarea,
+#table-filter-input
+{
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  font-family: var(--font-primary);
+  transition: all 0.2s ease-in-out;
+  margin-bottom: 0;
+}
+
+.contact-form input[type="text"]:focus,
+.contact-form input[type="email"]:focus,
+.contact-form textarea:focus,
+#chat-input:focus,
+.form-grid input[type="text"]:focus,
+.form-grid input[type="number"]:focus,
+.form-grid input[type="date"]:focus,
+.risk-fieldset textarea:focus,
+#table-filter-input:focus
+{
+  outline: none;
+  border-color: var(--color-primary-medium);
+  box-shadow: 0 0 0 3px var(--color-primary-lightest);
+}
+
+/* Chat específico */
+#chat-response-box {
+  background-color: var(--bg-surface);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  min-height: 100px;
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.chat-input-area {
+  display: flex;
+  gap: var(--space-sm);
+}

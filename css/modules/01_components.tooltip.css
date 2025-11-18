@@ -1,0 +1,108 @@
+/* css/modules/01_components.tooltip.css */
+
+/* -------------------------------------- */
+/* 6. GLOSSÁRIO INTERATIVO (TOOLTIP) */
+/* -------------------------------------- */
+
+.glossary-term,
+.equipment-term,
+.purpose-term,
+.checklist-term { /* [NOVO] Adicionado checklist-term */
+  font-weight: 600;
+  cursor: help;
+  border-bottom: 2px dotted;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.glossary-term { color: var(--color-primary-medium); border-color: var(--color-primary-light); }
+.glossary-term:hover { background-color: var(--color-primary-lightest); }
+
+.equipment-term { color: var(--color-accent-dark); border-color: var(--color-accent); }
+.equipment-term:hover { background-color: #FFF8E1; }
+
+.purpose-term { color: var(--color-danger); border-color: var(--color-danger-light); }
+.purpose-term:hover { background-color: var(--color-danger-light); }
+
+/* [NOVO] Estilo do Checklist */
+.checklist-term {
+  color: #d32f2f; 
+  border-color: #ef9a9a;
+}
+.checklist-term:hover {
+  background-color: #FFEBEE;
+}
+
+
+#glossary-tooltip {
+  position: absolute;
+  background-color: var(--color-dark);
+  color: #fff;
+  border-radius: var(--border-radius-md);
+  padding: var(--space-sm) var(--space-md);
+  max-width: 90vw;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  transition: opacity 0.2s, visibility 0.2s, width 0.3s ease-in-out;
+  opacity: 0;
+  visibility: hidden;
+  text-align: left;
+  font-size: 0.9em;
+}
+
+#glossary-tooltip strong {
+  color: var(--color-accent);
+  display: block;
+  margin-bottom: var(--space-sm);
+  font-size: 1.1em;
+}
+
+#glossary-tooltip p {
+  margin-top: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+#glossary-tooltip .manual-img {
+  margin: var(--space-sm) 0;
+  width: 100%; 
+  height: auto;
+  display: block;
+}
+
+#tooltip-photo-container {
+  position: relative;
+  padding: 0;
+}
+#glossary-tooltip[data-current-element^="photo-"] {
+  padding: var(--space-sm);
+}
+#tooltip-photo-container .manual-img {
+  margin: 0; 
+  border-radius: var(--border-radius-md);
+}
+.tooltip-photo-zoom {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(255,255,255,0.8);
+  padding: 3px;
+  border-radius: 4px;
+}
+.tooltip-photo-zoom button {
+  background-color: var(--gray-200);
+  border: 1px solid var(--gray-300);
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 25px;
+  height: 25px;
+  line-height: 25px;
+  color: var(--color-dark);
+}
+.tooltip-photo-zoom button:hover {
+  background-color: var(--gray-300);
+}

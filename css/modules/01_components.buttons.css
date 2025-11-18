@@ -1,0 +1,142 @@
+/* css/modules/01_components.buttons.css */
+
+/* -------------------------------------- */
+/* 8. BOTÕES (PADRONIZAÇÃO GERAL) */
+/* -------------------------------------- */
+
+/* Formulário de Contato e Chat */
+.send-btn,
+#chat-send-btn {
+  padding: var(--space-sm) var(--space-md);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  text-decoration: none;
+  background-color: var(--color-primary-medium);
+  color: white;
+  width: 100%;
+}
+.send-btn:hover,
+#chat-send-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  background-color: var(--color-primary-dark);
+}
+#chat-send-btn {
+  width: auto;
+}
+
+/* Área de Botões da Calculadora */
+.risk-buttons-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+#add-tree-btn, #reset-risk-form-btn,
+.export-btn {
+  padding: var(--space-sm) var(--space-md);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  text-decoration: none;
+  flex-grow: 1;
+  min-width: 150px;
+}
+#add-tree-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+#reset-risk-form-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.export-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+
+
+/* Aplica as classes de cor */
+#add-tree-btn {
+  background-color: var(--color-primary-medium);
+  color: white;
+}
+#add-tree-btn:hover { background-color: var(--color-primary-dark); }
+
+#reset-risk-form-btn {
+  background-color: var(--gray-200);
+  color: var(--color-text-light);
+  border-color: var(--gray-300);
+}
+#reset-risk-form-btn:hover { background-color: var(--gray-300); }
+
+/* Botão Importar e Exportar */
+#import-data-btn,
+#export-data-btn,
+#send-email-btn {
+  background-color: transparent;
+  color: var(--color-primary-medium);
+  border-color: var(--color-primary-medium);
+}
+#import-data-btn:hover,
+#export-data-btn:hover,
+#send-email-btn:hover {
+  background-color: var(--color-primary-lightest);
+}
+
+#clear-all-btn {
+  background-color: var(--color-danger);
+  color: white;
+}
+#clear-all-btn:hover { background-color: var(--color-danger-dark); }
+
+/* Botão de GPS */
+#get-gps-btn {
+  background-color: var(--color-primary-dark);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: var(--space-sm) var(--space-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+#get-gps-btn:hover { background-color: var(--color-primary-medium); }
+#get-gps-btn:disabled { background-color: var(--color-primary-medium); cursor: not-allowed; }
+
+/* Botão de Foto */
+.photo-btn {
+  padding: var(--space-sm) var(--space-md);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  text-decoration: none;
+  
+  background-color: transparent;
+  color: var(--color-primary-medium);
+  border: 2px solid var(--color-primary-medium);
+}
+.photo-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  background-color: var(--color-primary-lightest);
+  color: var(--color-primary-dark);
+}

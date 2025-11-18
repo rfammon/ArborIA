@@ -1,0 +1,50 @@
+/* css/modules/02_feature.manual_nav.css */
+
+/* -------------------------------------- */
+/* 4. ESTILOS DO ÍNDICE (MAPA MENTAL) */
+/* -------------------------------------- */
+
+.mapa-navegacao h2 {
+  color: var(--color-primary-dark);
+  text-align: center;
+}
+
+.topicos-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.topico-btn {
+  padding: var(--space-md) var(--space-sm);
+  background-color: var(--bg-surface);
+  color: var(--color-primary-medium);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  height: 75px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.topico-btn:hover {
+  background-color: var(--color-primary-lightest);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-light);
+}
+
+.topico-btn.active {
+  background-color: var(--color-accent);
+  color: var(--color-dark);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-accent-dark);
+}

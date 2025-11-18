@@ -1,0 +1,69 @@
+/* css/modules/01_components.helpers.css */
+
+/* -------------------------------------- */
+/* 12. TOAST, SPINNER, VOLTAR AO TOPO */
+/* -------------------------------------- */
+
+#toast-notification {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-dark);
+  color: white;
+  font-weight: 600;
+  z-index: 2000;
+  box-shadow: var(--shadow-lg);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s, visibility 0.3s, bottom 0.3s;
+}
+#toast-notification.show { visibility: visible; opacity: 1; bottom: 30px; }
+#toast-notification.success { background-color: var(--color-primary-medium); }
+#toast-notification.error { background-color: var(--color-danger); }
+
+/* Spinner */
+.spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  vertical-align: middle;
+}
+#get-gps-btn:disabled .spinner { display: inline-block; }
+#zip-status .spinner {
+  display: inline-block;
+  border-color: rgba(0, 0, 0, 0.2);
+  border-top-color: var(--color-primary-medium);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Back to Top */
+#back-to-top-btn {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999;
+  background-color: var(--color-primary-dark);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
+  line-height: 50px;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+}
+#back-to-top-btn:hover { background-color: var(--color-primary-medium); transform: scale(1.1); }
+#back-to-top-btn.show { display: block; opacity: 1; visibility: visible; }
