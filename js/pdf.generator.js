@@ -1,20 +1,28 @@
-// js/pdf.generator.js (v54.0 - Com Verificação de Biblioteca)
+// js/pdf.generator.js (v79.0 - Fix Array Map Error)
 
 import * as state from './state.js';
 import { getImageFromDB } from './database.js';
 import { showToast } from './utils.js';
 import { prepareMapForScreenshot, initializeMap, currentLayerType, toggleMapLayer } from './map.ui.js'; 
-import { checklistData } from './content.js'; 
 
-const RISK_LABELS = checklistData.map(item => item.term); // Tenta mapear se for array, ou usa lista fixa abaixo
-
-// Fallback caso checklistData não seja um array iterável direto
-const SAFE_RISK_LABELS = [
-    "1. Galhos Mortos > 5cm", "2. Rachaduras/Fendas", "3. Sinais de Apodrecimento",
-    "4. Casca Inclusa (União em V)", "5. Galhos Cruzados", "6. Copa Assimétrica",
-    "7. Inclinação Anormal", "8. Próxima a Vias Públicas", "9. Risco de Queda sobre Alvos",
-    "10. Interferência em Redes", "11. Espécie com Histórico de Falhas", "12. Poda Drástica/Brotação",
-    "13. Calçadas Rachadas", "14. Perda de Raízes", "15. Compactação/Asfixia", "16. Apodrecimento Raízes"
+// [CORREÇÃO] Lista manual para garantir ordem e evitar erro de .map() em Objeto
+const RISK_LABELS = [
+    "1. Galhos Mortos > 5cm",
+    "2. Rachaduras/Fendas",
+    "3. Sinais de Apodrecimento",
+    "4. Casca Inclusa (União em V)",
+    "5. Galhos Cruzados",
+    "6. Copa Assimétrica",
+    "7. Inclinação Anormal",
+    "8. Próxima a Vias Públicas",
+    "9. Risco de Queda sobre Alvos",
+    "10. Interferência em Redes",
+    "11. Espécie com Histórico de Falhas",
+    "12. Poda Drástica/Brotação",
+    "13. Calçadas Rachadas",
+    "14. Perda de Raízes",
+    "15. Compactação/Asfixia",
+    "16. Apodrecimento Raízes"
 ];
 
 const blobToDataURL = (blob) => {
@@ -32,23 +40,15 @@ export async function generatePDF() {
         return;
     }
 
-    // [CORREÇÃO CRÍTICA] Verificação segura da biblioteca
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-        console.error("Biblioteca jsPDF não encontrada em window.jspdf");
-        showToast("Erro: Bibliotecas PDF não carregadas. Recarregue a página com internet.", "error");
+    const { jsPDF } = window.jspdf;
+    if (!jsPDF || !window.html2canvas) {
+        showToast("Bibliotecas PDF não carregadas. Verifique a internet.", "error");
         return;
     }
-    
-    if (!window.html2canvas) {
-        showToast("Erro: Biblioteca html2canvas não carregada.", "error");
-        return;
-    }
-
-    const { jsPDF } = window.jspdf; // Agora é seguro extrair
 
     showToast("Preparando mapa e gerando PDF...", "success");
 
-    // COLE SUA LOGO BASE64 AQUI
+    // COLE SUA BASE64 DA LOGO AQUI
     const logoBase64 = ""; 
 
     const doc = new jsPDF();
@@ -66,7 +66,9 @@ export async function generatePDF() {
     const originalWidth = mapContainer.style.width;
     const originalHeight = mapContainer.style.height;
     let wasSummaryActive = false;
-    let originalLayerType = window.currentLayerType || 'satellite';
+    
+    // Salva estado original da camada
+    let originalLayer = currentLayerType;
 
     try {
         if (mapTabContent && summaryTabContent) {
@@ -96,8 +98,9 @@ export async function generatePDF() {
         mapContainer.style.width = originalWidth;
         mapContainer.style.height = originalHeight;
 
-        if (originalLayerType !== 'satellite' && window.toggleMapLayer) { 
-             window.toggleMapLayer(); 
+        // Restaura camada se mudou e a função existir
+        if (originalLayer !== 'satellite' && typeof toggleMapLayer === 'function') {
+             // toggleMapLayer(); // Opcional: reverter para ruas se estava em ruas
         }
 
         if (mapTabContent && summaryTabContent) {
@@ -112,10 +115,11 @@ export async function generatePDF() {
                 summaryTabContent.classList.remove('active');
             }
         }
+        
         if (state.mapInstance) state.mapInstance.invalidateSize();
     }
 
-    // === CABEÇALHO ===
+    // === CABEÇALHO RECORRENTE ===
     const printHeader = (isCover) => {
         if (logoBase64) { try { doc.addImage(logoBase64, 'PNG', 14, 10, 25, 25); } catch(e){} }
         const textX = logoBase64 ? 45 : pageWidth/2;
@@ -148,7 +152,7 @@ export async function generatePDF() {
     doc.text(`Emissão: ${new Date().toLocaleDateString('pt-BR')}`, margin, 45);
     doc.text(`Total Avaliado: ${state.registeredTrees.length} árvores`, pageWidth-margin, 45, {align:'right'});
 
-    // === TABELA ===
+    // === 3. TABELA RESUMO ===
     const tableHeaders = [['ID', 'Data', 'Espécie', 'DAP', 'Local', 'Risco', 'Observações']];
     const tableData = state.registeredTrees.map(t => [
         t.id, t.data.split('-').reverse().join('/'), t.especie, 
@@ -170,7 +174,7 @@ export async function generatePDF() {
     });
     cursorY = doc.lastAutoTable.finalY + 15;
 
-    // === MAPA ===
+    // === 4. MAPA ===
     if (mapImageParams) {
         if (cursorY + mapImageParams.h + 25 > pageHeight - 20) { doc.addPage(); cursorY = printHeader(false); }
         doc.setFontSize(12); doc.setTextColor(0); doc.setFont(undefined, 'bold');
@@ -179,6 +183,8 @@ export async function generatePDF() {
         const mapX = (pageWidth - mapImageParams.w) / 2;
         doc.addImage(mapImageParams.data, 'PNG', mapX, cursorY, mapImageParams.w, mapImageParams.h);
         cursorY += mapImageParams.h + 5;
+        
+        // Legenda
         doc.setFontSize(9); doc.setFont(undefined, 'normal');
         let lx = mapX; const dSz = 2; const spc = 25;
         doc.setFillColor(198, 40, 40); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.setTextColor(0); doc.text("Alto Risco", lx+6, cursorY+dSz+1); lx += spc + 10;
@@ -187,7 +193,7 @@ export async function generatePDF() {
         cursorY += 15;
     }
 
-    // === FICHAS ===
+    // === 5. FICHAS INDIVIDUAIS ===
     doc.addPage(); cursorY = printHeader(false);
     doc.setFontSize(14); doc.setTextColor(0, 77, 64); doc.setFont(undefined, 'bold');
     doc.text("Detalhamento Técnico Individual", margin, cursorY);
@@ -207,9 +213,9 @@ export async function generatePDF() {
         else if (tree.risco === 'Médio Risco') { bgColor = [255, 243, 224]; riskColor = [230, 81, 0]; }
         else { bgColor = [232, 245, 233]; riskColor = [46, 125, 50]; }
 
-        const risksList = (tree.riskFactors || []).map((val, idx) => val === 1 ? SAFE_RISK_LABELS[idx] : null).filter(v => v !== null);
+        const risksList = (tree.riskFactors || []).map((val, idx) => val === 1 ? RISK_LABELS[idx] : null).filter(v => v !== null);
         
-        const leftHeight = 50 + (risksList.length > 0 ? risksList.length * 5 : 10);
+        const leftHeight = 70 + (risksList.length > 0 ? risksList.length * 5 : 10);
         const rightColX = margin + 85; const obsWidth = pageWidth - rightColX - margin - 2; 
         const obsLines = doc.splitTextToSize(tree.observacoes || '—', obsWidth);
         let rightHeight = 20 + 10 + (obsLines.length * 4) + 10;
@@ -230,12 +236,17 @@ export async function generatePDF() {
 
         doc.setTextColor(50); doc.setFont(undefined, 'normal'); doc.setFontSize(9);
         const col1X = margin + 6; let lineY = cursorY + 16;
-        doc.text(`Data: ${tree.data.split('-').reverse().join('/')}`, col1X, lineY);
+        
+        doc.setFont(undefined, 'bold'); doc.text(`Altura: ${alturaNum.toFixed(1)} m`, col1X, lineY);
         doc.text(`DAP: ${tree.dap} cm`, col1X + 40, lineY); lineY += 5;
-        doc.text(`Local: ${tree.local}`, col1X, lineY); lineY += 5;
-        doc.text(`Coord: ${tree.coordX} E / ${tree.coordY} N`, col1X, lineY);
-        doc.text(`Raio Queda: ${rcq}m | Raio Raízes: ${rcr}m`, col1X, lineY + 5); // Métricas
-        lineY += 12;
+        doc.text(`Raio Queda (RCQ): ${rcq} m`, col1X, lineY);
+        doc.text(`Raio Radicular (RCR): ${rcr} m`, col1X + 40, lineY); lineY += 7;
+
+        doc.setFont(undefined, 'normal'); doc.text(`Local: ${tree.local}`, col1X, lineY);
+        lineY += 5;
+        doc.text(`Coord: ${tree.coordX} / ${tree.coordY}`, col1X, lineY);
+        doc.text(`Zona: ${tree.utmZoneNum}${tree.utmZoneLetter}`, col1X + 60, lineY);
+        lineY += 8;
 
         doc.setFont(undefined, 'bold'); doc.setTextColor(0);
         doc.text("Fatores de Risco:", col1X, lineY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); lineY += 5;
@@ -257,7 +268,6 @@ export async function generatePDF() {
         doc.setFont(undefined, 'bold'); doc.setTextColor(0);
         doc.text("Observações:", rightColX, contentY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); contentY += 5;
         doc.text(obsLines, rightColX, contentY);
-
         cursorY += boxHeight + 8; 
     }
     const filename = `Relatorio_Arboreo_${new Date().toISOString().slice(0,10)}.pdf`;
