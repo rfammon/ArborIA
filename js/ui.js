@@ -1,10 +1,12 @@
 /**
  * ARBORIA 2.0 - UI CONTROLLER
- * Gerencia a navegação, responsividade e feedback visual (Toasts/Modais).
- * Autor: Js Master
+ * Gerencia a navegação, responsividade e feedback visual.
+ * Correção: Adaptação para importar o state.js legado corretamente.
  */
 
-import { State } from './state.js';
+// --- CORREÇÃO AQUI ---
+// Mudamos de { State } para * as State para agrupar as funções do seu arquivo original
+import * as State from './state.js';
 
 export const UI = {
     // Cache de Elementos do DOM para performance
@@ -57,21 +59,25 @@ export const UI = {
      */
     bindEvents() {
         // 1. Cliques no Menu Principal
-        this.elements.navButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                // Se for link externo, deixa passar. Se for navegação interna, previne.
-                if (!btn.dataset.external) e.preventDefault();
-                
-                const targetId = btn.getAttribute('data-target');
-                if (targetId) {
-                    this.navigateTo(targetId);
+        if (this.elements.navButtons) {
+            this.elements.navButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // Se for link externo (sem data-target), deixa passar
+                    if (!btn.hasAttribute('data-target')) return;
                     
-                    // Estado Visual Ativo
-                    this.elements.navButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                }
+                    e.preventDefault();
+                    
+                    const targetId = btn.getAttribute('data-target');
+                    if (targetId) {
+                        this.navigateTo(targetId);
+                        
+                        // Estado Visual Ativo
+                        this.elements.navButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    }
+                });
             });
-        });
+        }
 
         // 2. Botão Voltar (Apenas Mobile)
         if (this.elements.backBtn) {
@@ -152,10 +158,9 @@ export const UI = {
 
         // Restaura Menu
         if (this.elements.navPanel) {
-            // Verifica se o CSS define grid ou block, ou força grid no mobile
-            this.elements.navPanel.style.display = window.innerWidth <= 768 ? 'block' : 'block'; 
-            // Nota: O CSS trata o display interno (.topicos-container é grid). 
-            // Aqui só garantimos que o container pai está visível.
+            // Garante visibilidade do container pai
+            this.elements.navPanel.style.display = 'block'; 
+            // No CSS, .topicos-container cuidará do display grid/flex
         }
 
         // Esconde botão voltar
@@ -171,11 +176,15 @@ export const UI = {
      * Gerencia Sub-Abas (ex: Calculadora > Registrar | Mapa)
      */
     bindSubTabs() {
+        if (!this.elements.subTabButtons) return;
+
         this.elements.subTabButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetTabId = btn.getAttribute('data-target');
                 const parentSection = btn.closest('.content-section');
+
+                if (!parentSection) return;
 
                 // 1. Atualiza botões (Pílulas)
                 const siblings = parentSection.querySelectorAll('.sub-nav-btn');
@@ -192,7 +201,7 @@ export const UI = {
                 }
 
                 // 3. Fix Específico para Mapa (Leaflet)
-                if (targetTabId.includes('mapa')) {
+                if (targetTabId && targetTabId.includes('mapa')) {
                    this.triggerMapResize();
                 }
             });
@@ -242,7 +251,12 @@ export const UI = {
         if (!this.elements.toast) return;
 
         this.elements.toast.textContent = message;
-        this.elements.toast.className = `toast toast-${type} show`; // Classes CSS definidas no helpers.css
+        // Remove classes antigas antes de adicionar novas
+        this.elements.toast.className = 'toast'; 
+        // Força reflow para reiniciar animação se necessário
+        void this.elements.toast.offsetWidth;
+        
+        this.elements.toast.classList.add(`toast-${type}`, 'show');
 
         // Auto-hide
         setTimeout(() => {
