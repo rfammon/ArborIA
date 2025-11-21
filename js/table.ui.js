@@ -1,6 +1,6 @@
-/* js/table.ui.js (vFinal)
-   Gerenciador da Tabela de Resumo (Árvores Cadastradas).
-   Responsável por: Renderizar HTML, Filtros e Eventos de Ação (Excluir/Visualizar).
+/* js/table.ui.js (vFinal - Reconstruído)
+   Gerenciador da Tabela de Resumo.
+   Responsável por: Renderizar HTML da lista, Filtros e Ações (Excluir).
 */
 
 import Utils from './utils.js';
@@ -9,16 +9,20 @@ import State from './state.js';
 const TableUI = {
     container: null,
 
+    // === 1. INICIALIZAÇÃO ===
     init() {
         this.container = document.getElementById('summary-table-container');
+        
+        if (!this.container) {
+            console.warn('[TableUI] Container #summary-table-container não encontrado.');
+        } else {
+            console.log('[TableUI] Inicializado.');
+        }
     },
 
-    /**
-     * Renderiza a tabela com base nos dados do State.
-     * @param {string} filterText - Texto para filtrar (opcional)
-     */
+    // === 2. RENDERIZAÇÃO (UPDATE) ===
     update(filterText = '') {
-        // Garante que pegou o container (caso init não tenha sido chamado)
+        // Garante que temos o container (caso init tenha falhado ou ordem de carga)
         if (!this.container) {
             this.container = document.getElementById('summary-table-container');
             if (!this.container) return;
@@ -26,81 +30,78 @@ const TableUI = {
 
         const trees = State.getAllTrees();
 
-        // 1. Estado Vazio
+        // A. Estado Vazio
         if (trees.length === 0) {
             this.container.innerHTML = `
-                <div style="text-align: center; padding: 40px 20px; color: #90a4ae;">
-                    <p style="font-size: 3rem; margin-bottom: 10px;">🌳</p>
-                    <p>Nenhuma árvore cadastrada ainda.</p>
+                <div style="text-align: center; padding: 30px; color: #90a4ae;">
+                    <p style="font-size: 2.5rem; margin-bottom: 10px;">🌳</p>
+                    <p><strong>Nenhuma árvore cadastrada.</strong></p>
                     <p style="font-size: 0.9rem;">Use a aba "Registrar Árvore" para começar.</p>
                 </div>
             `;
             return;
         }
 
-        // 2. Filtragem
+        // B. Filtragem
         const search = filterText.toLowerCase();
         const filtered = trees.filter(t => {
             if (!search) return true;
             return (t.especie && t.especie.toLowerCase().includes(search)) ||
                    (t.local && t.local.toLowerCase().includes(search)) ||
-                   (t.riskLevel && t.riskLevel.toLowerCase().includes(search)) ||
-                   (t.id && t.id.includes(search));
+                   (t.riskLevel && t.riskLevel.toLowerCase().includes(search));
         });
 
         if (filtered.length === 0) {
-            this.container.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">Nenhum resultado encontrado para o filtro.</p>';
+            this.container.innerHTML = `
+                <p style="text-align:center; padding:20px; color:#777;">
+                    Nenhum resultado para "<strong>${Utils.escapeHTML(filterText)}</strong>".
+                </p>`;
             return;
         }
 
-        // 3. Construção do HTML
+        // C. Construção do HTML
         let html = `
             <div class="table-responsive">
                 <table class="summary-table">
                     <thead>
                         <tr>
-                            <th>Data</th>
+                            <th>Data / ID</th>
                             <th>Espécie / Local</th>
                             <th>Risco</th>
-                            <th style="text-align: right;">Ações</th>
+                            <th style="text-align: center;">Ação</th>
                         </tr>
                     </thead>
                     <tbody>
         `;
 
         filtered.forEach(tree => {
-            // Define estilo do Badge de Risco
+            // Define cor do Badge
             let badgeClass = 'badge-low';
-            let riskLabel = tree.riskLevel || 'N/A';
-            
-            if (riskLabel === 'Alto Risco') badgeClass = 'badge-high';
-            else if (riskLabel === 'Médio Risco') badgeClass = 'badge-medium';
+            if (tree.riskLevel === 'Alto Risco') badgeClass = 'badge-high';
+            else if (tree.riskLevel === 'Médio Risco') badgeClass = 'badge-medium';
 
-            // Formatação de dados
+            // Formatações seguras
             const dateStr = Utils.formatDate(tree.dataColeta);
             const especieStr = Utils.escapeHTML(tree.especie);
-            const localStr = Utils.escapeHTML(tree.local || '-');
+            const localStr = Utils.escapeHTML(tree.local || 'Sem local');
+            const shortId = tree.id ? tree.id.substr(0, 4) : '???';
 
             html += `
-                <tr class="fade-in-row">
+                <tr>
                     <td>
-                        <span style="font-weight:600; color:#546E7A;">${dateStr}</span>
-                        <div style="font-size:0.75em; color:#b0bec5;">ID: ${tree.id.substr(0,6)}</div>
+                        <div style="font-weight:600; color:#455A64;">${dateStr}</div>
+                        <div style="font-size:0.75rem; color:#b0bec5;">#${shortId}</div>
                     </td>
                     <td>
                         <div style="font-weight:700; color:#0277BD;">${especieStr}</div>
-                        <div style="font-size:0.85em; color:#78909c;">${localStr}</div>
+                        <div style="font-size:0.85rem; color:#78909c;">${localStr}</div>
                     </td>
                     <td>
-                        <span class="risk-badge ${badgeClass}">${riskLabel}</span>
+                        <span class="risk-badge ${badgeClass}">${tree.riskLevel}</span>
                     </td>
-                    <td style="text-align: right;">
-                        <button class="action-btn view-btn" data-id="${tree.id}" title="Ver Detalhes" 
-                                style="background: #e3f2fd; color: #0277BD; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; margin-right:5px;">
-                            👁️
-                        </button>
-                        <button class="action-btn delete-btn" data-id="${tree.id}" title="Excluir" 
-                                style="background: #ffebee; color: #c62828; border:none; border-radius:8px; padding:6px 10px; cursor:pointer;">
+                    <td style="text-align: center;">
+                        <button class="delete-btn" data-id="${tree.id}" title="Excluir Registro" 
+                                style="background:none; border:none; cursor:pointer; font-size:1.2rem;">
                             🗑️
                         </button>
                     </td>
@@ -113,55 +114,41 @@ const TableUI = {
                 </table>
             </div>
             <div style="text-align: right; margin-top: 10px; font-size: 0.8rem; color: #90a4ae;">
-                Exibindo ${filtered.length} de ${trees.length} registros
+                ${filtered.length} registro(s) encontrado(s)
             </div>
         `;
 
         this.container.innerHTML = html;
 
-        // 4. Reconectar Listeners (Event Delegation seria melhor, mas direto é mais seguro aqui)
-        this.attachListeners(filtered);
+        // D. Reconectar Listeners (Botões gerados dinamicamente)
+        this.attachListeners();
     },
 
-    attachListeners(trees) {
-        // Botão Excluir
-        this.container.querySelectorAll('.delete-btn').forEach(btn => {
+    // === 3. LISTENERS DE AÇÃO ===
+    attachListeners() {
+        const buttons = this.container.querySelectorAll('.delete-btn');
+        
+        buttons.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Evita triggers indesejados
                 const id = e.target.closest('button').dataset.id;
                 
-                if (confirm('Tem certeza que deseja excluir este registro permanentemente?')) {
+                if (confirm('Tem certeza que deseja excluir esta árvore permanentemente?')) {
                     const success = State.removeTree(id);
+                    
                     if (success) {
-                        // Recarrega a tabela mantendo o filtro atual? 
-                        // Por simplicidade, recarrega tudo
-                        this.update(); 
+                        this.update(); // Recarrega a tabela
+                        Utils.showToast('Registro excluído.', 'success');
                         
-                        // Atualiza badge da aba (via evento global ou callback se necessário)
-                        // Dispara evento customizado para a CalculatorUI ouvir
+                        // Dispara evento global para atualizar badges em outros lugares
                         document.dispatchEvent(new CustomEvent('arboria:tree-updated'));
-                        
-                        Utils.showToast('Registro excluído com sucesso.', 'success');
                     } else {
-                        Utils.showToast('Erro ao excluir registro.', 'error');
+                        Utils.showToast('Erro ao excluir.', 'error');
                     }
-                }
-            });
-        });
-
-        // Botão Visualizar (Pode abrir um modal no futuro)
-        this.container.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.target.closest('button').dataset.id;
-                const tree = trees.find(t => t.id === id);
-                if (tree) {
-                    alert(`Detalhes:\n\nEspécie: ${tree.especie}\nLocal: ${tree.local}\nObs: ${tree.obs || 'Nenhuma'}`);
-                    // Futuramente: ModalUI.open(tree);
                 }
             });
         });
     }
 };
 
-/* EXPORTAÇÃO PADRÃO (Essencial para o import funcionar) */
+/* EXPORTAÇÃO PADRÃO */
 export default TableUI;
