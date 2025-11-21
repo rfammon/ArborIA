@@ -1,134 +1,192 @@
 /* 02_feature.manual_nav.css 
-   Refatorado: Identidade ArborIA (Blue/Green), Botões Arredondados e Alto Contraste
+   V2.0: Estilo Híbrido (Lista Desktop / Grid Smartphone Mobile)
+   Identidade: ArborIA (Blue -> Green)
 */
 
+/* --- CONTAINER PRINCIPAL --- */
 .mapa-navegacao {
     background: white;
-    border-radius: 16px; /* Mais arredondado */
+    border-radius: 20px; /* Cantos bem arredondados */
     padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Sombra suave no card */
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06); /* Sombra difusa moderna */
     margin-bottom: 1.5rem;
-    border: 1px solid #e0e0e0;
+    border: 1px solid rgba(0,0,0,0.05);
 }
 
 .mapa-navegacao h2 {
-    /* Identidade: Azul Tecnológico */
     color: #0277BD; 
-    margin-bottom: 1.2rem;
-    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     
-    /* Substituindo a linha laranja por um degradê da marca */
+    /* Sublinhado degradê da marca */
     border-bottom: 3px solid;
     border-image-slice: 1;
-    border-image-source: linear-gradient(to right, #0277BD, #00796b);
-    
+    border-image-source: linear-gradient(to right, #0277BD, #00796b, transparent);
     padding-bottom: 0.5rem;
 }
 
-/* Container dos botões */
+/* --- GRID/LISTA CONTROLADOR --- */
 .topicos-container {
     display: flex;
     flex-direction: column;
-    gap: 10px; /* Espaçamento entre botões */
+    gap: 10px;
 }
 
-/* ESTILO DO BOTÃO (Estado Normal) */
+/* --- ESTILO DOS BOTÕES (BASE / DESKTOP) --- */
 .topico-btn {
-    /* Formato de Botão */
+    position: relative;
     background: #ffffff;
-    border: 1px solid #cfd8dc; /* Borda cinza azulada suave */
-    border-radius: 12px; /* Bordas bem arredondadas */
-    padding: 12px 16px;
+    border: 1px solid #eceff1;
+    border-radius: 16px; /* Super arredondado (Pill shape) */
+    padding: 14px 20px;
     
     /* Tipografia */
-    color: #455A64; /* Cinza escuro para leitura confortável */
-    font-size: 1rem;
-    font-weight: 600; /* Negrito para destaque */
+    color: #546E7A;
+    font-size: 0.95rem;
+    font-weight: 600;
     text-align: left;
+    line-height: 1.4;
     
-    /* Comportamento */
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Sombra leve para dar volume */
-    
-    /* Layout Flexbox */
+    /* Layout e Animação */
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Efeito "bouncy" suave */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
 }
 
-/* Hover (Passar o mouse) */
+/* Hover Desktop */
 .topico-btn:hover {
-    transform: translateY(-2px); /* O botão "flutua" levemente */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    border-color: #00796b; /* Borda verde ao passar o mouse */
-    background: #f1f8e9; /* Fundo verde muito pálido */
-    color: #004d40;
+    transform: translateX(6px); /* Move para a direita */
+    border-color: #00796b;
+    background: #f0fcfc; /* Cyan muito claro */
+    color: #00695c;
+    box-shadow: 0 4px 12px rgba(0, 121, 107, 0.15);
 }
 
-/* ESTILO DO BOTÃO (Ativo/Selecionado) */
+/* --- ESTADO ATIVO (SELECIONADO) --- */
 .topico-btn.active {
-    /* Identidade: Degradê ArborIA (Verde -> Azul) */
     background: linear-gradient(135deg, #00796b 0%, #0277BD 100%);
-    
-    color: #ffffff !important; /* Texto Branco Forçado */
-    border: none; /* Remove borda para o degradê brilhar */
-    
-    box-shadow: 0 4px 10px rgba(0, 121, 107, 0.4); /* Sombra colorida (Glow) */
-    transform: scale(1.02); /* Levemente maior para indicar seleção */
+    color: white !important;
+    border-color: transparent;
+    box-shadow: 0 8px 20px rgba(0, 121, 107, 0.4);
+    transform: scale(1.02);
+    z-index: 1;
 }
 
-/* Ajuste para não mover demais no hover se já estiver ativo */
-.topico-btn.active:hover {
-    transform: scale(1.02) translateY(0);
-    box-shadow: 0 5px 12px rgba(0, 121, 107, 0.5);
-}
-
-/* --- ÍCONES (Imagens PNG) --- */
+/* Ícones (Desktop) */
 .topico-btn img {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     object-fit: contain;
-    
-    /* SAFETY LOCK: Impede que o clique quebre a navegação */
-    pointer-events: none; 
-    
-    transition: filter 0.2s ease;
-    
-    /* Filtro padrão: Deixa o ícone levemente acinzentado para combinar com o texto */
-    filter: grayscale(100%) opacity(0.7);
+    pointer-events: none; /* SAFETY LOCK */
+    transition: filter 0.2s ease, transform 0.3s ease;
+    filter: grayscale(100%) opacity(0.6);
 }
 
-/* Ícone quando passa o mouse (Hover) */
 .topico-btn:hover img {
-    filter: none; /* Mostra a cor original do ícone */
-    transform: scale(1.1); /* Ícone cresce um pouquinho */
+    filter: none;
+    transform: scale(1.1);
 }
 
-/* Ícone quando Ativo (Selecionado) */
 .topico-btn.active img {
-    /* Inverte totalmente para Branco Brilhante */
-    filter: brightness(0) invert(1); 
+    filter: brightness(0) invert(1); /* Branco Puro */
+    transform: scale(1.2); /* Ícone cresce no ativo */
 }
 
-/* Separador Visual (Linha divisória entre seções) */
+/* Separador */
 .nav-separator {
-    height: 2px;
-    /* Degradê suave e transparente */
-    background: linear-gradient(to right, transparent, #e0e0e0, transparent);
-    margin: 10px 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #cfd8dc, transparent);
+    margin: 15px 0;
     width: 100%;
 }
 
-/* Responsividade Mobile */
+/* --- TRANSFORMAÇÃO MOBILE (SMARTPHONE GRID) --- */
 @media (max-width: 768px) {
+    
     .mapa-navegacao {
-        padding: 1rem;
+        background: transparent; /* Remove fundo do container no mobile */
+        box-shadow: none;
+        border: none;
+        padding: 0 5px; /* Espaço lateral pequeno */
+        margin-bottom: 1rem;
+    }
+
+    .mapa-navegacao h2 {
+        /* Título centralizado e menor no mobile */
+        text-align: center;
+        font-size: 1rem;
+        background: white;
+        padding: 10px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 1rem;
+        border-bottom: none; /* Remove a linha, usa card */
+    }
+
+    /* TRANSFORMAÇÃO EM GRID */
+    .topicos-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 Colunas */
+        gap: 12px; /* Espaço entre os "Apps" */
+    }
+
+    /* TRANSFORMAÇÃO DOS BOTÕES EM "ÍCONES DE APP" */
+    .topico-btn {
+        flex-direction: column; /* Ícone em cima, texto embaixo */
+        justify-content: center;
+        text-align: center;
+        
+        aspect-ratio: 1.1; /* Quase quadrado */
+        padding: 15px 10px;
+        border-radius: 24px; /* Borda estilo iOS/Android moderno */
+        
+        background: white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08); /* Sombra mais forte para "flutuar" */
+        border: 1px solid rgba(255,255,255,0.5);
+        gap: 10px; /* Espaço entre ícone e texto */
+    }
+
+    /* Ícones Maiores no Mobile */
+    .topico-btn img {
+        width: 42px; /* Ícone Grande */
+        height: 42px;
+        margin-bottom: 0;
+        filter: none; /* Mostra cor original sempre no mobile */
+        opacity: 1;
+    }
+
+    /* Texto Menor e Descritivo */
+    .topico-btn {
+        font-size: 0.8rem; /* Texto pequeno */
+        font-weight: 600;
+        line-height: 1.2;
+        color: #37474f;
+    }
+
+    /* Estado Ativo no Mobile */
+    .topico-btn.active {
+        /* Mantém fundo branco ou levemente colorido para não perder a estética de ícone */
+        background: linear-gradient(135deg, #e0f2f1 0%, #e1f5fe 100%);
+        color: #00695c !important; /* Texto Verde Escuro */
+        border: 2px solid #00796b;
+        transform: translateY(-2px);
     }
     
-    .topico-btn {
-        padding: 12px;
-        font-size: 0.95rem;
+    /* No mobile, o ícone ativo NÃO fica branco, mantém a cor original para destaque */
+    .topico-btn.active img {
+        filter: none; 
+        transform: scale(1.1);
+    }
+    
+    /* Hover no Mobile (Feedback de Toque) */
+    .topico-btn:active {
+        transform: scale(0.96);
+        background: #eceff1;
     }
 }
