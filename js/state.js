@@ -1,148 +1,139 @@
-/* js/state.js (vFinal - Reconstruído)
-   Gerenciador de Estado Global (Database Local).
-   Responsável por: CRUD de Árvores, Persistência (LocalStorage) e Notificação de UI.
-*/
+/* js/state.js (vFinal - Reconstruído para Compatibilidade) */
 
 const State = {
-    // Armazenamento em memória
-    trees: [],
-    
-    // Chave do LocalStorage
+    // Dados em memória
+    registeredTrees: [],
+    activeTab: 'conceitos-basicos',
+    lastEvaluatorName: '',
+    currentTreePhoto: null, // Blob da foto atual
+    editingTreeId: null,    // ID da árvore sendo editada
+
+    // Configurações
     storageKey: 'arboria_trees_v1',
 
     // === 1. INICIALIZAÇÃO ===
     init() {
-        console.log('[State] Inicializando Banco de Dados...');
-        this.loadFromStorage();
+        console.log('[State] Carregando dados...');
+        this.loadDataFromStorage();
     },
 
-    // === 2. CRUD (Create, Read, Delete) ===
+    // === 2. GETTERS & SETTERS ===
+    getAllTrees() {
+        return this.registeredTrees;
+    },
 
-    // Adicionar nova árvore
+    getTreeById(id) {
+        return this.registeredTrees.find(t => t.id === id);
+    },
+
+    getActiveTab() {
+        return this.activeTab;
+    },
+
+    saveActiveTab(tabId) {
+        this.activeTab = tabId;
+    },
+
+    setCurrentTreePhoto(blob) {
+        this.currentTreePhoto = blob;
+    },
+
+    getCurrentTreePhoto() {
+        return this.currentTreePhoto;
+    },
+
+    setEditingTreeId(id) {
+        this.editingTreeId = id;
+    },
+
+    getEditingTreeId() {
+        return this.editingTreeId;
+    },
+    
+    setLastEvaluatorName(name) {
+        this.lastEvaluatorName = name;
+        // Opcional: Salvar em localStorage separado
+        localStorage.setItem('arboria_last_evaluator', name);
+    },
+
+    // === 3. CRUD (Dados) ===
     addTree(treeData) {
-        // Validação básica
-        if (!treeData) return false;
-
-        // Garante ID e Data
-        if (!treeData.id) treeData.id = Date.now().toString(36);
-        if (!treeData.createdAt) treeData.createdAt = new Date().toISOString();
-
-        // Salva
-        this.trees.push(treeData);
+        this.registeredTrees.push(treeData);
         this.saveToStorage();
-        
-        console.log('[State] Registro adicionado:', treeData.id);
-        
-        // Avisa o sistema que mudou (Atualiza Tabela e Badges)
-        this.notifyChange();
-        
+        this.notifyChange(); // Avisa a UI
         return treeData;
     },
 
-    // Remover árvore pelo ID
-    removeTree(id) {
-        const initialLength = this.trees.length;
-        
-        // Filtra removendo o ID alvo
-        this.trees = this.trees.filter(t => t.id !== id);
-        
-        const success = this.trees.length < initialLength;
-        
-        if (success) {
+    updateTree(updatedTree) {
+        const index = this.registeredTrees.findIndex(t => t.id === updatedTree.id);
+        if (index !== -1) {
+            this.registeredTrees[index] = updatedTree;
             this.saveToStorage();
-            console.log('[State] Registro removido:', id);
             this.notifyChange();
+            return true;
         }
+        return false;
+    },
+
+    removeTree(id) {
+        const initialLength = this.registeredTrees.length;
+        this.registeredTrees = this.registeredTrees.filter(t => t.id !== id);
         
-        return success;
+        if (this.registeredTrees.length < initialLength) {
+            this.saveToStorage();
+            this.notifyChange();
+            return true;
+        }
+        return false;
     },
 
-    // Obter todas (Read)
-    getAllTrees() {
-        // Retorna uma cópia para evitar mutação direta acidental
-        return [...this.trees];
-    },
-
-    // Limpar Banco de Dados (Delete All)
     clearAll() {
-        this.trees = [];
+        this.registeredTrees = [];
         this.saveToStorage();
-        console.log('[State] Banco de dados limpo.');
         this.notifyChange();
     },
 
-    // === 3. PERSISTÊNCIA (LocalStorage) ===
-
+    // === 4. PERSISTÊNCIA ===
     saveToStorage() {
         try {
-            const json = JSON.stringify(this.trees);
+            const json = JSON.stringify(this.registeredTrees);
             localStorage.setItem(this.storageKey, json);
         } catch (e) {
-            console.error('[State] Erro ao salvar (LocalStorage cheio?):', e);
-            alert('Erro de Armazenamento: O navegador não permitiu salvar os dados. Tente limpar o cache.');
+            console.error('[State] Erro ao salvar:', e);
         }
     },
 
-    loadFromStorage() {
+    loadDataFromStorage() {
         try {
             const json = localStorage.getItem(this.storageKey);
             if (json) {
-                const data = JSON.parse(json);
-                if (Array.isArray(data)) {
-                    this.trees = data;
-                    console.log(`[State] ${this.trees.length} registros carregados.`);
-                }
+                this.registeredTrees = JSON.parse(json);
             }
+            // Carrega avaliador
+            const evaluator = localStorage.getItem('arboria_last_evaluator');
+            if (evaluator) this.lastEvaluatorName = evaluator;
         } catch (e) {
-            console.error('[State] Erro ao ler dados, iniciando vazio.', e);
-            this.trees = [];
+            console.error('[State] Erro ao carregar:', e);
+            this.registeredTrees = [];
         }
     },
 
-    // === 4. IMPORTAÇÃO / EXPORTAÇÃO ===
-
-    // Gera JSON para backup
-    exportData() {
-        return JSON.stringify(this.trees, null, 2);
-    },
-
-    // Importa JSON de backup
-    importData(jsonString) {
-        try {
-            const data = JSON.parse(jsonString);
-            if (Array.isArray(data)) {
-                // Mescla inteligentemente (evita duplicatas por ID)
-                const currentIds = new Set(this.trees.map(t => t.id));
-                let addedCount = 0;
-
-                data.forEach(item => {
-                    if (item.id && !currentIds.has(item.id)) {
-                        this.trees.push(item);
-                        addedCount++;
-                    }
-                });
-
-                this.saveToStorage();
-                this.notifyChange();
-                return { success: true, count: addedCount };
-            }
-            return { success: false, message: 'Formato de arquivo inválido.' };
-        } catch (e) {
-            return { success: false, message: e.message };
-        }
-    },
-
-    // === 5. SISTEMA DE NOTIFICAÇÃO ===
-    
-    // Dispara um evento global para que a UI se atualize sozinha
+    // Notificação simples via evento customizado
     notifyChange() {
-        // Cria evento customizado 'arboria:tree-updated'
-        const event = new CustomEvent('arboria:tree-updated', {
-            detail: { count: this.trees.length }
-        });
-        document.dispatchEvent(event);
+        document.dispatchEvent(new CustomEvent('arboria:data-updated'));
     }
 };
 
-/* EXPORTAÇÃO PADRÃO (Obrigatório para main.js) */
+// Inicializa automaticamente
+State.init();
+
+/* CORREÇÃO DO ERRO "does not provide an export named default" */
 export default State;
+
+/* Mantém exportações nomeadas para compatibilidade com código antigo se houver */
+export const loadDataFromStorage = State.loadDataFromStorage.bind(State);
+export const saveActiveTab = State.saveActiveTab.bind(State);
+export const getActiveTab = State.getActiveTab.bind(State);
+export const setLastEvaluatorName = State.setLastEvaluatorName.bind(State);
+export const setCurrentTreePhoto = State.setCurrentTreePhoto.bind(State);
+export const setEditingTreeId = State.setEditingTreeId.bind(State);
