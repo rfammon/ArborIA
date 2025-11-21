@@ -1,13 +1,16 @@
-// js/main.js (v2.3 - Maestro do ArborIA 2.0 - Final Integration)
+// js/main.js (v2.4 - Maestro do ArborIA 2.0 - Final + Map Fix)
 
 import * as state from './state.js';
 import { UI } from './ui.js'; 
 import { TooltipUI } from './tooltip.ui.js';
-import { TableUI } from './table.ui.js'; // [CRITICAL IMPORT]
+import { TableUI } from './table.ui.js';
 
 import * as features from './features.js';
 import { initImageDB } from './database.js'; 
 import * as modalUI from './modal.ui.js'; 
+// [NEW] Import Map Module
+import * as mapUI from './map.ui.js'; 
+
 import { manualContent } from './content.js'; 
 import { showToast } from './utils.js';
 import * as clinometer from './clinometer.js'; 
@@ -45,6 +48,12 @@ function handleMainNavigation(event) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // Se vier de outra aba, garante que a tabela esteja atualizada
     TableUI.render();
+    
+    // [MAP FIX] Se a última sub-aba ativa era o mapa, força resize
+    const mapTab = document.getElementById('tab-content-mapa');
+    if (mapTab && mapTab.style.display === 'block') {
+        setTimeout(() => mapUI.prepareMapForScreenshot(), 100);
+    }
 
   } else if (targetId === 'clinometro-view') {
     clinometer.startClinometer();
@@ -85,11 +94,12 @@ function setupActionButtons() {
     const riskForm = document.getElementById('risk-calculator-form');
     if (riskForm) {
         riskForm.addEventListener('submit', (e) => {
-            // Feature retorna sucesso? Atualiza tabela.
+            // Feature retorna sucesso? Atualiza tabela e mapa.
             const result = features.handleAddTreeSubmit(e); 
             if (result && result.success) {
-                TableUI.render(); // [CRÍTICO]
-                // Muda para aba de resumo automaticamente para ver o resultado
+                TableUI.render(); 
+                mapUI.initializeMap(); // [MAP] Add new marker
+                
                 const summaryTab = document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]');
                 if (summaryTab) summaryTab.click();
             }
@@ -114,7 +124,8 @@ function setupActionButtons() {
         btnImport.addEventListener('click', () => inputZip.click()); 
         inputZip.addEventListener('change', async (e) => {
             await features.handleImportZip(e);
-            TableUI.render(); // [CRÍTICO] Atualiza após importar
+            TableUI.render(); 
+            mapUI.initializeMap(); // [MAP] Refresh markers
         });
     }
 
@@ -144,7 +155,8 @@ function setupActionButtons() {
                 "Esta ação apagará todas as árvores e fotos cadastradas. Não pode ser desfeito.", 
                 () => {
                     features.handleClearAll();
-                    TableUI.render(); // [CRÍTICO]
+                    TableUI.render();
+                    mapUI.initializeMap(); // [MAP] Clear
                 }
             );
         });
@@ -221,14 +233,28 @@ async function initApp() {
     setupBackToTop();
     initFormDefaults();
     
-    // 4. Renderiza Tabela Inicial com Dados Carregados
+    // 4. Renderiza Tabela Inicial
     TableUI.render();
 
-    // 5. Inicializa Sensores
+    // 5. Inicializa Mapa e Listeners
+    // [MAP FIX] Ensures map is ready and listening to filters
+    mapUI.initializeMap();
+    mapUI.setupMapListeners();
+
+    // 6. Inicializa Sensores
     clinometer.initClinometerListeners();
     dapEstimator.initDAPEstimatorListeners();
 
-    // 6. Restaura Estado (Última aba)
+    // 7. Global Resize Listener (Fixes Gray Map on Tab Change)
+    window.addEventListener('resize', () => {
+        const mapContainer = document.getElementById('map-container');
+        if (mapContainer && mapContainer.offsetParent !== null) {
+            mapUI.initializeMap(); 
+            if (state.mapInstance) state.mapInstance.invalidateSize();
+        }
+    });
+
+    // 8. Restaura Estado (Última aba)
     const lastTab = state.getActiveTab() || 'conceitos-basicos';
     let initialButton = null;
     if (topNavContainer) {
