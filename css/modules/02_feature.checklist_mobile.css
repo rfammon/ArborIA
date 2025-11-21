@@ -1,10 +1,9 @@
 /**
- * ARBORIA 2.0 - MOBILE CHECKLIST FEATURE
- * Transforma a Tabela de Risco em um "Wizard" passo-a-passo no celular.
+ * ARBORIA 2.0 - MOBILE CHECKLIST FEATURE (v30.0 - Gradient Card & Toggle)
+ * Transforma a Tabela de Risco em um "Wizard" visual no celular.
  */
 
 /* --- ESTADO PADRÃO (DESKTOP) --- */
-/* No desktop, escondemos o componente mobile e mostramos a tabela normal */
 .mobile-checklist-wrapper {
   display: none;
 }
@@ -13,7 +12,6 @@
 @media (max-width: 768px) {
 
   /* 1. Esconde a Tabela Clássica */
-  /* Não queremos ver a tabela gigante no celular */
   .risk-table {
     display: none; 
   }
@@ -24,18 +22,21 @@
     flex-direction: column;
     gap: 1rem;
     margin-top: 0.5rem;
+    width: 100%;
   }
 
-  /* --- O CARTÃO DA PERGUNTA --- */
+  /* --- O CARTÃO DA PERGUNTA (COM GRADIENTE) --- */
   .mobile-checklist-card {
-    background: #ffffff;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-floating);
-    min-height: 220px;
+    /* Gradiente da Identidade Visual */
+    background: var(--gradient-main);
+    color: white;
     
-    /* Centralização do Conteúdo */
+    border-radius: var(--radius-md);
+    padding: 2rem 1.5rem;
+    box-shadow: var(--shadow-floating);
+    min-height: 260px;
+    
+    /* Centralização Flex */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -43,107 +44,148 @@
     text-align: center;
     position: relative;
     
-    /* Animação de Transição */
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
-  /* Feedback Visual quando respondido "SIM" */
+  /* Feedback Visual quando "SIM" (Risco) */
   .mobile-checklist-card.answered-yes {
-    border-color: var(--risk-high);
-    background-color: #fff5f5; /* Fundo vermelho bem claro */
+    /* Muda o gradiente para tons de alerta (Laranja/Vermelho) */
+    background: linear-gradient(135deg, #f57c00, #d32f2f);
+    box-shadow: 0 8px 25px rgba(211, 47, 47, 0.4);
   }
   
   .mobile-checklist-card.answered-yes::after {
     content: '⚠️ Risco Identificado';
     position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 0.7rem;
-    color: var(--risk-high);
+    top: 15px;
+    right: 15px;
+    font-size: 0.75rem;
+    color: white;
+    background: rgba(0,0,0,0.2);
     font-weight: 700;
-    border: 1px solid var(--risk-high);
-    padding: 2px 6px;
+    border: 1px solid rgba(255,255,255,0.5);
+    padding: 4px 8px;
     border-radius: 4px;
   }
 
-  /* --- TIPOGRAFIA DA PERGUNTA --- */
+  /* --- TIPOGRAFIA DA PERGUNTA (ADAPTADA PARA FUNDO ESCURO) --- */
   .mobile-checklist-card h4 {
-    color: var(--color-forest);
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8); /* Branco translúcido */
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
   }
 
   .mobile-checklist-card p {
-    font-size: 1.1rem; /* Letra grande para leitura fácil */
-    line-height: 1.5;
-    color: var(--color-text-main);
-    margin-bottom: 1.5rem;
+    font-size: 1.3rem; /* Texto maior para leitura em campo */
+    font-weight: 600;
+    line-height: 1.4;
+    color: #ffffff;
+    margin-bottom: 2rem;
   }
 
-  /* Destaque para termos técnicos clicáveis dentro do card */
+  /* Termos técnicos clicáveis (Glossário) dentro do card */
   .mobile-checklist-card .checklist-term {
-    font-weight: 700;
-    color: var(--color-tech);
-    padding-bottom: 2px;
+    font-weight: 800;
+    color: #A7FFEB; /* Verde água claro para destaque */
+    border-bottom: 1px dashed #A7FFEB;
+    cursor: help;
   }
 
-  /* --- CHECKBOX GIGANTE (Toggle) --- */
-  /* Transformamos o checkbox em um botão grande de Sim/Não visual */
+  /* --- INTERRUPTOR (TOGGLE SWITCH) --- */
   .mobile-checklist-toggle {
     display: flex;
     align-items: center;
-    gap: 10px;
-    width: 100%;
     justify-content: center;
+    gap: 15px;
+    width: 100%;
   }
 
-  /* Estilização do input checkbox nativo para ficar grande */
-  .mobile-checklist-toggle input[type="checkbox"] {
-    width: 28px;
-    height: 28px;
-    accent-color: var(--risk-high); /* Vermelho se marcar risco */
-    margin: 0;
-  }
-
+  /* Label do texto "Sim, Identificado" */
   .mobile-checklist-toggle label {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 600;
-    margin: 0;
-    color: var(--color-text-main);
+    color: white;
+    cursor: pointer;
   }
 
-  /* --- NAVEGAÇÃO (Anterior / Próxima) --- */
+  /* Estilização do Toggle (Escondendo o checkbox nativo) */
+  .mobile-checklist-toggle input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 60px;
+    height: 34px;
+    background: rgba(0, 0, 0, 0.3); /* Fundo do trilho desligado */
+    border-radius: 50px;
+    position: relative;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    transition: background 0.3s;
+    outline: none;
+  }
+
+  /* A bolinha do interruptor */
+  .mobile-checklist-toggle input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+
+  /* Estado LIGADO (Checked) */
+  .mobile-checklist-toggle input[type="checkbox"]:checked {
+    background: #00E676; /* Verde Neon */
+    border-color: #00E676;
+  }
+
+  .mobile-checklist-toggle input[type="checkbox"]:checked::after {
+    transform: translateX(26px); /* Move a bolinha para a direita */
+  }
+
+  /* --- NAVEGAÇÃO INFERIOR --- */
   .mobile-checklist-nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #f1f5f9;
-    padding: 10px;
+    background: white;
+    padding: 12px 15px;
     border-radius: var(--radius-pill);
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Sombra suave */
+    border: 1px solid var(--color-border);
   }
 
   .mobile-checklist-nav button {
-    background: white;
+    background: transparent;
     border: none;
     color: var(--color-forest);
-    font-weight: 600;
-    padding: 10px 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 8px 16px;
     border-radius: var(--radius-pill);
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s;
+    transition: background 0.2s;
   }
 
   .mobile-checklist-nav button:active {
-    transform: scale(0.95);
-    background: #e0f2f1;
+    background-color: #e0f2f1;
+  }
+  
+  .mobile-checklist-nav button:disabled {
+    color: #ccc;
+    pointer-events: none;
   }
 
   /* Contador (1/16) */
   .checklist-counter {
-    font-weight: 700;
+    font-weight: 600;
     color: var(--color-text-muted);
-    font-variant-numeric: tabular-nums; /* Números alinhados */
+    font-variant-numeric: tabular-nums;
   }
 }
