@@ -1,6 +1,10 @@
-// js/utils.js (v26.2 - Completo com optimizeImage e GPS Fix)
+/* js/utils.js (v26.2 - Completo & Otimizado)
+   Utilitários: Performance, UI (Toast), Imagens e GPS.
+   Mantém a lógica original robusta solicitada.
+*/
 
-import { toastTimer, setToastTimer } from './state.js';
+// Variável local para controlar o Toast (substitui a dependência circular com State)
+let internalToastTimer = null;
 
 // === 1. UTILITÁRIO DE PERFORMANCE (DEBOUNCE) ===
 
@@ -29,25 +33,23 @@ export function showToast(message, type = 'success') {
     if (!toast) return;
 
     // Limpa timer anterior
-    if (toastTimer) {
-        clearTimeout(toastTimer);
+    if (internalToastTimer) {
+        clearTimeout(internalToastTimer);
     }
 
     toast.textContent = message;
-    toast.className = 'show'; 
-    toast.classList.add(type);
+    // Reseta classes mantendo a base se existir, ou define 'show'
+    toast.className = `show ${type}`; 
 
     // Cria novo timer para esconder
-    const newTimer = setTimeout(() => {
-        toast.className = toast.className.replace('show', '');
+    internalToastTimer = setTimeout(() => {
+        toast.className = toast.className.replace('show', '').trim();
         toast.classList.remove(type); 
-        setToastTimer(null);
+        internalToastTimer = null;
     }, 3000);
-    
-    setToastTimer(newTimer);
 }
 
-// === 3. OTIMIZAÇÃO DE IMAGEM (Esta é a função que estava faltando) ===
+// === 3. OTIMIZAÇÃO DE IMAGEM ===
 
 /**
  * Redimensiona e comprime uma imagem (Blob/File) no cliente.
@@ -158,3 +160,53 @@ export function convertLatLonToUtm(lat, lon) {
         return null;
     }
 }
+
+// === 5. HELPERS GERAIS (Adicionados para compatibilidade com UI) ===
+
+export function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+export function formatDate(dateString) {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat('pt-BR').format(date);
+    } catch (e) {
+        return dateString;
+    }
+}
+
+export function formatDateTime(dateString) {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        }).format(date);
+    } catch (e) {
+        return dateString;
+    }
+}
+
+export function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag]));
+}
+
+// Objeto Default para compatibilidade com import Utils from ...
+const Utils = {
+    debounce,
+    showToast,
+    optimizeImage,
+    convertLatLonToUtm,
+    generateId,
+    formatDate,
+    formatDateTime,
+    escapeHTML
+};
+
+export default Utils;
