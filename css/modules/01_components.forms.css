@@ -1,86 +1,99 @@
-/* css/modules/01_components.forms.css */
+/* 01_components.forms.css 
+   Estilos de Formulários (Modern & Clean)
+*/
 
-/* -------------------------------------- */
-/* 7. FORMULÁRIOS (CHAT & CONTATO) */
-/* -------------------------------------- */
-
-#fale-conosco,
-#gemini-chat {
-  padding: var(--space-lg);
-  background-color: var(--bg-surface);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-md);
-  border-top: 5px solid var(--color-primary-medium);
-  margin-top: var(--space-lg);
+/* Containers de Formulário (Fieldset) */
+.risk-fieldset {
+    border: none; /* Removemos a borda padrão feia */
+    background: #fafafa;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); /* Borda sutil interna */
 }
 
-#gemini-chat {
-  background-color: var(--color-primary-lightest);
-  border-top-color: var(--color-primary-medium);
+.risk-fieldset legend {
+    font-weight: 700;
+    color: #0277BD; /* Azul Tech */
+    font-size: 1.1rem;
+    padding: 0 10px;
+    background: transparent;
+    display: block;
+    width: 100%;
+    border-bottom: 2px solid rgba(2, 119, 189, 0.2);
+    margin-bottom: 15px;
 }
 
-#fale-conosco h2,
-#gemini-chat h2 {
-  color: var(--color-primary-dark);
-  margin-bottom: var(--space-md);
-  font-size: 1.4rem;
+/* Inputs e Selects */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #cfd8dc;
+    border-radius: 10px; /* Arredondamento unificado */
+    background: white;
+    font-size: 1rem;
+    color: #37474f;
+    transition: all 0.2s ease;
+    
+    /* Sombra interna leve para profundidade */
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
 }
 
-.contact-form label,
-.chat-container label {
-  display: block;
-  margin-bottom: var(--space-sm);
-  font-weight: 600;
-  color: var(--color-text);
+/* Foco (Highlight Blue/Green) */
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #00796b; /* Verde ArborIA */
+    box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.15);
+    background: #ffffff;
 }
 
-/* Inputs e Textareas Padronizados */
-.contact-form input[type="text"],
-.contact-form input[type="email"],
-.contact-form textarea,
-#chat-input,
-.form-grid input[type="text"],
-.form-grid input[type="number"],
-.form-grid input[type="date"],
-.risk-fieldset textarea,
-#table-filter-input
-{
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  border: 2px solid var(--gray-300);
-  border-radius: var(--border-radius-md);
-  font-size: 1rem;
-  font-family: var(--font-primary);
-  transition: all 0.2s ease-in-out;
-  margin-bottom: 0;
+/* Labels */
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #546E7A;
+    font-size: 0.9rem;
 }
 
-.contact-form input[type="text"]:focus,
-.contact-form input[type="email"]:focus,
-.contact-form textarea:focus,
-#chat-input:focus,
-.form-grid input[type="text"]:focus,
-.form-grid input[type="number"]:focus,
-.form-grid input[type="date"]:focus,
-.risk-fieldset textarea:focus,
-#table-filter-input:focus
-{
-  outline: none;
-  border-color: var(--color-primary-medium);
-  box-shadow: 0 0 0 3px var(--color-primary-lightest);
+/* Grid de Formulário */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 15px;
 }
 
-/* Chat específico */
-#chat-response-box {
-  background-color: var(--bg-surface);
-  border: 2px solid var(--gray-300);
-  border-radius: var(--border-radius-md);
-  min-height: 100px;
-  padding: var(--space-md);
-  margin-bottom: var(--space-md);
+/* Área de Upload de Foto */
+.photo-upload-container {
+    margin-top: 15px;
+    text-align: center;
+    border: 2px dashed #b0bec5;
+    border-radius: 16px;
+    padding: 20px;
+    background: #eceff1;
+    transition: background 0.3s;
 }
 
-.chat-input-area {
-  display: flex;
-  gap: var(--space-sm);
+.photo-upload-container:hover {
+    background: #e1f5fe;
+    border-color: #0277BD;
+}
+
+.photo-btn {
+    background: #fff;
+    color: #0277BD;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-block;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
