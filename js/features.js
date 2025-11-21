@@ -8,9 +8,9 @@ import * as utils from './utils.js';
 import * as db from './database.js';
 import { TableUI } from './table.ui.js'; 
 
-// === WIZARD STATE & LISTENERS (Novo Gerenciamento) ===
+// === WIZARD STATE & LISTENERS ===
 let currentChecklistIndex = 0;
-let checklistListenersAttached = false; // Flag para garantir que os botões só sejam ligados 1x
+let checklistListenersAttached = false; // [FIX] Flag para anexar listeners apenas 1x
 
 // Helper para pegar elementos do Wizard (DOM)
 const getChecklistElements = () => {
@@ -38,16 +38,14 @@ function updateChecklistCard(index) {
 
     const row = els.tableRows[index];
     const originalCheckbox = row.querySelector('input[type="checkbox"]');
-    
-    // Clonamos a célula para extrair o HTML da pergunta, evitando bugs de re-renderização
+
+    // [Fix Content Corruption] Usamos cloneNode para extrair HTML limpo e seguro
     const questionCell = row.cells[1].cloneNode(true); 
     const tooltipSpan = questionCell.querySelector('.checklist-term');
     if (tooltipSpan) {
-        // Assegura que o span tem a classe correta para o TooltipUI escutar
-        tooltipSpan.classList.add('tooltip-trigger'); 
+        tooltipSpan.classList.add('tooltip-trigger'); // Adiciona a classe que o TooltipUI escuta
     }
 
-    // Atualiza o Card
     els.cardTitle.textContent = `Critério ${index + 1} / ${els.tableRows.length}`;
     els.cardText.innerHTML = questionCell.innerHTML; 
     
@@ -55,21 +53,21 @@ function updateChecklistCard(index) {
     els.toggleInput.checked = originalCheckbox.checked;
     
     // Estilo do Card
-    if (originalCheckbox.checked) els.card.classList.add('answered-yes');
-    else els.card.classList.remove('answered-yes');
+    const card = els.card;
+    if (originalCheckbox.checked) card.classList.add('answered-yes');
+    else card.classList.remove('answered-yes');
 
-    // Atualiza UI de Navegação
+    // Atualiza UI
     els.counter.textContent = `${index + 1} / ${els.tableRows.length}`;
     els.btnPrev.disabled = index === 0;
     els.btnNext.innerHTML = index === els.tableRows.length - 1 ? 'Concluir' : 'Próxima ❯';
-    
-    // Re-attach Listener do Toggle (Precisa ser re-anexado pois o índice/target muda)
-    // Usamos onchange direto porque é um único input no card, e ele é reescrito a cada updateCard.
+
+    // [IMPORTANTE] Listener do Toggle: Precisa ser re-anexado no loop para pegar o índice 'index' correto
     els.toggleInput.onchange = () => {
         originalCheckbox.checked = els.toggleInput.checked;
         
-        if (els.toggleInput.checked) els.card.classList.add('answered-yes');
-        else els.card.classList.remove('answered-yes');
+        if (els.toggleInput.checked) card.classList.add('answered-yes');
+        else card.classList.remove('answered-yes');
 
         // Auto-Avanço
         if (els.toggleInput.checked && index < els.tableRows.length - 1) {
@@ -82,13 +80,14 @@ function updateChecklistCard(index) {
 }
 
 /**
- * Anexa listeners de navegação (Próxima/Voltar) apenas uma única vez.
+ * [CRÍTICO] Anexa listeners de navegação APENAS UMA VEZ.
+ * Isso resolve o bug do "Limpar" que só funcionava no segundo clique.
  */
 function attachChecklistListenersOnce() {
     if (checklistListenersAttached) return;
     const els = getChecklistElements();
     if (!els) return;
-    
+
     // Listener para o botão ANTERIOR
     els.btnPrev.addEventListener('click', (e) => {
         e.preventDefault();
@@ -110,7 +109,7 @@ function attachChecklistListenersOnce() {
         }
     });
     
-    checklistListenersAttached = true;
+    checklistListenersAttached = true; // Seta a flag para não rodar novamente
 }
 
 
@@ -120,7 +119,7 @@ function attachChecklistListenersOnce() {
 export function initMobileChecklist() {
     if (window.innerWidth > 768) return; 
 
-    // Anexa os listeners (Prev/Next) na PRIMEIRA chamada para estabilizar os botões
+    // [FIX] Anexa listeners de forma persistente
     attachChecklistListenersOnce();
 
     const tableRows = document.querySelectorAll('.risk-table tbody tr');
@@ -253,7 +252,7 @@ export function handleAddTreeSubmit(event) {
   const checkedRiskFactors = Array.from(form.querySelectorAll('.risk-checkbox')).map(cb => cb.checked ? 1 : 0);
   
   let classificationText = 'Baixo Risco', classificationClass = 'risk-low';
-  if (totalScore >= 20) { classificationText = 'Alto Risco'; classificationClass = 'risk-high'; }
+  if (totalScore >= 20) { classificationCode = 'Alto Risco'; classificationClass = 'risk-high'; }
   else if (totalScore >= 10) { classificationText = 'Médio Risco'; classificationClass = 'risk-medium'; }
   
   const especie = document.getElementById('risk-especie').value.trim();
@@ -331,8 +330,8 @@ export function handleDeleteTree(id) {
   const n = state.registeredTrees.filter(tree => tree.id !== id);
   state.setRegisteredTrees(n); 
   state.saveDataToStorage();
-  TableUI.render();
   
+  TableUI.render();
   initMobileChecklist();
   
   utils.showToast(`Árvore removida.`, 'info'); 
@@ -585,6 +584,21 @@ export function handleContactForm(e) { e.preventDefault(); }
 let currentChecklistIndex = 0;
 let checklistListenersAttached = false; // Flag para garantir que os botões só sejam ligados 1x
 
+const getChecklistElements = () => {
+    const wrapper = document.querySelector('.mobile-checklist-wrapper');
+    if (!wrapper) return null;
+    return {
+        tableRows: document.querySelectorAll('.risk-table tbody tr'),
+        cardTitle: wrapper.querySelector('h4'),
+        cardText: wrapper.querySelector('p'),
+        toggleInput: wrapper.querySelector('.mobile-checklist-toggle input'),
+        btnPrev: document.getElementById('checklist-prev'),
+        btnNext: document.getElementById('checklist-next'),
+        counter: wrapper.querySelector('.checklist-counter'),
+        card: wrapper.querySelector('.mobile-checklist-card')
+    };
+};
+
 /**
  * Atualiza o Card do Wizard com a pergunta e o estado do checkbox.
  * @param {number} index 
@@ -596,6 +610,7 @@ function updateChecklistCard(index) {
     const row = els.tableRows[index];
     const originalCheckbox = row.querySelector('input[type="checkbox"]');
 
+    // [Fix Content Corruption] Usamos cloneNode para extrair HTML limpo
     const questionCell = row.cells[1].cloneNode(true); 
     const tooltipSpan = questionCell.querySelector('.checklist-term');
     if (tooltipSpan) {
@@ -633,7 +648,7 @@ function updateChecklistCard(index) {
 }
 
 /**
- * Anexa listeners de navegação (Próxima/Voltar) apenas uma única vez.
+ * [CRÍTICO] Anexa listeners de navegação APENAS UMA VEZ.
  */
 function attachChecklistListenersOnce() {
     if (checklistListenersAttached) return;
@@ -661,7 +676,7 @@ function attachChecklistListenersOnce() {
         }
     });
     
-    checklistListenersAttached = true;
+    checklistListenersAttached = true; // Seta a flag para não rodar novamente
 }
 
 
@@ -676,7 +691,7 @@ export function initMobileChecklist() {
     const tableRows = document.querySelectorAll('.risk-table tbody tr');
     if (tableRows.length === 0) return;
 
-    // Reset UI
+    // Reset UI e começa no primeiro card
     currentChecklistIndex = 0;
     updateChecklistCard(currentChecklistIndex);
 }
