@@ -1,15 +1,16 @@
 /**
- * ARBORIA 2.0 - FEATURES (v72.1 Refatorado)
+ * ARBORIA 2.0 - FEATURES (v72.2 Refatorado)
  * Lógica de Negócios: GPS, CRUD de Árvores, Importação/Exportação e Chat
- * Correção: Integração com utils.convertLatLonToUtm restaurada.
+ * Correção: Integração com utils.convertLatLonToUtm restaurada e TableUI render.
  */
 
 import * as state from './state.js';
 import * as utils from './utils.js';
 import * as db from './database.js';
+import { TableUI } from './table.ui.js'; // Import TableUI for re-renders
 
 // === 1. GPS ===
-// O processo de captura usa múltiplas leituras para aumentar a precisão (triangulação).
+// The GPS capture process uses multiple readings to increase precision (triangulation).
 // 
 export async function handleGetGPS() {
   const gpsStatus = document.getElementById('gps-status');
@@ -25,7 +26,7 @@ export async function handleGetGPS() {
     return;
   }
   
-  const CAPTURE_TIME_MS = 15000; // Tempo de calibração
+  const CAPTURE_TIME_MS = 15000; // Calibration time
   const options = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
   let readings = [];
   let watchId = null;
@@ -37,13 +38,13 @@ export async function handleGetGPS() {
   const cleanup = () => {
       if (watchId !== null) navigator.geolocation.clearWatch(watchId);
       if (timerInterval !== null) clearInterval(timerInterval);
-      const btn = document.getElementById('get-gps-btn'); // Recaptura do DOM
+      const btn = document.getElementById('get-gps-btn'); 
       if (btn) { btn.disabled = false; btn.innerHTML = '🛰️ Capturar GPS Preciso'; }
   };
 
   const updateUI = () => {
       const btn = document.getElementById('get-gps-btn');
-      if (!btn) { cleanup(); return; } // Proteção se mudar de aba
+      if (!btn) { cleanup(); return; } 
 
       const elapsed = Date.now() - startTime;
       const remaining = Math.ceil((CAPTURE_TIME_MS - elapsed) / 1000);
@@ -67,7 +68,7 @@ export async function handleGetGPS() {
           return;
       }
 
-      // Cálculo da média das leituras para maior precisão
+      // Calculate average for better precision
       let sumLat = 0, sumLon = 0, sumAcc = 0;
       readings.forEach(r => { 
           sumLat += r.latitude; 
@@ -79,24 +80,24 @@ export async function handleGetGPS() {
       const avgLon = sumLon / readings.length;
       const avgAcc = sumAcc / readings.length;
 
-      // [CORREÇÃO CRÍTICA] Chamada da função que restauramos no utils.js
+      // Call restored utility function
       const utmCoords = utils.convertLatLonToUtm(avgLat, avgLon); 
 
       if (utmCoords) {
           if(coordXField) coordXField.value = utmCoords.easting.toFixed(0);
           if(coordYField) coordYField.value = utmCoords.northing.toFixed(0);
           
-          // Atualiza estado global
+          // Update global state
           if(state.setLastUtmZone) state.setLastUtmZone(utmCoords.zoneNum, utmCoords.zoneLetter);
           
-          // Atualiza campo de Zona UTM (se existir no form)
+          // Update UTM Zone field if present
           const dz = document.getElementById('default-utm-zone');
           if (dz) dz.value = `${utmCoords.zoneNum}${utmCoords.zoneLetter}`;
           
-          // Feedback Visual
+          // Visual Feedback
           const gs = document.getElementById('gps-status');
           if(gs) {
-              const color = avgAcc <= 5 ? 'var(--color-forest)' : '#E65100'; // Verde se preciso, Laranja se fraco
+              const color = avgAcc <= 5 ? 'var(--color-forest)' : '#E65100'; 
               gs.innerHTML = `Média: <strong>${readings.length}</strong> pts. Prec: <span style="color:${color}">±${avgAcc.toFixed(1)}m</span>`;
           }
           
@@ -108,7 +109,7 @@ export async function handleGetGPS() {
 
   watchId = navigator.geolocation.watchPosition(
       (pos) => { 
-          // Filtra leituras muito ruins (> 150m de erro)
+          // Filter out poor readings (> 150m error)
           if (pos.coords.accuracy < 150) readings.push(pos.coords); 
       },
       (err) => console.warn("GPS Error:", err),
@@ -124,7 +125,7 @@ export function clearPhotoPreview() {
   const pc = document.getElementById('photo-preview-container');
   const rb = document.getElementById('remove-photo-btn');
   
-  // Remove a tag <img> se ela existir
+  // Remove <img> tag if exists
   const op = document.querySelector('#photo-preview-container img');
   if (op && pc) { 
       try { URL.revokeObjectURL(op.src); } catch(e){} 
@@ -143,7 +144,7 @@ export function handleAddTreeSubmit(event) {
   event.preventDefault();
   const form = event.target;
   
-  // Cálculo de Pontuação de Risco
+  // Risk Score Calculation
   let totalScore = 0;
   form.querySelectorAll('.risk-checkbox:checked').forEach(cb => totalScore += parseInt(cb.dataset.weight, 10));
   
@@ -156,14 +157,14 @@ export function handleAddTreeSubmit(event) {
   const especie = document.getElementById('risk-especie').value.trim();
   if (!especie) { utils.showToast("O nome da espécie é obrigatório.", 'error'); return { success: false }; }
 
-  // Leitura segura dos inputs (com fallbacks)
+  // Safe input reading with fallbacks
   const alturaInput = document.getElementById('risk-altura');
   const distInput = document.getElementById('risk-distancia-obs'); 
   
   const alturaVal = alturaInput ? alturaInput.value || '0.0' : '0.0';
   const distVal = distInput ? distInput.value || '0.0' : '0.0';
 
-  // Montagem do Objeto Árvore
+  // Tree Object Assembly
   const treeData = {
     data: document.getElementById('risk-data').value || new Date().toISOString().split('T')[0],
     especie: especie,
@@ -188,7 +189,7 @@ export function handleAddTreeSubmit(event) {
   
   let resultTree, mode;
 
-  // Modo Adicionar ou Editar
+  // Add or Edit Mode
   if (state.editingTreeId === null) {
     // ADD
     mode = 'add';
@@ -208,7 +209,7 @@ export function handleAddTreeSubmit(event) {
     resultTree = { ...treeData, id: state.editingTreeId };
     const original = state.registeredTrees[idx];
     
-    // Gerenciamento inteligente de imagem (salva, mantém ou deleta)
+    // Smart image management (save, keep, or delete)
     if (resultTree.hasPhoto && !original.hasPhoto) db.saveImageToDB(resultTree.id, state.currentTreePhoto);
     else if (!resultTree.hasPhoto && original.hasPhoto) db.deleteImageFromDB(resultTree.id);
     else if (resultTree.hasPhoto && original.hasPhoto && state.currentTreePhoto) db.saveImageToDB(resultTree.id, state.currentTreePhoto);
@@ -220,12 +221,15 @@ export function handleAddTreeSubmit(event) {
   state.saveDataToStorage();
   state.setEditingTreeId(null);
   
-  // Limpa UI
+  // Clear UI
   form.reset();
   clearPhotoPreview();
   
-  // Remove foco (fecha teclado mobile)
+  // Remove focus (close mobile keyboard)
   if(document.activeElement) document.activeElement.blur();
+
+  // [CRITICAL] Update Table UI
+  TableUI.render();
   
   return { success: true, mode: mode, tree: resultTree };
 }
@@ -237,6 +241,9 @@ export function handleDeleteTree(id) {
   const n = state.registeredTrees.filter(tree => tree.id !== id);
   state.setRegisteredTrees(n); 
   state.saveDataToStorage();
+
+  // [CRITICAL] Update Table UI
+  TableUI.render();
   
   utils.showToast(`Árvore ID ${id} excluída.`, 'error'); 
   return true;
@@ -249,27 +256,31 @@ export function handleEditTree(id) {
   state.setEditingTreeId(id);
   if(state.setLastUtmZone) state.setLastUtmZone(t.utmZoneNum || 0, t.utmZoneLetter || 'Z');
   
-  // Redireciona visualmente para a aba de registro
-  // Nota: Usamos seletor do novo HTML para garantir compatibilidade
+  // Visually redirect to register tab
   const tabBtn = document.querySelector('.sub-nav-btn[data-target="tab-content-register"]');
   if(tabBtn) tabBtn.click();
   
+  // Populate form logic should be handled here or in main/ui calling this
+  // For now, let's assume main.js or UI handles form population via this return
   return t;
 }
 
 export function handleClearAll() {
-  // Limpa imagens
+  // Clear images
   state.registeredTrees.forEach(t => { if (t.hasPhoto) db.deleteImageFromDB(t.id); });
   
-  // Limpa estado
+  // Clear state
   state.setRegisteredTrees([]); 
   state.saveDataToStorage();
+
+  // [CRITICAL] Update Table UI
+  TableUI.render();
   
   utils.showToast('Banco de dados limpo com sucesso.', 'success'); 
   return true;
 }
 
-// === HELPERS DE UI E TABELA ===
+// === UI HELPERS AND TABLE ===
 export function handleTableFilter() {
   const fi = document.getElementById('table-filter-input'); if (!fi) return;
   const ft = fi.value.toLowerCase();
@@ -290,13 +301,13 @@ export function getSortValue(tree, key) {
   return (tree[key] || '').toLowerCase();
 }
 
-// === MAPA E UTILS GEOGRÁFICOS ===
+// === MAP AND GEO UTILS ===
 export function convertToLatLon(tree) {
   if(tree.coordX === 'N/A' || tree.coordY === 'N/A') return null;
   if (typeof window.proj4 === 'undefined') return null;
   
   const e = parseFloat(tree.coordX); const n = parseFloat(tree.coordY);
-  // Fallback para zona padrão se a árvore não tiver
+  // Fallback to default zone if tree doesn't have one
   const zn = tree.utmZoneNum || (state.lastUtmZone ? state.lastUtmZone.num : 23);
   const zl = tree.utmZoneLetter || (state.lastUtmZone ? state.lastUtmZone.letter : 'K');
   
@@ -318,7 +329,7 @@ export function handleZoomToPoint(id) {
   if (c) {
     state.setZoomTargetCoords(c); state.setHighlightTargetId(id); state.setOpenInfoBoxId(id);
     
-    // Navega para a aba do mapa
+    // Navigate to map tab
     const b = document.querySelector('.sub-nav-btn[data-target="tab-content-mapa"]'); 
     if (b) b.click();
   } else { 
@@ -329,26 +340,26 @@ export function handleZoomToPoint(id) {
 export function handleMapMarkerClick(id) {
   state.setHighlightTargetId(id);
   
-  // Volta para o resumo
+  // Back to summary
   const b = document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]'); 
   if (b) b.click();
   
-  // Scroll e destaque da linha
+  // Scroll and highlight row
   setTimeout(() => {
       const row = document.getElementById(`row-${id}`);
       if(row) {
           row.scrollIntoView({behavior: 'smooth', block: 'center'});
-          row.style.backgroundColor = '#e3f2fd'; // Highlight temporário
+          row.style.backgroundColor = '#e3f2fd'; // Temp Highlight
           setTimeout(() => row.style.backgroundColor = '', 2000);
       }
   }, 300);
 }
 
 export function handleZoomToExtent() {
-    // Placeholder - Lógica real está no map.ui.js que ouve este evento ou botão
+    // Placeholder - Real logic in map.ui.js which listens to this event or button
 }
 
-// === IMPORTAÇÃO / EXPORTAÇÃO ===
+// === IMPORT / EXPORT ===
 function getCSVData() {
   if (state.registeredTrees.length === 0) return null;
   
@@ -436,7 +447,7 @@ export async function handleImportZip(event) {
     const csvContent = await csvFile.async("string");
     const lines = csvContent.split('\n').filter(l => l.trim() !== '');
     
-    const append = !event.replaceData; // Se não for replace, é append
+    const append = !event.replaceData; // If not replace, it's append
     let newTrees = append ? [...state.registeredTrees] : [];
     let maxId = newTrees.length > 0 ? Math.max(...newTrees.map(t => t.id)) : 0;
     
@@ -445,9 +456,9 @@ export async function handleImportZip(event) {
     for (let i = 1; i < lines.length; i++) {
         const row = lines[i].split(';'); if(row.length < 10) continue;
         const oldId = row[0]; 
-        const newId = ++maxId; // Gera novo ID para evitar colisão
+        const newId = ++maxId; // Generate new ID to avoid collision
         
-        // Mapeamento conforme v72
+        // Mapping per v72
         const treeData = {
             id: newId, data: row[1], especie: row[2], coordX: row[3], coordY: row[4],
             utmZoneNum: parseInt(row[5])||0, utmZoneLetter: row[6],
@@ -458,7 +469,7 @@ export async function handleImportZip(event) {
             hasPhoto: (row[16] && row[16].trim().toLowerCase() === 'sim')
         };
         
-        // Compatibilidade com CSVs antigos (shift de colunas)
+        // Compatibility with old CSVs (column shift)
         if (isNaN(parseFloat(treeData.altura))) { 
              treeData.altura = '0'; treeData.distancia = '0'; 
              treeData.local = row[8]; treeData.avaliador = row[9]; 
@@ -468,12 +479,12 @@ export async function handleImportZip(event) {
              treeData.hasPhoto = (row[14] && row[14].trim().toLowerCase() === 'sim');
         }
         
-        // Atualiza classe CSS de risco
+        // Update risk CSS class
         if(treeData.pontuacao >= 20) treeData.riscoClass = 'risk-high'; 
         else if(treeData.pontuacao >= 10) treeData.riscoClass = 'risk-medium'; 
         else treeData.riscoClass = 'risk-low';
         
-        // Importação de Imagem
+        // Image Import
         if(treeData.hasPhoto) {
             let imgFile = zip.file(`images/tree_id_${oldId}.jpg`) || zip.file(`images/tree_id_${oldId}.png`);
             if(imgFile) { 
@@ -488,6 +499,10 @@ export async function handleImportZip(event) {
     
     state.setRegisteredTrees(newTrees); 
     state.saveDataToStorage(); 
+    
+    // [CRITICAL] Update Table UI
+    TableUI.render();
+    
     utils.showToast("Importação concluída!", "success");
     
   } catch (e) { 
