@@ -1,6 +1,6 @@
 /**
- * ARBORIA 2.0 - FEATURES (v76.1 - Final Stable)
- * Contém: Lógica de GPS, CRUD, Importação e WIZARD MOBILE (Fixado).
+ * ARBORIA 2.0 - FEATURES (v76.2 - Final Stable Fix)
+ * Contém: Lógica de GPS, CRUD, Importação e WIZARD MOBILE (Finalizado).
  */
 
 import * as state from './state.js';
@@ -8,9 +8,10 @@ import * as utils from './utils.js';
 import * as db from './database.js';
 import { TableUI } from './table.ui.js'; 
 
-// === WIZARD STATE & LISTENERS (Refatorado para corrigir bug de attach) ===
-let currentChecklistIndex = 0; // [CRÍTICO] Declarada UMA ÚNICA VEZ no topo do escopo do módulo
-let checklistListenersAttached = false; // Flag para anexo de listeners
+// === WIZARD STATE & LISTENERS ===
+// [CRITICAL FIX] Declared ONCE in the module scope
+let currentChecklistIndex = 0;
+let checklistListenersAttached = false; 
 
 // Helper para pegar elementos do Wizard (DOM)
 const getChecklistElements = () => {
@@ -23,7 +24,7 @@ const getChecklistElements = () => {
         toggleInput: wrapper.querySelector('.mobile-checklist-toggle input'),
         btnPrev: document.getElementById('checklist-prev'),
         btnNext: document.getElementById('checklist-next'),
-        counter: document.querySelector('.checklist-counter'),
+        counter: wrapper.querySelector('.checklist-counter'),
         card: wrapper.querySelector('.mobile-checklist-card')
     };
 };
@@ -39,6 +40,7 @@ function updateChecklistCard(index) {
     const row = els.tableRows[index];
     const originalCheckbox = row.querySelector('input[type="checkbox"]');
 
+    // Fix Content Corruption / Tooltip attachment
     const questionCell = row.cells[1].cloneNode(true); 
     const tooltipSpan = questionCell.querySelector('.checklist-term');
     if (tooltipSpan) {
@@ -58,7 +60,7 @@ function updateChecklistCard(index) {
     els.btnPrev.disabled = index === 0;
     els.btnNext.innerHTML = index === els.tableRows.length - 1 ? 'Concluir' : 'Próxima ❯';
 
-    // Listener do Toggle
+    // Listener do Toggle (Re-attached on every card update to maintain correct index scope)
     els.toggleInput.onchange = () => {
         originalCheckbox.checked = els.toggleInput.checked;
         
@@ -114,7 +116,7 @@ function attachChecklistListenersOnce() {
 export function initMobileChecklist() {
     if (window.innerWidth > 768) return; 
 
-    // [FIX] Anexa listeners de forma persistente (resolve o bug do "Limpar")
+    // [FIX] Anexa listeners de forma persistente (resolve o bug do "Limpar" ao estabilizar o attach)
     attachChecklistListenersOnce();
 
     const tableRows = document.querySelectorAll('.risk-table tbody tr');
@@ -625,6 +627,7 @@ function updateChecklistCard(index) {
     els.btnNext.innerHTML = index === els.tableRows.length - 1 ? 'Concluir' : 'Próxima ❯';
 
     // Listener do Toggle
+    // [FIX] Listener must be re-attached on every card update to maintain correct scope
     els.toggleInput.onchange = () => {
         originalCheckbox.checked = els.toggleInput.checked;
         
