@@ -1,5 +1,5 @@
 /* 02_feature.manual_nav.css 
-   V2.2: Ícones Originais no Estado Ativo (Sem filtro branco)
+   V3.0: Navegação Compacta Mobile + Botão Voltar
 */
 
 /* --- CONTAINER PRINCIPAL --- */
@@ -10,6 +10,11 @@
     box-shadow: 0 8px 24px rgba(0,0,0,0.06);
     margin-bottom: 1.5rem;
     border: 1px solid rgba(0,0,0,0.05);
+    transition: opacity 0.3s ease;
+}
+
+.mapa-navegacao.hidden {
+    display: none; /* Esconde o painel quando solicitado */
 }
 
 .mapa-navegacao h2 {
@@ -18,7 +23,6 @@
     font-size: 1.2rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
     border-bottom: 3px solid;
     border-image-slice: 1;
     border-image-source: linear-gradient(to right, #0277BD, #00796b, transparent);
@@ -33,7 +37,7 @@
     width: 100%;
 }
 
-/* --- ESTILO DOS BOTÕES (BASE / DESKTOP) --- */
+/* --- ESTILO DOS BOTÕES (DESKTOP) --- */
 .topico-btn {
     position: relative;
     width: 100%;
@@ -41,36 +45,27 @@
     border: 1px solid #eceff1;
     border-radius: 16px;
     padding: 14px 20px;
-    
-    /* Tipografia */
     color: #546E7A;
     font-size: 0.95rem;
     font-weight: 600;
-    
-    /* Layout Flexbox (Desktop) - Alinhado à Esquerda */
     display: flex;
     align-items: center;
     justify-content: flex-start; 
     text-align: left; 
-    
     gap: 16px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 2px 6px rgba(0,0,0,0.02);
 }
 
-/* Hover Desktop */
 .topico-btn:hover {
     transform: translateX(6px);
     border-color: #00796b;
     background: #f0fcfc;
     color: #00695c;
-    box-shadow: 0 4px 12px rgba(0, 121, 107, 0.15);
 }
 
-/* --- ESTADO ATIVO (SELECIONADO) --- */
 .topico-btn.active {
-    /* Mantém o degradê de fundo */
     background: linear-gradient(135deg, #00796b 0%, #0277BD 100%);
     color: white !important;
     border-color: transparent;
@@ -79,36 +74,24 @@
     z-index: 1;
 }
 
-/* --- ÍCONES (GLOBAL) --- */
+/* Ícones Desktop */
 .topico-btn img {
     width: 28px; 
     height: 28px;
     min-width: 28px;
-    
     object-fit: contain;
     pointer-events: none;
-    transition: transform 0.3s ease, filter 0.3s ease;
-    
-    /* Por padrão (não ativo): Escala de cinza leve para não brigar com o texto */
     filter: grayscale(100%) opacity(0.7);
-    
-    margin: 0;
-    display: block;
+    transition: transform 0.3s ease;
 }
 
-/* Ícone no Hover: Cores originais */
 .topico-btn:hover img {
-    filter: none; /* Remove cinza */
+    filter: none;
     transform: scale(1.1);
-    opacity: 1;
 }
 
-/* --- CORREÇÃO AQUI: Ícone no Ativo --- */
 .topico-btn.active img {
-    /* REMOVIDO: filter: brightness(0) invert(1); (Isso deixava branco) */
-    
-    /* AGORA: Mostra cores originais + Sombra para destacar do fundo escuro */
-    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3)); 
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
     opacity: 1;
     transform: scale(1.15);
 }
@@ -121,7 +104,30 @@
     width: 100%;
 }
 
-/* --- MOBILE (SMARTPHONE GRID) --- */
+/* --- BOTÃO VOLTAR (APARECE SÓ NO CONTEÚDO) --- */
+#btn-voltar-painel {
+    display: none; /* Escondido no Desktop por padrão */
+    width: 100%;
+    padding: 12px;
+    background: #f5f5f5;
+    color: #455A64;
+    font-weight: 700;
+    border: 1px solid #cfd8dc;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+#btn-voltar-painel:hover {
+    background: #eceff1;
+    color: #0277BD;
+}
+
+/* --- MOBILE OTIMIZADO (Compacto) --- */
 @media (max-width: 768px) {
     
     .mapa-navegacao {
@@ -129,7 +135,7 @@
         box-shadow: none;
         border: none;
         padding: 0 5px;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
     }
 
     .mapa-navegacao h2 {
@@ -143,62 +149,43 @@
         border-bottom: none;
     }
 
-    /* Grid Mobile */
+    /* Grid Compacto */
     .topicos-container {
         display: grid;
         grid-template-columns: 1fr 1fr; 
-        gap: 12px;
+        gap: 8px; /* Gap menor */
     }
 
-    /* Botões Mobile */
+    /* Botão Mobile Compacto */
     .topico-btn {
         flex-direction: column;
         justify-content: center; 
         text-align: center;
-        
-        width: auto; 
-        aspect-ratio: 1.1;
-        padding: 15px 10px;
-        border-radius: 24px;
-        
-        background: white;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-        border: 1px solid rgba(255,255,255,0.5);
-        gap: 10px;
+        padding: 10px 8px; /* Padding reduzido */
+        border-radius: 16px;
+        gap: 6px;
+        aspect-ratio: auto; /* Remove proporção fixa quadrada */
+        min-height: 90px; /* Altura mínima controlada */
     }
 
-    /* Ícones Mobile */
+    /* Ícone Mobile Reduzido */
     .topico-btn img {
-        width: 42px;
-        height: 42px;
-        min-width: 42px;
-        
-        /* No mobile sempre colorido */
+        width: 32px; /* Reduzido de 42px */
+        height: 32px;
+        min-width: 32px;
         filter: none; 
         opacity: 1;
+        margin-bottom: 2px;
     }
 
+    /* Texto Mobile */
     .topico-btn {
-        font-size: 0.8rem;
-        font-weight: 600;
-        line-height: 1.2;
-        color: #37474f;
-    }
-
-    .topico-btn.active {
-        background: linear-gradient(135deg, #e0f2f1 0%, #e1f5fe 100%);
-        color: #00695c !important;
-        border: 2px solid #00796b;
-        transform: translateY(-2px);
+        font-size: 0.75rem; /* Fonte menor */
+        line-height: 1.1;
     }
     
-    .topico-btn.active img {
-        filter: none; 
-        transform: scale(1.1);
-    }
-    
-    .topico-btn:active {
-        transform: scale(0.96);
-        background: #eceff1;
+    /* Botão Voltar no Mobile */
+    #btn-voltar-painel.visible {
+        display: flex; /* Flex para alinhar ícone e texto */
     }
 }
