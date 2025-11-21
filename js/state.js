@@ -1,93 +1,97 @@
-// js/state.js (v24.1 - Adiciona Rastreamento de Localização)
+/**
+ * ARBORIA 2.0 - GLOBAL STATE
+ * Gerencia o estado volátil da aplicação (variáveis em memória) e persistência básica.
+ * Refatorado: Removida dependência circular do Banco de Dados.
+ */
 
-// === 1. Chaves de Armazenamento ===
+// === 1. Chaves de Armazenamento (LocalStorage) ===
+// Mantidas iguais para não perder dados de usuários antigos
 const STORAGE_KEY = 'manualPodaData';
 const ACTIVE_TAB_KEY = 'manualPodaActiveTab';
 
 // === 2. Estado Global da Aplicação ===
 
+// Dados Principais
 export let registeredTrees = [];
-export let db = null;
+// [REMOVIDO] export let db = null; -> O database.js agora gerencia sua própria conexão.
+
+// Mapa e Visualização
 export let mapInstance = null;
 export let mapMarkerGroup = null;
-export let currentTooltip = null;
-
-export let sortState = {
-  key: 'id',
-  direction: 'asc'
-};
-
-// Variáveis de estado temporárias
-export let lastEvaluatorName = '';
-export let toastTimer = null;
-export let lastUtmZone = { num: 0, letter: 'Z' };
 export let zoomTargetCoords = null;
 export let highlightTargetId = null;
-export let currentTreePhoto = null;
-export let editingTreeId = null; // (v23.5)
-export let openInfoBoxId = null; // (v23.6)
+export let openInfoBoxId = null;
 
-// [NOVO v24.1] Rastreamento de localização do usuário
+// Rastreamento de Localização (GPS em tempo real no mapa)
 export let userLocationWatchId = null;
 export let userLocationMarker = null;
 
+// Estado de UI e Edição
+export let sortState = { key: 'id', direction: 'asc' };
+export let lastEvaluatorName = '';
+export let lastUtmZone = { num: 0, letter: 'Z' };
+export let currentTreePhoto = null; // Blob da foto atual em memória
+export let editingTreeId = null;    // ID da árvore sendo editada (null = modo adição)
+export let currentTooltip = null;   // Legado (pode ser removido se TooltipUI for autônomo)
 
 // === 3. Funções "Setters" ===
+// Usadas para modificar o estado de forma controlada
 
 export function setRegisteredTrees(newTrees) {
   registeredTrees = newTrees;
 }
-export function setDb(databaseInstance) {
-  db = databaseInstance;
-}
+
 export function setMapInstance(map) {
   mapInstance = map;
 }
+
 export function setMapMarkerGroup(group) {
   mapMarkerGroup = group;
 }
-export function setCurrentTooltip(tooltip) {
-  currentTooltip = tooltip;
-}
+
 export function setSortState(key, direction) {
   sortState.key = key;
   sortState.direction = direction;
 }
+
 export function setLastEvaluatorName(name) {
   lastEvaluatorName = name;
 }
-export function setToastTimer(timer) {
-  toastTimer = timer;
-}
+
 export function setLastUtmZone(num, letter) {
   lastUtmZone.num = num;
   lastUtmZone.letter = letter;
 }
+
 export function setZoomTargetCoords(coords) {
   zoomTargetCoords = coords;
 }
+
 export function setHighlightTargetId(id) {
   highlightTargetId = id;
 }
+
 export function setCurrentTreePhoto(photoBlob) {
   currentTreePhoto = photoBlob;
 }
+
 export function setEditingTreeId(id) {
   editingTreeId = id;
 }
 
 /**
- * [NOVO v23.6] Define o ID do InfoBox que deve ser aberto no mapa.
- * @param {number | null} id O ID da árvore ou null.
+ * Define qual InfoBox (popup do mapa) deve abrir automaticamente
+ * @param {number|null} id 
  */
 export function setOpenInfoBoxId(id) {
   openInfoBoxId = id;
 }
 
-// [NOVO v24.1] Setters de Localização
+// Setters de Localização
 export function setUserLocationWatchId(id) {
   userLocationWatchId = id;
 }
+
 export function setUserLocationMarker(marker) {
   userLocationMarker = marker;
 }
@@ -95,7 +99,8 @@ export function setUserLocationMarker(marker) {
 // === 4. Funções de Persistência (LocalStorage) ===
 
 /**
- * Salva o array 'registeredTrees' no LocalStorage.
+ * Salva o array 'registeredTrees' no LocalStorage (Backup síncrono rápido).
+ * Nota: As fotos não vão para cá (pesadas demais), vão para o IndexedDB via database.js.
  */
 export function saveDataToStorage() {
   try {
@@ -106,7 +111,7 @@ export function saveDataToStorage() {
 }
 
 /**
- * Carrega os dados do LocalStorage para o estado 'registeredTrees'.
+ * Carrega os dados do LocalStorage para a memória.
  */
 export function loadDataFromStorage() {
   try {
@@ -116,31 +121,28 @@ export function loadDataFromStorage() {
     }
   } catch (e) {
     console.error("Erro ao ler dados do localStorage:", e);
-    registeredTrees = []; // Garante que o estado seja limpo em caso de erro
+    registeredTrees = [];
   }
 }
 
 /**
- * Salva a última aba ativa no LocalStorage.
- * @param {string} tabKey O 'data-target' da aba (ex: 'conceitos-basicos')
+ * Salva a última aba ativa (para o usuário voltar onde parou).
  */
 export function saveActiveTab(tabKey) {
   try {
     localStorage.setItem(ACTIVE_TAB_KEY, tabKey);
   } catch (e) {
-    console.error("Erro ao salvar a aba ativa:", e);
+    console.error("Erro ao salvar aba ativa:", e);
   }
 }
 
 /**
- * Busca a última aba ativa salva no LocalStorage.
- * @returns {string | null} A chave da última aba salva.
+ * Recupera a última aba ativa.
  */
 export function getActiveTab() {
   try {
     return localStorage.getItem(ACTIVE_TAB_KEY);
   } catch (e) {
-    console.error("Erro ao ler a aba ativa:", e);
     return null;
   }
 }
