@@ -11,11 +11,10 @@
     <link rel="apple-touch-icon" href="img/icons/icon-192x192.png">
     <link rel="icon" type="image/png" href="img/icons/favicon.png">
     
-    <link rel="stylesheet" href="style.css?v=78.0"> 
+    <link rel="stylesheet" href="style.css?v=78.1"> 
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -37,53 +36,65 @@
                 <h2>Painel de Controle</h2>
                 <nav class="topicos-container">
                     <button class="topico-btn active" data-target="conceitos-basicos">
-                        <i class="ph ph-lightbulb" style="pointer-events: none;"></i> Conceitos
+                        <img src="img/icons/definicoes.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Definições e Termos
                     </button>
                     
                     <button class="topico-btn" data-target="planejamento-inspecao">
-                        <i class="ph ph-clipboard-text" style="pointer-events: none;"></i> Planejamento
+                        <img src="img/icons/planejamento.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Planejamento e Risco
                     </button>
                     
                     <button class="topico-btn" data-target="autorizacao-legal">
-                        <i class="ph ph-scroll" style="pointer-events: none;"></i> Termos Legais
+                        <img src="img/icons/legal.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Termos Legais (ASV)
                     </button>
                     
                     <button class="topico-btn" data-target="preparacao-e-isolamento">
-                        <i class="ph ph-barricade" style="pointer-events: none;"></i> Preparação
+                        <img src="img/icons/preparacao.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Preparação (Isolamento)
                     </button>
                     
                     <button class="topico-btn" data-target="operacoes-e-tecnicas">
-                        <i class="ph ph-scissors" style="pointer-events: none;"></i> Poda e Supressão
+                        <img src="img/icons/poda.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Poda e Supressão
                     </button>
                     
                     <button class="topico-btn" data-target="riscos-e-epis">
-                        <i class="ph ph-shield-check" style="pointer-events: none;"></i> EPIs e Risco
+                        <img src="img/icons/epi.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        EPIs e Análise de Risco
                     </button>
                     
                     <button class="topico-btn" data-target="gestao-e-desmobilizacao">
-                        <i class="ph ph-recycle" style="pointer-events: none;"></i> Resíduos
+                        <img src="img/icons/residuos.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Resíduos (MTR)
                     </button>
                     
                     <button class="topico-btn" data-target="glossario-geral">
-                        <i class="ph ph-book-bookmark" style="pointer-events: none;"></i> Glossário
+                        <img src="img/icons/glossario.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Glossário Geral
                     </button>
                     
                     <button class="topico-btn" data-target="sobre-autor">
-                        <i class="ph ph-user-circle" style="pointer-events: none;"></i> Sobre
+                        <img src="img/icons/autor.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Sobre o Autor
                     </button>
                     
                     <div class="nav-separator" style="height: 1px; background: #eee; margin: 5px 0;"></div>
 
                     <button class="topico-btn" data-target="calculadora-risco">
-                        <i class="ph ph-calculator" style="pointer-events: none;"></i> Calc. Risco
+                        <img src="img/icons/calc.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Calculadora de Risco
                     </button>
                     
                     <button class="topico-btn" data-target="clinometro-view">
-                        <i class="ph ph-triangle" style="pointer-events: none;"></i> Clinômetro
+                        <img src="img/icons/clinometro.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Clinômetro (Altura)
                     </button>
                     
                     <button class="topico-btn" data-target="dap-estimator-view">
-                        <i class="ph ph-arrows-out-line-horizontal" style="pointer-events: none;"></i> Medir DAP
+                        <img src="img/icons/dap.png" alt="" style="width: 24px; height: 24px; pointer-events: none; margin-right: 8px; vertical-align: middle;"> 
+                        Medir DAP
                     </button> 
                 </nav>
             </section>
@@ -144,181 +155,4 @@
                         
                         <div class="hud-controls">
                             <div id="dap-step-distance" class="hud-step active">
-                                <p><strong>1. Configuração</strong></p>
-                                <label>Distância até o tronco (m):</label>
-                                <input type="number" id="dap-distance-input" value="10" min="1" step="0.5">
-                                <p class="instruction-text">Mantenha esta distância fixa. Aponte a câmera para a altura do peito (1.30m).</p>
-                                <button id="btn-dap-next-step" class="hud-action-btn">Começar</button>
-                            </div>
-                            <div id="dap-step-left" class="hud-step">
-                                <p><strong>2. Borda Esquerda</strong></p>
-                                <p class="instruction-text">Alinhe a mira na borda <strong>ESQUERDA</strong> do tronco.</p>
-                                <button id="btn-dap-capture-left" class="hud-capture-btn">Capturar</button>
-                            </div>
-                            <div id="dap-step-right" class="hud-step">
-                                <p><strong>3. Borda Direita</strong></p>
-                                <p class="instruction-text">Gire o celular e alinhe na borda <strong>DIREITA</strong>.</p>
-                                <button id="btn-dap-capture-right" class="hud-capture-btn">Capturar</button>
-                            </div>
-                            <div id="dap-step-result" class="hud-step">
-                                <p>DAP Estimado:</p>
-                                <h1 id="dap-estimated-result">0.0 cm</h1>
-                                <div class="result-actions">
-                                    <button id="btn-dap-reset" class="hud-action-btn">Nova Medição</button>
-                                    <button id="btn-dap-save" class="hud-action-btn save">✅ Usar no Cadastro</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="app-view conteudo-detalhe" id="calculadora-view" style="display: none;">
-                
-                <h3>📊 Calculadora de Risco Arbóreo</h3>
-                <p>Use o mapa para visualização geoespacial do risco, a aba "Registrar" para coleta e "Resumo" para gerenciar os dados.</p>
-                
-                <nav class="sub-nav">
-                    <button type="button" class="sub-nav-btn" data-target="tab-content-register">Registrar Árvore</button>
-                    <button type="button" class="sub-nav-btn" data-target="tab-content-summary">Resumo da Vistoria <span id="summary-badge" class="badge"></span></button>
-                    <button type="button" class="sub-nav-btn" data-target="tab-content-mapa">Mapa GIS 🗺️</button>
-                </nav>
-
-                <div id="tab-content-register" class="sub-tab-content">
-                    <form id="risk-calculator-form">
-                        <fieldset class="risk-fieldset">
-                            <legend>1. Identificação da Árvore</legend>
-                            <div class="form-grid">
-                                <div><label for="risk-data">Data da Coleta:</label><input type="date" id="risk-data" name="risk-data"></div>
-                                <div><label for="risk-especie">Espécie (Nome/Tag):</label><input type="text" id="risk-especie" name="risk-especie" required autocomplete="off"></div>
-                                <div><label for="risk-local">Local (Endereço/Setor):</label><input type="text" id="risk-local" name="risk-local" autocomplete="street-address"></div>
-                                
-                                <div>
-                                    <label for="risk-altura">Altura Total (m):</label>
-                                    <div style="display: flex; gap: 5px;">
-                                        <input type="number" id="risk-altura" name="risk-altura" min="0" step="0.1" placeholder="0.0">
-                                        <button type="button" id="btn-measure-height-form" style="padding:0 10px; background:var(--color-primary-dark); color:white; border:none; border-radius:4px; cursor:pointer;" title="Abrir Clinômetro">📐</button>
-                                    </div>
-                                </div>
-
-                                <div><label for="risk-coord-x">Coord. X (UTM ou Lon):</label><input type="text" id="risk-coord-x" name="risk-coord-x" autocomplete="off"></div>
-                                <div><label for="risk-coord-y">Coord. Y (UTM ou Lat):</label><input type="text" id="risk-coord-y" name="risk-coord-y" autocomplete="off"></div>
-                                <div class="gps-button-container">
-                                    <button type="button" id="get-gps-btn">🛰️ Capturar GPS</button>
-                                    <span id="gps-status"></span>
-                                </div>
-                                
-                                <div>
-                                    <label for="risk-dap">DAP (cm):</label>
-                                    <div style="display: flex; gap: 5px;">
-                                        <input type="number" id="risk-dap" name="risk-dap" min="0" step="any" placeholder="0.0">
-                                        <button type="button" id="btn-measure-dap-form" style="padding:0 10px; background:var(--color-primary-dark); color:white; border:none; border-radius:4px; cursor:pointer;" title="Abrir Medidor DAP">📏</button>
-                                    </div>
-                                </div>
-                                
-                                <div><label for="risk-distancia-obs">Dist. Observador (m):</label><input type="number" id="risk-distancia-obs" name="risk-distancia-obs" min="0" step="0.5" placeholder="Ex: 10"></div>
-                                
-                                <div><label for="risk-avaliador">Avaliador:</label><input type="text" id="risk-avaliador" name="risk-avaliador" autocomplete="name"></div>
-                            </div>
-                            <div><label for="risk-obs">Observações (Opcional):</label><textarea id="risk-obs" name="risk-obs" rows="3" placeholder="Ex: Cavidade no tronco..."></textarea></div>
-                            <div class="photo-upload-container">
-                                <label for="tree-photo-input" class="photo-btn">📷 Adicionar Foto</label>
-                                <input type="file" id="tree-photo-input" accept="image/*" capture="environment" style="display: none;">
-                                <div id="photo-preview-container"><button type="button" id="remove-photo-btn" style="display:none;">&times;</button></div>
-                            </div>
-                        </fieldset>
-                        
-                        <fieldset class="risk-fieldset">
-                            <legend>2. Lista de Verificação de Risco</legend>
-                            <table class="risk-table">
-                                <thead><tr><th>Nº</th><th>Pergunta</th><th>Peso</th><th>Sim</th></tr></thead>
-                                <tbody>
-                                    <tr><td>1</td><td>Há <span class="checklist-term" data-term-key="galhos-mortos">galhos mortos</span> com diâmetro superior a 5 cm?</td><td>3</td><td><input type="checkbox" class="risk-checkbox" data-weight="3"></td></tr>
-                                    <tr><td>2</td><td>Existem <span class="checklist-term" data-term-key="rachaduras">rachaduras ou fendas</span> no tronco ou galhos principais?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>3</td><td>Há <span class="checklist-term" data-term-key="apodrecimento">sinais de apodrecimento</span> (madeira esponjosa, fungos, cavidades)?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>4</td><td>A árvore possui uniões em “V” com <span class="checklist-term" data-term-key="casca-inclusa">casca inclusa</span>?</td><td>4</td><td><input type="checkbox" class="risk-checkbox" data-weight="4"></td></tr>
-                                    <tr><td>5</td><td>Há <span class="checklist-term" data-term-key="galhos-cruzados">galhos cruzados</span> ou friccionando entre si?</td><td>2</td><td><input type="checkbox" class="risk-checkbox" data-weight="2"></td></tr>
-                                    <tr><td>6</td><td>A árvore apresenta <span class="checklist-term" data-term-key="copa-assimetrica">copa assimétrica</span> (>30% de desequilíbrio)?</td><td>2</td><td><input type="checkbox" class="risk-checkbox" data-weight="2"></td></tr>
-                                    <tr><td>7</td><td>Há sinais de <span class="checklist-term" data-term-key="inclinacao">inclinação anormal</span> ou recente?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>8</td><td>A árvore está próxima a vias públicas ou áreas de circulação?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>9</td><td>Há risco de queda sobre edificações, veículos ou pessoas?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>10</td><td>A árvore interfere em redes elétricas ou estruturas urbanas?</td><td>4</td><td><input type="checkbox" class="risk-checkbox" data-weight="4"></td></tr>
-                                    <tr><td>11</td><td>A espécie é conhecida por apresentar alta taxa de falhas?</td><td>3</td><td><input type="checkbox" class="risk-checkbox" data-weight="3"></td></tr>
-                                    <tr><td>12</td><td>A árvore já sofreu podas drásticas ou <span class="checklist-term" data-term-key="brotacao-intensa">brotação epicórmica intensa</span>?</td><td>3</td><td><input type="checkbox" class="risk-checkbox" data-weight="3"></td></tr>
-                                    <tr><td>13</td><td>Há calçadas rachadas ou tubulações expostas próximas à base?</td><td>3</td><td><input type="checkbox" class="risk-checkbox" data-weight="3"></td></tr>
-                                    <tr><td>14</td><td>Há <span class="checklist-term" data-term-key="perda-raizes">perda visível de raízes</span> de sustentação (>40%)?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>15</td><td>Há sinais de <span class="checklist-term" data-term-key="compactacao">compactação</span> ou asfixia radicular?</td><td>3</td><td><input type="checkbox" class="risk-checkbox" data-weight="3"></td></tr>
-                                    <tr><td>16</td><td>Há <span class="checklist-term" data-term-key="apodrecimento">apodrecimento em raízes</span> primárias (>3 cm)?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                </tbody>
-                            </table>
-                            <div class="mobile-checklist-wrapper">
-                                <div class="mobile-checklist-card"></div>
-                                <div class="mobile-checklist-nav">
-                                    <button type="button" id="checklist-prev">❮ Anterior</button>
-                                    <span class="checklist-counter">1 / 16</span>
-                                    <button type="button" id="checklist-next">Próxima ❯</button>
-                                </div>
-                            </div>
-                        </fieldset>
-                        
-                        <div class="risk-buttons-area">
-                            <button type="submit" id="add-tree-btn">➕ Adicionar Árvore</button>
-                            <button type="button" id="reset-risk-form-btn">Limpar Campos</button>
-                        </div>
-                    </form>
-                </div>
-                
-                <div id="tab-content-summary" class="sub-tab-content">
-                    <fieldset class="risk-fieldset">
-                        <legend>3. Árvores Cadastradas</legend>
-                        <div class="table-filter-container"><input type="text" id="table-filter-input" placeholder="🔎 Filtrar..." autocomplete="off"></div>
-                        <div id="summary-table-container"><p id="summary-placeholder">Nenhuma árvore cadastrada ainda.</p></div>
-                        <div id="import-export-controls" class="risk-buttons-area">
-                            <input type="file" id="zip-importer" style="display: none;"><input type="file" id="csv-importer" style="display: none;">
-                            <button type="button" id="import-data-btn" class="export-btn">📤 Importar Dados</button>
-                            <button type="button" id="export-data-btn" class="export-btn">📥 Exportar Dados</button>
-                            <button type="button" id="generate-pdf-btn" class="export-btn" style="border-color: #D32F2F; color: #D32F2F; display: inline-flex !important;">📄 Gerar Laudo PDF</button>
-                            <button type="button" id="send-email-btn" class="export-btn">📧 Enviar por Email</button>
-                            <button type="button" id="clear-all-btn" class="export-btn">🗑️ Limpar Tabela</button>
-                        </div>
-                        <div id="zip-status" style="display: none;"><span class="spinner"></span><span id="zip-status-text">Processando...</span></div>
-                    </fieldset>
-                </div>
-                
-                <div id="tab-content-mapa" class="sub-tab-content mapa-tab">
-                    <fieldset class="risk-fieldset">
-                        <legend>Mapa de Localização e Risco</legend>
-                        <div id="map-legend-filter">
-                            <h4>Legenda / Filtro</h4>
-                            <div class="legend-filter-grid">
-                                <div class="legend-filter"><input type="radio" id="filter-todos" name="risk-filter" value="Todos" checked><label for="filter-todos">Todos</label></div>
-                                <div class="legend-filter"><input type="radio" id="filter-alto" name="risk-filter" value="Alto Risco"><label for="filter-alto"><span class="legend-dot" style="background-color: #C62828;"></span> Alto Risco</label></div>
-                                <div class="legend-filter"><input type="radio" id="filter-medio" name="risk-filter" value="Médio Risco"><label for="filter-medio"><span class="legend-dot" style="background-color: #E65100;"></span> Médio Risco</label></div>
-                                <div class="legend-filter"><input type="radio" id="filter-baixo" name="risk-filter" value="Baixo Risco"><label for="filter-baixo"><span class="legend-dot" style="background-color: #2E7D32;"></span> Baixo Risco</label></div>
-                            </div>
-                        </div>
-                        <div id="map-info-box" class="hidden"></div>
-                        <div id="map-container" style="height: 60vh; width: 100%; background-color: #f0f0f0;"></div>
-                        <div class="form-grid" style="margin-top: 15px; gap: 10px;">
-                            <div><label for="default-utm-zone">Zona UTM Padrão (Ex: 23K):</label><input type="text" id="default-utm-zone" placeholder="Ex: 23K" style="height: 38px;" autocomplete="off"><small style="color: #555; font-size: 0.8em;">(Necessário para dados antigos ou importados)</small></div>
-                            <button type="button" id="zoom-to-extent-btn" class="export-btn">📍 Aproximar dos Pontos</button>
-                            <button type="button" id="toggle-map-layer-btn" class="export-btn" style="border-color: #0277BD; color: #0277BD;">🗺️ Ruas</button>
-                            <button type="button" id="show-my-location-btn" class="export-btn map-geolocation-btn">🛰️ Minha Posição</button>
-                        </div>
-                    </fieldset>
-                </div>
-            </section>
-        </div>
-
-        <section id="gemini-chat">
-            <h2>🤖 Assistente Digital</h2>
-            <div class="chat-container">
-                <div id="chat-response-box"><p class="chat-placeholder">Faça uma pergunta específica sobre o manual...</p></div>
-                <div class="chat-input-area"><input type="text" id="chat-input" placeholder="Digite sua pergunta..." autocomplete="off"><button id="chat-send-btn">Enviar</button></div>
-            </div>
-        </section>
-        <section id="fale-conosco">
-            <h2>📧 Dúvidas</h2>
-            <div class="contact-form-container">
-                <form id="contact-form" class="contact-form">
-                    <label for="nome">Seu Nome
+                                <p><strong>
