@@ -307,3 +307,18 @@
         color: #b0bec5;
     }
 }
+
+/* CORREÇÃO DE EMERGÊNCIA: Força a primeira aba a aparecer se o JS falhar */
+#tab-content-register {
+    display: block !important; /* Garante visibilidade inicial */
+    opacity: 1;
+}
+
+/* Quando a aba "Resumo" ou "Mapa" ganhar a classe active, o JS esconde a de registro */
+.sub-tab-content {
+    display: none; /* As outras começam ocultas */
+}
+
+.sub-tab-content.active {
+    display: block !important;
+}
