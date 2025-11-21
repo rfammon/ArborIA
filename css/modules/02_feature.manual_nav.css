@@ -1,20 +1,28 @@
 /* 02_feature.manual_nav.css 
-   Estilos específicos da navegação do manual e botões de tópicos
+   Refatorado: Identidade ArborIA (Blue/Green), Botões Arredondados e Alto Contraste
 */
 
 .mapa-navegacao {
     background: white;
-    border-radius: var(--border-radius-lg);
+    border-radius: 16px; /* Mais arredondado */
     padding: 1.5rem;
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Sombra suave no card */
     margin-bottom: 1.5rem;
+    border: 1px solid #e0e0e0;
 }
 
 .mapa-navegacao h2 {
-    color: var(--color-primary-dark);
-    margin-bottom: 1.5rem;
-    font-size: 1.25rem;
-    border-bottom: 2px solid var(--color-accent);
+    /* Identidade: Azul Tecnológico */
+    color: #0277BD; 
+    margin-bottom: 1.2rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+    
+    /* Substituindo a linha laranja por um degradê da marca */
+    border-bottom: 3px solid;
+    border-image-slice: 1;
+    border-image-source: linear-gradient(to right, #0277BD, #00796b);
+    
     padding-bottom: 0.5rem;
 }
 
@@ -22,79 +30,93 @@
 .topicos-container {
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 10px; /* Espaçamento entre botões */
 }
 
-/* Botão de Tópico (Padrão) */
+/* ESTILO DO BOTÃO (Estado Normal) */
 .topico-btn {
-    background: var(--color-background);
-    border: 1px solid #e0e0e0;
-    border-radius: var(--border-radius-sm);
-    padding: 1rem 1.2rem;
-    text-align: left;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 1rem;
-    color: var(--color-text);
-    position: relative;
-    overflow: hidden;
+    /* Formato de Botão */
+    background: #ffffff;
+    border: 1px solid #cfd8dc; /* Borda cinza azulada suave */
+    border-radius: 12px; /* Bordas bem arredondadas */
+    padding: 12px 16px;
     
-    /* Layout Flexbox para alinhar Ícone + Texto */
+    /* Tipografia */
+    color: #455A64; /* Cinza escuro para leitura confortável */
+    font-size: 1rem;
+    font-weight: 600; /* Negrito para destaque */
+    text-align: left;
+    
+    /* Comportamento */
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Sombra leve para dar volume */
+    
+    /* Layout Flexbox */
     display: flex;
     align-items: center;
-    gap: 12px; /* Espaço entre ícone e texto */
+    gap: 12px;
 }
 
+/* Hover (Passar o mouse) */
 .topico-btn:hover {
-    background: #f5f5f5;
-    transform: translateX(5px);
-    border-color: var(--color-primary);
-    color: var(--color-primary-dark);
+    transform: translateY(-2px); /* O botão "flutua" levemente */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-color: #00796b; /* Borda verde ao passar o mouse */
+    background: #f1f8e9; /* Fundo verde muito pálido */
+    color: #004d40;
 }
 
-/* Estado Ativo (Selecionado) */
+/* ESTILO DO BOTÃO (Ativo/Selecionado) */
 .topico-btn.active {
-    background: var(--color-primary);
-    color: white;
-    border-color: var(--color-primary-dark);
-    box-shadow: var(--shadow-sm);
-    font-weight: 600;
+    /* Identidade: Degradê ArborIA (Verde -> Azul) */
+    background: linear-gradient(135deg, #00796b 0%, #0277BD 100%);
+    
+    color: #ffffff !important; /* Texto Branco Forçado */
+    border: none; /* Remove borda para o degradê brilhar */
+    
+    box-shadow: 0 4px 10px rgba(0, 121, 107, 0.4); /* Sombra colorida (Glow) */
+    transform: scale(1.02); /* Levemente maior para indicar seleção */
 }
 
+/* Ajuste para não mover demais no hover se já estiver ativo */
 .topico-btn.active:hover {
-    transform: none; /* Remove o deslocamento no ativo */
-    background: var(--color-primary-dark);
+    transform: scale(1.02) translateY(0);
+    box-shadow: 0 5px 12px rgba(0, 121, 107, 0.5);
 }
 
-/* --- ÍCONES DE NAVEGAÇÃO (PNG) --- 
-   Padronização e Segurança dos Ícones
-*/
+/* --- ÍCONES (Imagens PNG) --- */
 .topico-btn img {
     width: 24px;
     height: 24px;
-    object-fit: contain; /* Garante que o ícone não distorça */
+    object-fit: contain;
     
-    /* CRÍTICO: pointer-events: none 
-       Faz com que o clique "atravesse" a imagem e acerte o botão.
-       Essencial para o funcionamento do JavaScript atual.
-    */
+    /* SAFETY LOCK: Impede que o clique quebre a navegação */
     pointer-events: none; 
     
-    /* Filtro para suavizar ícones em modo escuro (opcional, mantido normal por enquanto) */
     transition: filter 0.2s ease;
+    
+    /* Filtro padrão: Deixa o ícone levemente acinzentado para combinar com o texto */
+    filter: grayscale(100%) opacity(0.7);
 }
 
-/* Quando o botão está ativo, inverte/brilha o ícone se necessário 
-   (Opcional: ajusta o brilho para contrastar com o fundo verde)
-*/
+/* Ícone quando passa o mouse (Hover) */
+.topico-btn:hover img {
+    filter: none; /* Mostra a cor original do ícone */
+    transform: scale(1.1); /* Ícone cresce um pouquinho */
+}
+
+/* Ícone quando Ativo (Selecionado) */
 .topico-btn.active img {
-    filter: brightness(0) invert(1); /* Torna o ícone branco */
+    /* Inverte totalmente para Branco Brilhante */
+    filter: brightness(0) invert(1); 
 }
 
-/* Separador Visual na Navegação */
+/* Separador Visual (Linha divisória entre seções) */
 .nav-separator {
-    height: 1px;
-    background: #eee;
+    height: 2px;
+    /* Degradê suave e transparente */
+    background: linear-gradient(to right, transparent, #e0e0e0, transparent);
     margin: 10px 0;
     width: 100%;
 }
@@ -106,12 +128,7 @@
     }
     
     .topico-btn {
-        padding: 0.8rem 1rem;
+        padding: 12px;
         font-size: 0.95rem;
-    }
-    
-    .topico-btn img {
-        width: 20px; /* Ícones levemente menores no mobile */
-        height: 20px;
     }
 }
