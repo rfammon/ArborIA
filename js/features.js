@@ -1,6 +1,7 @@
 /**
- * ARBORIA 2.0 - FEATURES (v72.0 Refatorado)
+ * ARBORIA 2.0 - FEATURES (v72.1 Refatorado)
  * Lógica de Negócios: GPS, CRUD de Árvores, Importação/Exportação e Chat
+ * Correção: Integração com utils.convertLatLonToUtm restaurada.
  */
 
 import * as state from './state.js';
@@ -8,6 +9,8 @@ import * as utils from './utils.js';
 import * as db from './database.js';
 
 // === 1. GPS ===
+// O processo de captura usa múltiplas leituras para aumentar a precisão (triangulação).
+// 
 export async function handleGetGPS() {
   const gpsStatus = document.getElementById('gps-status');
   const coordXField = document.getElementById('risk-coord-x');
@@ -15,11 +18,14 @@ export async function handleGetGPS() {
   const getGpsBtn = document.getElementById('get-gps-btn');
 
   if (!navigator.geolocation) {
-    if(gpsStatus) { gpsStatus.textContent = "Sem GPS."; gpsStatus.className = 'instruction-text text-center error'; }
+    if(gpsStatus) { 
+        gpsStatus.textContent = "Sem GPS."; 
+        gpsStatus.className = 'instruction-text text-center error'; 
+    }
     return;
   }
   
-  const CAPTURE_TIME_MS = 15000; 
+  const CAPTURE_TIME_MS = 15000; // Tempo de calibração
   const options = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
   let readings = [];
   let watchId = null;
@@ -55,40 +61,60 @@ export async function handleGetGPS() {
 
   const finishCapture = () => {
       cleanup();
+      
       if (readings.length === 0) {
           utils.showToast("Sem sinal de satélite.", "error");
           return;
       }
+
+      // Cálculo da média das leituras para maior precisão
       let sumLat = 0, sumLon = 0, sumAcc = 0;
-      readings.forEach(r => { sumLat += r.latitude; sumLon += r.longitude; sumAcc += r.accuracy; });
+      readings.forEach(r => { 
+          sumLat += r.latitude; 
+          sumLon += r.longitude; 
+          sumAcc += r.accuracy; 
+      });
+      
       const avgLat = sumLat / readings.length;
       const avgLon = sumLon / readings.length;
       const avgAcc = sumAcc / readings.length;
-      const utmCoords = utils.convertLatLonToUtm(avgLat, avgLon); // Assume que utils exporta isso ou proj4 direto
+
+      // [CORREÇÃO CRÍTICA] Chamada da função que restauramos no utils.js
+      const utmCoords = utils.convertLatLonToUtm(avgLat, avgLon); 
 
       if (utmCoords) {
           if(coordXField) coordXField.value = utmCoords.easting.toFixed(0);
           if(coordYField) coordYField.value = utmCoords.northing.toFixed(0);
           
+          // Atualiza estado global
           if(state.setLastUtmZone) state.setLastUtmZone(utmCoords.zoneNum, utmCoords.zoneLetter);
           
+          // Atualiza campo de Zona UTM (se existir no form)
           const dz = document.getElementById('default-utm-zone');
           if (dz) dz.value = `${utmCoords.zoneNum}${utmCoords.zoneLetter}`;
           
+          // Feedback Visual
           const gs = document.getElementById('gps-status');
           if(gs) {
-              const color = avgAcc <= 5 ? 'var(--color-forest)' : '#E65100';
+              const color = avgAcc <= 5 ? 'var(--color-forest)' : '#E65100'; // Verde se preciso, Laranja se fraco
               gs.innerHTML = `Média: <strong>${readings.length}</strong> pts. Prec: <span style="color:${color}">±${avgAcc.toFixed(1)}m</span>`;
           }
+          
           utils.showToast("Coordenadas capturadas com sucesso!", "success");
+      } else {
+          utils.showToast("Falha na conversão UTM.", "error");
       }
   };
 
   watchId = navigator.geolocation.watchPosition(
-      (pos) => { if (pos.coords.accuracy < 150) readings.push(pos.coords); },
-      (err) => console.warn(err),
+      (pos) => { 
+          // Filtra leituras muito ruins (> 150m de erro)
+          if (pos.coords.accuracy < 150) readings.push(pos.coords); 
+      },
+      (err) => console.warn("GPS Error:", err),
       options
   );
+  
   timerInterval = setInterval(updateUI, 1000);
   updateUI();
 }
@@ -97,15 +123,18 @@ export async function handleGetGPS() {
 export function clearPhotoPreview() {
   const pc = document.getElementById('photo-preview-container');
   const rb = document.getElementById('remove-photo-btn');
-  // Remove elemento de imagem se existir
+  
+  // Remove a tag <img> se ela existir
   const op = document.querySelector('#photo-preview-container img');
   if (op && pc) { 
       try { URL.revokeObjectURL(op.src); } catch(e){} 
       op.remove(); 
   }
+  
   if (rb) rb.style.display = 'none';
   
   if(state.setCurrentTreePhoto) state.setCurrentTreePhoto(null);
+  
   const pi = document.getElementById('tree-photo-input');
   if (pi) pi.value = null;
 }
@@ -114,9 +143,10 @@ export function handleAddTreeSubmit(event) {
   event.preventDefault();
   const form = event.target;
   
-  // Cálculo de Pontuação
+  // Cálculo de Pontuação de Risco
   let totalScore = 0;
   form.querySelectorAll('.risk-checkbox:checked').forEach(cb => totalScore += parseInt(cb.dataset.weight, 10));
+  
   const checkedRiskFactors = Array.from(form.querySelectorAll('.risk-checkbox')).map(cb => cb.checked ? 1 : 0);
   
   let classificationText = 'Baixo Risco', classificationClass = 'risk-low';
@@ -126,7 +156,7 @@ export function handleAddTreeSubmit(event) {
   const especie = document.getElementById('risk-especie').value.trim();
   if (!especie) { utils.showToast("O nome da espécie é obrigatório.", 'error'); return { success: false }; }
 
-  // Leitura segura dos inputs
+  // Leitura segura dos inputs (com fallbacks)
   const alturaInput = document.getElementById('risk-altura');
   const distInput = document.getElementById('risk-distancia-obs'); 
   
@@ -149,7 +179,7 @@ export function handleAddTreeSubmit(event) {
     observacoes: document.getElementById('risk-obs').value || 'N/A',
     pontuacao: totalScore,
     risco: classificationText,
-    riscoClass: classificationClass, // Ajustado para classes CSS novas
+    riscoClass: classificationClass, 
     riskFactors: checkedRiskFactors,
     hasPhoto: (state.currentTreePhoto !== null)
   };
@@ -160,14 +190,17 @@ export function handleAddTreeSubmit(event) {
 
   // Modo Adicionar ou Editar
   if (state.editingTreeId === null) {
+    // ADD
     mode = 'add';
     const newTreeId = state.registeredTrees.length > 0 ? Math.max(...state.registeredTrees.map(t => t.id)) + 1 : 1;
     resultTree = { ...treeData, id: newTreeId };
     
     if (resultTree.hasPhoto) db.saveImageToDB(resultTree.id, state.currentTreePhoto);
+    
     state.registeredTrees.push(resultTree);
     utils.showToast(`Árvore ID ${resultTree.id} cadastrada com sucesso!`, 'success');
   } else {
+    // UPDATE
     mode = 'update';
     const idx = state.registeredTrees.findIndex(t => t.id === state.editingTreeId);
     if (idx === -1) return { success: false };
@@ -175,7 +208,7 @@ export function handleAddTreeSubmit(event) {
     resultTree = { ...treeData, id: state.editingTreeId };
     const original = state.registeredTrees[idx];
     
-    // Lógica de atualização de imagem no DB
+    // Gerenciamento inteligente de imagem (salva, mantém ou deleta)
     if (resultTree.hasPhoto && !original.hasPhoto) db.saveImageToDB(resultTree.id, state.currentTreePhoto);
     else if (!resultTree.hasPhoto && original.hasPhoto) db.deleteImageFromDB(resultTree.id);
     else if (resultTree.hasPhoto && original.hasPhoto && state.currentTreePhoto) db.saveImageToDB(resultTree.id, state.currentTreePhoto);
@@ -187,11 +220,11 @@ export function handleAddTreeSubmit(event) {
   state.saveDataToStorage();
   state.setEditingTreeId(null);
   
-  // Limpa formulário
+  // Limpa UI
   form.reset();
   clearPhotoPreview();
   
-  // Esconde teclado no mobile
+  // Remove foco (fecha teclado mobile)
   if(document.activeElement) document.activeElement.blur();
   
   return { success: true, mode: mode, tree: resultTree };
@@ -200,19 +233,24 @@ export function handleAddTreeSubmit(event) {
 export function handleDeleteTree(id) {
   const t = state.registeredTrees.find(tree => tree.id === id);
   if (t && t.hasPhoto) db.deleteImageFromDB(id);
+  
   const n = state.registeredTrees.filter(tree => tree.id !== id);
-  state.setRegisteredTrees(n); state.saveDataToStorage();
-  utils.showToast(`Árvore ID ${id} excluída.`, 'error'); return true;
+  state.setRegisteredTrees(n); 
+  state.saveDataToStorage();
+  
+  utils.showToast(`Árvore ID ${id} excluída.`, 'error'); 
+  return true;
 }
 
 export function handleEditTree(id) {
   const t = state.registeredTrees.find(tree => tree.id === id);
   if (!t) { utils.showToast(`Erro ao carregar ID ${id}.`, "error"); return null; }
+  
   state.setEditingTreeId(id);
   if(state.setLastUtmZone) state.setLastUtmZone(t.utmZoneNum || 0, t.utmZoneLetter || 'Z');
   
-  // Redireciona para a aba de cadastro (simulando clique na UI)
-  // No novo sistema, poderíamos chamar UI.navigateTo, mas features deve ser agnóstico
+  // Redireciona visualmente para a aba de registro
+  // Nota: Usamos seletor do novo HTML para garantir compatibilidade
   const tabBtn = document.querySelector('.sub-nav-btn[data-target="tab-content-register"]');
   if(tabBtn) tabBtn.click();
   
@@ -220,15 +258,22 @@ export function handleEditTree(id) {
 }
 
 export function handleClearAll() {
+  // Limpa imagens
   state.registeredTrees.forEach(t => { if (t.hasPhoto) db.deleteImageFromDB(t.id); });
-  state.setRegisteredTrees([]); state.saveDataToStorage();
-  utils.showToast('Banco de dados limpo com sucesso.', 'success'); return true;
+  
+  // Limpa estado
+  state.setRegisteredTrees([]); 
+  state.saveDataToStorage();
+  
+  utils.showToast('Banco de dados limpo com sucesso.', 'success'); 
+  return true;
 }
 
 // === HELPERS DE UI E TABELA ===
 export function handleTableFilter() {
   const fi = document.getElementById('table-filter-input'); if (!fi) return;
   const ft = fi.value.toLowerCase();
+  
   document.querySelectorAll("#summary-table-container tbody tr").forEach(r => {
     r.style.display = r.textContent.toLowerCase().includes(ft) ? "" : "none";
   });
@@ -249,31 +294,53 @@ export function getSortValue(tree, key) {
 export function convertToLatLon(tree) {
   if(tree.coordX === 'N/A' || tree.coordY === 'N/A') return null;
   if (typeof window.proj4 === 'undefined') return null;
+  
   const e = parseFloat(tree.coordX); const n = parseFloat(tree.coordY);
+  // Fallback para zona padrão se a árvore não tiver
   const zn = tree.utmZoneNum || (state.lastUtmZone ? state.lastUtmZone.num : 23);
   const zl = tree.utmZoneLetter || (state.lastUtmZone ? state.lastUtmZone.letter : 'K');
+  
   if(!zn || !e || !n) return null;
+  
   const hemi = (zl.toUpperCase() < 'N') ? '+south' : '';
   const def = `+proj=utm +zone=${zn} ${hemi} +datum=WGS84 +units=m +no_defs`;
-  try { const ll = window.proj4(def, "EPSG:4326", [e, n]); return [ll[1], ll[0]]; } catch(e) { return null; }
+  
+  try { 
+      const ll = window.proj4(def, "EPSG:4326", [e, n]); 
+      return [ll[1], ll[0]]; 
+  } catch(e) { return null; }
 }
 
 export function handleZoomToPoint(id) {
   const t = state.registeredTrees.find(tr => tr.id === id); if (!t) return;
   const c = convertToLatLon(t);
+  
   if (c) {
     state.setZoomTargetCoords(c); state.setHighlightTargetId(id); state.setOpenInfoBoxId(id);
-    const b = document.querySelector('.sub-nav-btn[data-target="tab-content-mapa"]'); if (b) b.click();
-  } else { utils.showToast("Coordenadas inválidas para este ponto.", "error"); }
+    
+    // Navega para a aba do mapa
+    const b = document.querySelector('.sub-nav-btn[data-target="tab-content-mapa"]'); 
+    if (b) b.click();
+  } else { 
+      utils.showToast("Coordenadas inválidas para este ponto.", "error"); 
+  }
 }
 
 export function handleMapMarkerClick(id) {
   state.setHighlightTargetId(id);
-  // Volta para o resumo e destaca a linha
-  const b = document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]'); if (b) b.click();
+  
+  // Volta para o resumo
+  const b = document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]'); 
+  if (b) b.click();
+  
+  // Scroll e destaque da linha
   setTimeout(() => {
       const row = document.getElementById(`row-${id}`);
-      if(row) row.scrollIntoView({behavior: 'smooth', block: 'center'});
+      if(row) {
+          row.scrollIntoView({behavior: 'smooth', block: 'center'});
+          row.style.backgroundColor = '#e3f2fd'; // Highlight temporário
+          setTimeout(() => row.style.backgroundColor = '', 2000);
+      }
   }, 300);
 }
 
@@ -284,8 +351,10 @@ export function handleZoomToExtent() {
 // === IMPORTAÇÃO / EXPORTAÇÃO ===
 function getCSVData() {
   if (state.registeredTrees.length === 0) return null;
+  
   const headers = ["ID", "Data Coleta", "Especie", "Coord X", "Coord Y", "Zona Num", "Zona Letter", "DAP", "Altura", "Distancia Obs", "Local", "Avaliador", "Pontuacao", "Risco", "Obs", "RiskFactors", "HasPhoto"];
   let csv = "\uFEFF" + headers.join(";") + "\n";
+  
   state.registeredTrees.forEach(t => {
     const c = (s) => (s || '').toString().replace(/[\n;]/g, ',');
     const rf = (t.riskFactors || []).join(',');
@@ -296,25 +365,34 @@ function getCSVData() {
     ];
     csv += r.join(";") + "\n";
   });
+  
   return csv;
 }
 
 export function exportActionCSV() {
-  const csv = getCSVData(); if (!csv) { utils.showToast("Não há dados para exportar.", 'error'); return; }
+  const csv = getCSVData(); 
+  if (!csv) { utils.showToast("Não há dados para exportar.", 'error'); return; }
+  
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `risco_arboreo_${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  const link = document.createElement("a"); 
+  link.href = URL.createObjectURL(blob); 
+  link.download = `risco_arboreo_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(link); 
+  link.click(); 
+  document.body.removeChild(link);
 }
 
 export async function exportActionZip() {
   if (typeof JSZip === 'undefined') { utils.showToast("Biblioteca JSZip não carregada.", 'error'); return; }
   if (state.registeredTrees.length === 0) { utils.showToast("Sem dados para backup.", 'error'); return; }
   
-  const zipStatus = document.getElementById('zip-status'); if(zipStatus) zipStatus.style.display = 'flex';
+  const zipStatus = document.getElementById('zip-status'); 
+  if(zipStatus) zipStatus.style.display = 'flex';
   
   try {
     const zip = new JSZip();
     const csvContent = getCSVData();
+    
     if (csvContent) zip.file("manifesto_dados.csv", csvContent.replace(/^\uFEFF/, ''));
     
     const images = await db.getAllImagesFromDB();
@@ -328,11 +406,23 @@ export async function exportActionZip() {
         }
       });
     }
+    
     const zipBlob = await zip.generateAsync({ type: "blob" });
-    const link = document.createElement("a"); link.href = URL.createObjectURL(zipBlob); link.download = `backup_completo_${new Date().toISOString().slice(0,10)}.zip`;
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    const link = document.createElement("a"); 
+    link.href = URL.createObjectURL(zipBlob); 
+    link.download = `backup_completo_${new Date().toISOString().slice(0,10)}.zip`;
+    
+    document.body.appendChild(link); 
+    link.click(); 
+    document.body.removeChild(link);
+    
     utils.showToast('Backup .zip criado com sucesso!', 'success');
-  } catch (error) { console.error(error); utils.showToast("Erro ao criar arquivo ZIP.", 'error'); } finally { if(zipStatus) zipStatus.style.display = 'none'; }
+  } catch (error) { 
+      console.error(error); 
+      utils.showToast("Erro ao criar arquivo ZIP.", 'error'); 
+  } finally { 
+      if(zipStatus) zipStatus.style.display = 'none'; 
+  }
 }
 
 export async function handleImportZip(event) {
