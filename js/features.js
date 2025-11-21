@@ -1,12 +1,137 @@
 /**
- * ARBORIA 2.0 - FEATURES (v75.1 - Final Stable)
- * Contém: Lógica de GPS, CRUD, Importação e WIZARD MOBILE (Fixado).
+ * ARBORIA 2.0 - FEATURES (v77.0 - Final Stable Fix)
+ * Contém: Lógica de GPS, CRUD, Importação e WIZARD MOBILE (Estável).
+ * Correção: Estabilização dos listeners do Checklist e correção do erro de declaração.
  */
 
 import * as state from './state.js';
 import * as utils from './utils.js';
 import * as db from './database.js';
 import { TableUI } from './table.ui.js'; 
+
+// === WIZARD STATE & LISTENERS (Refatorado para estabilidade) ===
+let currentChecklistIndex = 0; // [CRÍTICO] Declarado UMA ÚNICA VEZ aqui.
+let checklistListenersAttached = false; // Flag para anexo de listeners
+
+// Helper para pegar elementos do Wizard (DOM)
+const getChecklistElements = () => {
+    const wrapper = document.querySelector('.mobile-checklist-wrapper');
+    if (!wrapper) return null;
+    return {
+        tableRows: document.querySelectorAll('.risk-table tbody tr'),
+        cardTitle: wrapper.querySelector('h4'),
+        cardText: wrapper.querySelector('p'),
+        toggleInput: wrapper.querySelector('.mobile-checklist-toggle input'),
+        btnPrev: document.getElementById('checklist-prev'),
+        btnNext: document.getElementById('checklist-next'),
+        counter: wrapper.querySelector('.checklist-counter'),
+        card: wrapper.querySelector('.mobile-checklist-card')
+    };
+};
+
+/**
+ * Atualiza o Card do Wizard com a pergunta e o estado do checkbox.
+ * @param {number} index 
+ */
+function updateChecklistCard(index) {
+    const els = getChecklistElements();
+    if (!els || index < 0 || index >= els.tableRows.length) return;
+
+    const row = els.tableRows[index];
+    const originalCheckbox = row.querySelector('input[type="checkbox"]');
+
+    // Fix Content Corruption / Tooltip attachment
+    const questionCell = row.cells[1].cloneNode(true); 
+    const tooltipSpan = questionCell.querySelector('.checklist-term');
+    if (tooltipSpan) {
+        tooltipSpan.classList.add('tooltip-trigger'); 
+    }
+
+    els.cardTitle.textContent = `Critério ${index + 1} / ${els.tableRows.length}`;
+    els.cardText.innerHTML = questionCell.innerHTML; 
+    
+    els.toggleInput.checked = originalCheckbox.checked;
+    
+    const card = els.card;
+    if (originalCheckbox.checked) card.classList.add('answered-yes');
+    else card.classList.remove('answered-yes');
+
+    els.counter.textContent = `${index + 1} / ${els.tableRows.length}`;
+    els.btnPrev.disabled = index === 0;
+    els.btnNext.innerHTML = index === els.tableRows.length - 1 ? 'Concluir' : 'Próxima ❯';
+
+    // Listener do Toggle (Precisa ser re-anexado no loop para pegar o índice 'index' correto)
+    // Remove o listener anterior antes de adicionar o novo
+    els.toggleInput.removeEventListener('change', els.toggleInput._oldHandler);
+
+    const toggleHandler = () => {
+        originalCheckbox.checked = els.toggleInput.checked;
+        
+        if (els.toggleInput.checked) card.classList.add('answered-yes');
+        else card.classList.remove('answered-yes');
+
+        // Auto-Avanço
+        if (els.toggleInput.checked && index < els.tableRows.length - 1) {
+            setTimeout(() => {
+                currentChecklistIndex++;
+                updateChecklistCard(currentChecklistIndex);
+            }, 350); 
+        }
+    };
+    
+    els.toggleInput.addEventListener('change', toggleHandler);
+    els.toggleInput._oldHandler = toggleHandler; // Salva o handler para poder remover depois
+}
+
+/**
+ * Anexa listeners de navegação (Próxima/Voltar) apenas uma única vez.
+ */
+function attachChecklistListenersOnce() {
+    if (checklistListenersAttached) return;
+    const els = getChecklistElements();
+    if (!els) return;
+
+    // Listener para o botão ANTERIOR
+    els.btnPrev.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (currentChecklistIndex > 0) {
+            currentChecklistIndex--;
+            updateChecklistCard(currentChecklistIndex);
+        }
+    });
+
+    // Listener para o botão PRÓXIMA / CONCLUIR
+    els.btnNext.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (currentChecklistIndex < els.tableRows.length - 1) {
+            currentChecklistIndex++;
+            updateChecklistCard(currentChecklistIndex);
+        } else {
+            // Fim do Wizard: Rola para botões de salvar
+            document.getElementById('add-tree-btn').scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+    
+    checklistListenersAttached = true; // Seta a flag para não rodar novamente
+}
+
+
+/**
+ * [PÚBLICO] Função de inicialização e reset do Wizard.
+ */
+export function initMobileChecklist() {
+    if (window.innerWidth > 768) return; 
+
+    // [FIX] Anexa listeners de forma persistente (resolve o bug do "Limpar")
+    attachChecklistListenersOnce();
+
+    const tableRows = document.querySelectorAll('.risk-table tbody tr');
+    if (tableRows.length === 0) return;
+
+    // Reset UI e começa no primeiro card
+    currentChecklistIndex = 0;
+    updateChecklistCard(currentChecklistIndex);
+}
 
 // === 1. GPS ===
 export async function handleGetGPS() {
@@ -118,7 +243,6 @@ export function clearPhotoPreview() {
   }
   state.setEditingTreeId(null);
   
-  // Reinicia o wizard (Garantido pela chamada)
   setTimeout(() => initMobileChecklist(), 100);
 }
 
@@ -209,8 +333,8 @@ export function handleDeleteTree(id) {
   const n = state.registeredTrees.filter(tree => tree.id !== id);
   state.setRegisteredTrees(n); 
   state.saveDataToStorage();
-  
   TableUI.render();
+  
   initMobileChecklist();
   
   utils.showToast(`Árvore removida.`, 'info'); 
@@ -358,9 +482,7 @@ function getCSVData() {
   return csv;
 }
 
-export function exportActionCSV() { /* ... */ }
-
-export async function exportActionZip() {
+export function exportActionZip() {
   if (typeof JSZip === 'undefined') { utils.showToast("Erro: JSZip.", 'error'); return; }
   if (state.registeredTrees.length === 0) { utils.showToast("Sem dados.", 'error'); return; }
   
@@ -463,95 +585,117 @@ export function handleContactForm(e) { e.preventDefault(); }
 // === 3. CHECKLIST WIZARD MOBILE ===
 // Esta é a lógica que faz os botões "Próxima" e o Toggle funcionarem
 let currentChecklistIndex = 0;
+let checklistListenersAttached = false; // Flag para garantir que os botões só sejam ligados 1x
 
-export function initMobileChecklist() {
-    // Só ativa se estiver em modo mobile
-    if (window.innerWidth > 768) return;
-
+const getChecklistElements = () => {
     const wrapper = document.querySelector('.mobile-checklist-wrapper');
-    if (!wrapper) return;
+    if (!wrapper) return null;
+    return {
+        tableRows: document.querySelectorAll('.risk-table tbody tr'),
+        cardTitle: wrapper.querySelector('h4'),
+        cardText: wrapper.querySelector('p'),
+        toggleInput: wrapper.querySelector('.mobile-checklist-toggle input'),
+        btnPrev: document.getElementById('checklist-prev'),
+        btnNext: document.getElementById('checklist-next'),
+        counter: wrapper.querySelector('.checklist-counter'),
+        card: wrapper.querySelector('.mobile-checklist-card')
+    };
+};
 
-    const tableRows = document.querySelectorAll('.risk-table tbody tr');
-    if (tableRows.length === 0) return;
+/**
+ * Atualiza o Card do Wizard com a pergunta e o estado do checkbox.
+ * @param {number} index 
+ */
+function updateChecklistCard(index) {
+    const els = getChecklistElements();
+    if (!els || index < 0 || index >= els.tableRows.length) return;
 
-    // Elementos do DOM do Wizard
-    const cardTitle = wrapper.querySelector('h4');
-    const cardText = wrapper.querySelector('p');
-    const toggleInput = wrapper.querySelector('.mobile-checklist-toggle input');
-    const btnPrev = document.getElementById('checklist-prev');
-    const btnNext = document.getElementById('checklist-next');
-    const counter = wrapper.querySelector('.checklist-counter');
+    const row = els.tableRows[index];
+    const originalCheckbox = row.querySelector('input[type="checkbox"]');
 
-    if (!cardTitle || !toggleInput) return;
+    const questionCell = row.cells[1].cloneNode(true); 
+    const tooltipSpan = questionCell.querySelector('.checklist-term');
+    if (tooltipSpan) {
+        tooltipSpan.classList.add('tooltip-trigger'); 
+    }
 
-    const updateCard = (index) => {
-        const row = tableRows[index];
-        if (!row) return;
+    els.cardTitle.textContent = `Critério ${index + 1} / ${els.tableRows.length}`;
+    els.cardText.innerHTML = questionCell.innerHTML; 
+    
+    els.toggleInput.checked = originalCheckbox.checked;
+    
+    const card = els.card;
+    if (originalCheckbox.checked) card.classList.add('answered-yes');
+    else card.classList.remove('answered-yes');
 
-        const questionHTML = row.cells[1].innerHTML; 
-        const originalCheckbox = row.querySelector('input[type="checkbox"]');
+    els.counter.textContent = `${index + 1} / ${els.tableRows.length}`;
+    els.btnPrev.disabled = index === 0;
+    els.btnNext.innerHTML = index === els.tableRows.length - 1 ? 'Concluir' : 'Próxima ❯';
 
-        cardTitle.textContent = `Critério ${index + 1} / ${tableRows.length}`;
-        cardText.innerHTML = questionHTML;
+    // Listener do Toggle
+    // [FIX] Listener must be re-attached on every card update to maintain correct scope
+    els.toggleInput.onchange = () => {
+        originalCheckbox.checked = els.toggleInput.checked;
         
-        toggleInput.checked = originalCheckbox.checked;
-        
-        const card = wrapper.querySelector('.mobile-checklist-card');
-        if (originalCheckbox.checked) card.classList.add('answered-yes');
+        if (els.toggleInput.checked) card.classList.add('answered-yes');
         else card.classList.remove('answered-yes');
 
-        counter.textContent = `${index + 1} / ${tableRows.length}`;
-        btnPrev.disabled = index === 0;
-        btnNext.innerHTML = index === tableRows.length - 1 ? 'Concluir' : 'Próxima ❯';
-
-        // Listener do Toggle
-        toggleInput.onchange = () => {
-            originalCheckbox.checked = toggleInput.checked;
-            
-            if (toggleInput.checked) card.classList.add('answered-yes');
-            else card.classList.remove('answered-yes');
-
-            // Auto-Avanço
-            if (toggleInput.checked && index < tableRows.length - 1) {
-                setTimeout(() => {
-                    currentChecklistIndex++;
-                    updateCard(currentChecklistIndex);
-                }, 350); 
-            }
-        };
+        // Auto-Avanço
+        if (els.toggleInput.checked && index < els.tableRows.length - 1) {
+            setTimeout(() => {
+                currentChecklistIndex++;
+                updateChecklistCard(currentChecklistIndex);
+            }, 350); 
+        }
     };
+}
 
-    // Listeners dos botões Prev/Next
-    // Remove antigos clones para limpar memória e listeners duplicados
-    const replaceBtn = (oldBtn) => {
-        const newBtn = oldBtn.cloneNode(true);
-        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-        return newBtn;
-    };
+/**
+ * Anexa listeners de navegação (Próxima/Voltar) apenas uma única vez.
+ */
+function attachChecklistListenersOnce() {
+    if (checklistListenersAttached) return;
+    const els = getChecklistElements();
+    if (!els) return;
 
-    const newPrev = replaceBtn(btnPrev);
-    const newNext = replaceBtn(btnNext);
-
-    newPrev.addEventListener('click', (e) => {
+    // Listener para o botão ANTERIOR
+    els.btnPrev.addEventListener('click', (e) => {
         e.preventDefault();
         if (currentChecklistIndex > 0) {
             currentChecklistIndex--;
-            updateCard(currentChecklistIndex);
+            updateChecklistCard(currentChecklistIndex);
         }
     });
 
-    newNext.addEventListener('click', (e) => {
+    // Listener para o botão PRÓXIMA / CONCLUIR
+    els.btnNext.addEventListener('click', (e) => {
         e.preventDefault();
         if (currentChecklistIndex < tableRows.length - 1) {
             currentChecklistIndex++;
-            updateCard(currentChecklistIndex);
+            updateChecklistCard(currentChecklistIndex);
         } else {
             // Fim do Wizard: Rola para botões de salvar
             document.getElementById('add-tree-btn').scrollIntoView({ behavior: 'smooth' });
         }
     });
+    
+    checklistListenersAttached = true; // Seta a flag
+}
 
-    // Inicia
+
+/**
+ * [PÚBLICO] Função de inicialização e reset do Wizard.
+ */
+export function initMobileChecklist() {
+    if (window.innerWidth > 768) return; 
+
+    // [FIX] Anexa listeners de forma persistente (resolve o bug do "Limpar")
+    attachChecklistListenersOnce();
+
+    const tableRows = document.querySelectorAll('.risk-table tbody tr');
+    if (tableRows.length === 0) return;
+
+    // Reset UI e começa no primeiro card
     currentChecklistIndex = 0;
-    updateCard(currentChecklistIndex);
+    updateChecklistCard(currentChecklistIndex);
 }
