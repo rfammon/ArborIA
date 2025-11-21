@@ -124,11 +124,10 @@ const TooltipUI = {
     },
 
     show(targetElement, termKey) {
-        if (!glossaryData) return;
-        const content = glossaryData[termKey];
+        console.log('Tentando abrir tooltip:', termKey); // DEBUG
         
-        if (!content) {
-            console.warn(`Termo não encontrado: ${termKey}`);
+        if (!glossaryData) {
+            console.error('ERRO FATAL: glossaryData não foi carregado!');
             return;
         }
 
@@ -189,3 +188,4 @@ const TooltipUI = {
 };
 
 export default TooltipUI;
+
