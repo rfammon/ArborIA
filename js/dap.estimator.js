@@ -1,4 +1,7 @@
-// js/dap.estimator.js (v5.0 - Estimador de DAP Final)
+/**
+ * ARBORIA 2.0 - DAP ESTIMATOR (v5.1 Refatorado)
+ * Estimativa de diâmetro via Realidade Aumentada (Giroscópio Horizontal).
+ */
 
 import { showToast } from './utils.js';
 
@@ -9,36 +12,37 @@ let distance = 10;
 let angleLeftCapture = null; 
 let angleRightCapture = null;
 
-// Referências DOM
-const videoEl = document.getElementById('dap-camera-feed');
-const angleDisplay = document.getElementById('dap-current-angle'); 
-
-// Mapeamento dos passos (IDs do HTML)
-const steps = {
-    distance: document.getElementById('dap-step-distance'),
-    left: document.getElementById('dap-step-left'),
-    right: document.getElementById('dap-step-right'),
-    result: document.getElementById('dap-step-result')
-};
+// Referências DOM (sob demanda)
+const getElements = () => ({
+    videoEl: document.getElementById('dap-camera-feed'),
+    angleDisplay: document.getElementById('dap-current-angle'),
+    distInput: document.getElementById('dap-distance-input'),
+    steps: {
+        distance: document.getElementById('dap-step-distance'),
+        left: document.getElementById('dap-step-left'),
+        right: document.getElementById('dap-step-right'),
+        result: document.getElementById('dap-step-result')
+    }
+});
 
 /**
  * Inicia o Estimador de DAP.
  */
 export async function startDAPEstimator() {
+    const els = getElements();
+    
     resetMeasurement();
-    // Garante que o primeiro passo é mostrado ao abrir
     showStep('distance'); 
 
-    // 1. Sincroniza distância inicial com o formulário principal (se existir)
+    // 1. Sincroniza distância inicial com o formulário principal
     const mainDistInput = document.getElementById('risk-distancia-obs');
-    const dapDistInput = document.getElementById('dap-distance-input');
     
-    if (mainDistInput && mainDistInput.value) {
+    if (mainDistInput && mainDistInput.value && parseFloat(mainDistInput.value) > 0) {
         distance = parseFloat(mainDistInput.value);
-        if(dapDistInput) dapDistInput.value = distance;
-    } else {
-        distance = 10; // Valor padrão
-        if(dapDistInput) dapDistInput.value = 10;
+    }
+    
+    if (els.distInput) {
+        els.distInput.value = distance;
     }
 
     // 2. Acessar Câmera
@@ -49,14 +53,14 @@ export async function startDAPEstimator() {
             return navigator.mediaDevices.getUserMedia({ video: true });
         });
         
-        if (videoEl) {
-            videoEl.srcObject = stream;
-            videoEl.setAttribute("playsinline", true); 
-            videoEl.play();
+        if (els.videoEl) {
+            els.videoEl.srcObject = stream;
+            els.videoEl.setAttribute("playsinline", true); 
+            els.videoEl.play().catch(e => console.warn("Play error:", e));
         }
     } catch (err) {
         console.error(err);
-        showToast("Erro ao acessar câmera.", "error");
+        showToast("Erro ao acessar câmera. Verifique permissões.", "error");
     }
 
     // 3. Acessar Giroscópio
@@ -79,11 +83,12 @@ export async function startDAPEstimator() {
  * Para a câmera e remove listeners.
  */
 export function stopDAPEstimator() {
+    const els = getElements();
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
     }
-    if (videoEl) videoEl.srcObject = null;
+    if (els.videoEl) els.videoEl.srcObject = null;
     window.removeEventListener('deviceorientation', handleOrientation);
 }
 
@@ -91,19 +96,22 @@ export function stopDAPEstimator() {
  * Lógica do Sensor.
  */
 function handleOrientation(event) {
+    const els = getElements();
     const rawGamma = event.gamma; // Rotação Esquerda/Direita (Eixo Z)
-    const rawBeta = event.beta;   // Inclinação Frente/Trás (Eixo X)
+    const rawBeta = event.beta;   // Inclinação Frente/Trás (Eixo X) - Usado para nível
 
-    // Feedback visual: Mostra inclinação vertical para ajudar o usuário a manter o nível (90 graus)
-    if (rawBeta !== null && angleDisplay) {
-        const level = 90 - rawBeta;
-        angleDisplay.textContent = `Nível: ${level.toFixed(1)}°`;
+    // Feedback visual: Nível (Bolha Virtual)
+    if (rawBeta !== null && els.angleDisplay) {
+        // O ideal é manter o celular em pé (Beta ~90)
+        const level = 90 - Math.abs(rawBeta); 
         
-        // Muda a cor se estiver muito inclinado (dica visual)
-        if (Math.abs(level) > 10) {
-            angleDisplay.style.color = '#ff5252'; 
+        els.angleDisplay.textContent = `Nível: ${level.toFixed(1)}°`;
+        
+        // Muda a cor se estiver muito inclinado (fora de prumo)
+        if (Math.abs(level) > 15) {
+            els.angleDisplay.style.color = '#ff5252'; // Vermelho (Ruim)
         } else {
-            angleDisplay.style.color = '#FFEB3B';
+            els.angleDisplay.style.color = '#00e676'; // Verde (Bom)
         }
     }
 
@@ -116,14 +124,13 @@ function handleOrientation(event) {
 // === FLUXO DE UI ===
 
 function showStep(stepName) {
-    // Remove a classe .active de todos os passos
-    Object.values(steps).forEach(el => { 
+    const els = getElements();
+    Object.values(els.steps).forEach(el => { 
         if(el) el.classList.remove('active'); 
     });
     
-    // Adiciona .active apenas no passo atual
-    if (steps[stepName]) {
-        steps[stepName].classList.add('active');
+    if (els.steps[stepName]) {
+        els.steps[stepName].classList.add('active');
     }
 }
 
@@ -136,7 +143,8 @@ export function initDAPEstimatorListeners() {
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             stopDAPEstimator();
-            const calcBtn = document.querySelector('.topico-btn[data-target="calculadora-risco"]');
+            // CORREÇÃO: ID da nova UI
+            const calcBtn = document.querySelector('.topico-btn[data-target="calculadora-view"]');
             if (calcBtn) calcBtn.click();
         });
     }
@@ -153,12 +161,12 @@ export function initDAPEstimatorListeners() {
             }
             distance = val;
             
-            // Sincroniza de volta com o formulário principal (opcional)
+            // Sincroniza de volta com o formulário principal
             const formDist = document.getElementById('risk-distancia-obs');
             if(formDist) formDist.value = distance;
 
             showStep('left');
-            showToast("Mire na borda ESQUERDA.", "info");
+            showToast("Mire na borda ESQUERDA do tronco.", "info");
         });
     }
 
@@ -168,7 +176,6 @@ export function initDAPEstimatorListeners() {
         leftBtn.addEventListener('click', () => {
             angleLeftCapture = currentGamma;
             showToast("Esquerda capturada. Gire para a DIREITA.", "info");
-            // Pequeno delay para evitar clique duplo acidental
             setTimeout(() => showStep('right'), 500);
         });
     }
@@ -199,7 +206,7 @@ export function initDAPEstimatorListeners() {
                 showToast("DAP salvo no cadastro!", "success");
                 
                 stopDAPEstimator();
-                const calcBtn = document.querySelector('.topico-btn[data-target="calculadora-risco"]');
+                const calcBtn = document.querySelector('.topico-btn[data-target="calculadora-view"]');
                 if (calcBtn) calcBtn.click();
             }
         });
@@ -213,7 +220,8 @@ function calculateDAP() {
     // Diferença angular absoluta entre as bordas
     let delta = Math.abs(angleRightCapture - angleLeftCapture);
     
-    // Correção para virada de eixo (ex: passar de 179 para -179)
+    // Correção para virada de eixo (passagem pelo zero/360)
+    // Ex: Esquerda 179°, Direita -179° (delta nominal 358, real 2)
     if (delta > 180) delta = 360 - delta;
 
     // Validação básica
@@ -226,7 +234,8 @@ function calculateDAP() {
     const radDelta = delta * (Math.PI / 180);
     
     // FÓRMULA: Largura = Distancia * tan(Delta)
-    // (Para pequenos ângulos, tan(x) ~= x, mas usamos a tangente completa)
+    // Como medimos de borda a borda a partir de um centro pivot, 
+    // a aproximação linear Dist * tan(delta) funciona para DAP pequeno vs Distância grande.
     const widthMetros = distance * Math.tan(radDelta);
     const dapCentimetros = widthMetros * 100;
 
