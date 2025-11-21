@@ -1,219 +1,246 @@
 /**
- * ARBORIA 2.0 - CALCULATOR & SUMMARY TABLE
- * Layout: Abas de Navegação, Formulários e Tabelas de Dados
+ * ARBORIA 2.0 - TABLE UI (V25.1 - Mobile Fix & Gradient)
+ * Responsável pela renderização e interatividade da tabela de resumo.
+ * Correção: Integração do botão "Toggle Columns" para visualização mobile.
  */
 
-/* --- HEADER DA CALCULADORA --- */
-#calculadora-view h3 {
-  color: var(--color-forest);
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+import * as State from './state.js';
+import * as Features from './features.js';
+import { showConfirmModal, openPhotoViewer } from './modal.ui.js';
+import { getImageFromDB } from './database.js';
 
-#calculadora-view > p {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-}
+export const TableUI = {
+    
+    container: null,
+    badgeElement: null,
+    isCompactMode: false, // Estado do toggle de colunas (padrão: expandido/todos)
 
-/* --- SUB-NAVEGAÇÃO (Abas) --- */
-/* Mantido original */
-.sub-nav {
-  display: flex;
-  background-color: #e2e8f0;
-  border-radius: var(--radius-pill);
-  padding: 4px;
-  margin-bottom: 1.5rem;
-  gap: 4px;
-  overflow-x: auto; 
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
+    /**
+     * Renderiza a tabela completa.
+     */
+    render() {
+        this.container = document.getElementById('summary-table-container');
+        this.badgeElement = document.getElementById('summary-badge');
 
-.sub-nav::-webkit-scrollbar { display: none; }
+        if (!this.container) return;
 
-.sub-nav-btn {
-  flex: 1;
-  background: transparent;
-  border: none;
-  padding: 10px 12px;
-  border-radius: var(--radius-pill);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-  transition: all var(--transition-fast);
-  position: relative;
-}
+        const trees = State.registeredTrees || [];
+        this.updateBadge(trees.length);
 
-.sub-nav-btn.active {
-  background-color: #ffffff;
-  color: var(--color-forest);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  font-weight: 700;
-}
+        // Injeta controles superiores (Filtro + Toggle Colunas)
+        this.renderControls();
 
-.sub-nav-btn .badge {
-  font-size: 0.7em;
-  padding: 2px 6px;
-  margin-left: 4px;
-  vertical-align: top;
-}
+        // Estado Vazio
+        if (trees.length === 0) {
+            this.container.innerHTML = `
+                <div class="text-center" style="padding: 40px; color: #999;">
+                    <p style="font-size: 3rem; margin-bottom: 10px;">🌳</p>
+                    <p>Nenhuma árvore cadastrada.</p>
+                    <p style="font-size: 0.9rem;">Use a aba "Registrar" ou importe um arquivo.</p>
+                </div>
+            `;
+            this.toggleExportButtons(false);
+            return;
+        }
 
-/* --- CONTEÚDO DAS ABAS --- */
-.sub-tab-content {
-  animation: fadeInTab 0.3s ease-out;
-}
+        this.toggleExportButtons(true);
 
-@keyframes fadeInTab {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+        // Ordenação (Decrescente por ID padrão)
+        const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
 
-/* --- CONTROLES DA TABELA (Novo Layout Flex) --- */
-/* Permite que o botão de colunas fique ao lado da busca */
-.table-controls-wrapper {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 1rem;
-  align-items: center;
-}
+        // Monta a tabela com classe 'summary-table' e 'compact-view' se ativo
+        let html = `
+            <div class="table-responsive">
+            <table class="summary-table ${this.isCompactMode ? 'compact-view' : ''}">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th>Espécie/Data</th>
+                        <th class="col-hide-mobile">Coord. UTM</th>
+                        <th class="col-hide-mobile">DAP/Alt</th>
+                        <th>Local</th>
+                        <th class="col-hide-mobile">Avaliador</th>
+                        <th>Risco</th>
+                        <th style="text-align: center;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
 
-.table-filter-container {
-  flex-grow: 1; /* Ocupa o espaço restante */
-  margin-bottom: 0; /* Remove margem antiga */
-}
+        sortedTrees.forEach(tree => {
+            // Badges de Risco
+            let badgeClass = 'badge-low'; 
+            if (tree.riscoClass === 'risk-high' || tree.risco === 'Alto Risco') badgeClass = 'badge-high';
+            else if (tree.riscoClass === 'risk-medium' || tree.risco === 'Médio Risco') badgeClass = 'badge-medium';
 
-.table-filter-container input {
-  width: 100%;
-  padding: 10px 12px 10px 35px; /* Espaço para lupa */
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background-color: #fafafa;
-  /* Ícone de lupa SVG inline mantido */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23718096' viewBox='0 0 24 24'%3E%3Cpath d='M21.71 20.29l-5.01-5.01C17.54 13.68 18 11.91 18 10c0-4.41-3.59-8-8-8S2 5.59 2 10s3.59 8 8 8c1.91 0 3.68-.46 5.28-1.29l5.01 5.01c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41zM10 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: 10px center;
-  background-size: 20px;
-}
+            const photoIcon = tree.hasPhoto ? '📷' : '';
+            // Formata data simples
+            const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
 
-/* Estilo do Botão Toggle Colunas */
-#toggle-cols-btn {
-  background: #fff;
-  border: 1px solid var(--color-border);
-  color: var(--color-tech);
-  border-radius: 12px;
-  padding: 10px 15px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-#toggle-cols-btn:hover { background: #f0f9ff; }
+            html += `
+                <tr id="row-${tree.id}">
+                    <td class="col-id">#${tree.id}</td>
+                    <td>
+                        <div style="font-weight:700; color:#333;">${tree.especie}</div>
+                        <div style="font-size:0.75rem; color:#777;">${dateSimple} ${photoIcon}</div>
+                    </td>
+                    <td class="col-hide-mobile">
+                        <div style="font-size:0.8rem;">E: ${tree.coordX}</div>
+                        <div style="font-size:0.8rem;">N: ${tree.coordY}</div>
+                    </td>
+                    <td class="col-hide-mobile">
+                        <div style="font-size:0.8rem;">DAP: ${tree.dap}</div>
+                        <div style="font-size:0.8rem;">Alt: ${tree.altura}</div>
+                    </td>
+                    <td style="font-size:0.85rem;">${tree.local}</td>
+                    <td class="col-hide-mobile" style="font-size:0.8rem;">${tree.avaliador}</td>
+                    <td><span class="badge ${badgeClass}" style="font-size:0.7rem;">${tree.risco}</span></td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 6px; justify-content: center;">
+                            
+                            <button class="action-btn-icon btn-map" data-id="${tree.id}" title="Ver no Mapa" 
+                                style="background:#e3f2fd; color:#0277BD; border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;">
+                                📍
+                            </button>
+                            
+                            ${tree.hasPhoto ? `
+                            <button class="action-btn-icon btn-photo" data-id="${tree.id}" title="Ver Foto" 
+                                style="background:#e8f5e9; color:#2e7d32; border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;">
+                                📷
+                            </button>` : ''}
 
-/* --- TABELA DE RESUMO (.summary-table) --- */
-/* Separamos da .risk-table para garantir que apareça no mobile */
-#summary-table-container {
-  width: 100%;
-  overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid var(--color-border);
-  margin-bottom: 1rem;
-  background: #fff;
-  box-shadow: var(--shadow-sm);
-}
+                            <button class="action-btn-icon btn-edit" data-id="${tree.id}" title="Editar" 
+                                style="background:#fff3e0; color:#f57c00; border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;">
+                                ✏️
+                            </button>
+                            
+                            <button class="action-btn-icon btn-delete" data-id="${tree.id}" title="Excluir" 
+                                style="background:#ffebee; color:#d32f2f; border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
 
-.summary-table {
-  width: 100%;
-  border-collapse: collapse; /* Essencial para gradiente contínuo */
-  min-width: 100%;
-  font-size: 0.9rem;
-}
+        html += `</tbody></table></div>`;
+        this.container.innerHTML = html;
 
-/* CORREÇÃO DO GRADIENTE: Aplicado no THEAD */
-.summary-table thead {
-  background: var(--gradient-main); /* Gradiente contínuo na barra */
-}
+        this.bindEvents();
+    },
 
-.summary-table th {
-  color: white;
-  padding: 12px 10px;
-  text-align: left;
-  font-weight: 600;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: transparent; /* Transparente para ver o gradiente do thead */
-  white-space: nowrap;
-}
+    /**
+     * Renderiza o input de filtro e botão de toggle se não existirem.
+     * (Mantém os listeners originais do input ao mover no DOM).
+     */
+    renderControls() {
+        const wrapper = document.querySelector('.table-filter-container');
+        if (!wrapper) return;
 
-.summary-table td {
-  padding: 12px 10px;
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text-main);
-  vertical-align: middle;
-}
+        // Se já tem o botão, não faz nada
+        if (document.getElementById('toggle-cols-btn')) return;
 
-/* Zebrado */
-.summary-table tbody tr:nth-child(even) { background-color: #f8fafc; }
-.summary-table tbody tr:hover { background-color: #f1f5f9; }
+        // Transforma o container em Flexbox para acomodar o botão
+        wrapper.className = 'table-controls-wrapper'; // Classe CSS nova
+        
+        // Guarda referência ao input existente (para não perder o listener do features.js)
+        const input = document.getElementById('table-filter-input');
+        
+        // Cria o botão de toggle
+        const btnToggle = document.createElement('button');
+        btnToggle.id = 'toggle-cols-btn';
+        btnToggle.type = 'button';
+        btnToggle.innerHTML = this.isCompactMode ? '➕ Detalhes' : '👁️ Colunas';
+        // No mobile, queremos esconder por padrão? Se sim, inverta a lógica aqui.
+        // Assumindo padrão: Mostra tudo, botão esconde.
+        
+        btnToggle.onclick = () => this.toggleCompactMode(btnToggle);
 
-/* --- LÓGICA DE COLUNAS RESPONSIVAS --- */
-/* Por padrão no mobile, esconde colunas secundárias */
-@media (max-width: 768px) {
-  .col-hide-mobile {
-    display: none;
-  }
-  
-  /* Quando a classe .compact-view é REMOVIDA (ou toggle ativado), mostra tudo */
-  /* Mas como definimos no JS: se compact-view ESTÁ lá, esconde. Se não, mostra. */
-  /* Vamos alinhar com o JS: .summary-table.compact-view ESCONDE coisas */
-  
-  .summary-table.compact-view .col-hide-mobile {
-    display: none;
-  }
-  
-  /* Se a tabela NÃO tiver a classe compact-view, as colunas aparecem (display: table-cell padrão) */
-  .summary-table:not(.compact-view) .col-hide-mobile {
-    display: table-cell;
-  }
-}
+        // Limpa o wrapper e reconstrói
+        wrapper.innerHTML = ''; 
+        
+        // Wrapper do input (para manter estilo de largura total flex)
+        const divInput = document.createElement('div');
+        divInput.className = 'table-filter-container';
+        divInput.appendChild(input); // Move o elemento DOM existente
 
-/* --- TABELA DE CHECKLIST (.risk-table) --- */
-/* Mantida apenas para o Desktop na aba Registrar */
-.risk-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 600px;
-}
+        wrapper.appendChild(divInput);
+        wrapper.appendChild(btnToggle);
+    },
 
-.risk-table th {
-  background: var(--gradient-main); /* Gradiente aqui também */
-  color: white;
-  padding: 12px;
-  text-align: left;
-}
+    /**
+     * Alterna a visualização compacta/expandida.
+     */
+    toggleCompactMode(btn) {
+        this.isCompactMode = !this.isCompactMode;
+        btn.innerHTML = this.isCompactMode ? '➕ Detalhes' : '👁️ Colunas';
+        
+        // Atualiza classe na tabela sem re-renderizar tudo (Performance)
+        const table = this.container.querySelector('table');
+        if (table) {
+            if (this.isCompactMode) table.classList.add('compact-view');
+            else table.classList.remove('compact-view');
+        }
+    },
 
-.risk-table td {
-  padding: 10px;
-  border-bottom: 1px solid var(--color-border);
-}
+    updateBadge(count) {
+        if (this.badgeElement) {
+            this.badgeElement.textContent = count;
+            if (count > 0) this.badgeElement.classList.add('badge-medium');
+            else this.badgeElement.classList.remove('badge-medium');
+        }
+    },
 
-/* Checkbox centralizado */
-.risk-table input[type="checkbox"] {
-  margin: 0 auto;
-  display: block;
-}
+    toggleExportButtons(show) {
+        const ctrls = document.getElementById('import-export-controls');
+        if (!ctrls) return;
+        const exportBtns = ctrls.querySelectorAll('#export-data-btn, #generate-pdf-btn, #send-email-btn, #clear-all-btn');
+        exportBtns.forEach(btn => {
+            btn.style.display = show ? 'inline-flex' : 'none';
+        });
+    },
 
-/* --- BOTÕES DE AÇÃO EM GRUPO --- */
-#import-export-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
+    bindEvents() {
+        // Ver Mapa
+        this.container.querySelectorAll('.btn-map').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                Features.handleZoomToPoint(id);
+            });
+        });
 
-#import-export-controls button {
-  flex: 1 1 auto;
-}
+        // Editar
+        this.container.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                Features.handleEditTree(id);
+            });
+        });
+
+        // Excluir
+        this.container.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                showConfirmModal(
+                    "Excluir Registro?", 
+                    `Deseja apagar a árvore ID ${id}?`, 
+                    () => Features.handleDeleteTree(id)
+                );
+            });
+        });
+
+        // Ver Foto
+        this.container.querySelectorAll('.btn-photo').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                getImageFromDB(id, (blob) => {
+                    if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        openPhotoViewer(url);
+                    }
+                });
+            });
+        });
+    }
+};
