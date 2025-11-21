@@ -1,256 +1,146 @@
-// js/tooltip.ui.js (NOVO v24.0)
-// Gerencia toda a lógica de criação, posicionamento e interação de tooltips.
+/* js/tooltip.ui.js 
+   Gerenciador de Tooltips (Definições e Termos)
+   Refatorado para Mobile-First e UX estável.
+*/
 
-// === 1. IMPORTAÇÕES ===
-import * as state from './state.js';
-import { glossaryTerms, equipmentData, podaPurposeData } from './content.js';
+import { glossaryData } from './data-content.js';
 
-// === 2. ESTADO DO MÓDULO ===
+const TooltipUI = {
+    activeTooltip: null,
+    backdrop: null,
 
-// Helper de template (privado para este módulo)
-const imgTag = (src, alt) => `<img src="img/${src}" alt="${alt}" class="manual-img">`;
+    init() {
+        // 1. Cria o elemento DOM do tooltip se não existir
+        this.createTooltipElement();
+        
+        // 2. Configura listeners globais (Delegation) para abrir tooltips
+        // Isso pega cliques em <span class="checklist-term"> ou qualquer [data-term-key]
+        document.addEventListener('click', (e) => {
+            const termElement = e.target.closest('.checklist-term, [data-term-key]');
+            
+            if (termElement) {
+                e.preventDefault();
+                e.stopPropagation(); // Impede que o clique feche imediatamente
+                const termKey = termElement.getAttribute('data-term-key');
+                this.show(termElement, termKey);
+            } else {
+                // Se clicou fora (no backdrop ou corpo), verifica se deve fechar
+                if (this.activeTooltip && !e.target.closest('.tooltip-card')) {
+                    this.hide();
+                }
+            }
+        });
 
-// Detecção de toque (privado para este módulo)
-const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-const termClickEvent = isTouchDevice ? 'touchend' : 'click';
-const popupCloseEvent = isTouchDevice ? 'touchend' : 'click';
+        // 3. Listener específico para o botão Fechar
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.tooltip-close')) {
+                e.preventDefault();
+                this.hide();
+            }
+        });
+        
+        // 4. Listener para tecla ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.hide();
+        });
 
-// Timer de tooltip
-let tooltipHideTimer = null;
+        // NOTA: Removemos listeners de 'scroll' para evitar fechamento acidental no mobile.
+    },
 
-// === 3. LÓGICA DE TOOLTIP (Privada e Pública) ===
+    createTooltipElement() {
+        // Cria o Card do Tooltip
+        const tooltipDiv = document.createElement('div');
+        tooltipDiv.className = 'tooltip-card';
+        tooltipDiv.id = 'arboria-tooltip';
+        tooltipDiv.innerHTML = `
+            <div class="tooltip-header">
+                <h4 class="tooltip-title">Definição</h4>
+                <button class="tooltip-close" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="tooltip-content" id="tooltip-body"></div>
+            <div class="tooltip-arrow"></div>
+        `;
+        document.body.appendChild(tooltipDiv);
+        this.activeTooltip = tooltipDiv;
 
-/**
- * Cria ou obtém o elemento de tooltip global.
- * @returns {HTMLElement} O elemento do tooltip.
- */
-function createTooltip() {
-  let tooltip = document.getElementById('glossary-tooltip');
-  if (!tooltip) {
-    tooltip = document.createElement('div');
-    tooltip.id = 'glossary-tooltip';
-    document.body.appendChild(tooltip);
-  }
+        // Cria o Backdrop (Fundo escuro para mobile)
+        const backdropDiv = document.createElement('div');
+        backdropDiv.className = 'tooltip-backdrop';
+        document.body.appendChild(backdropDiv);
+        this.backdrop = backdropDiv;
+    },
 
-  // Garante que o listener de fechar (em touch) seja anexado apenas uma vez
-  if (!tooltip.dataset.clickToCloseAdded) {
-    tooltip.addEventListener(popupCloseEvent, (e) => {
-      e.stopPropagation();
-      hideTooltip();
-    });
-    tooltip.dataset.clickToCloseAdded = 'true';
-  }
-  
-  state.setCurrentTooltip(tooltip);
-  return tooltip;
-}
+    show(targetElement, termKey) {
+        const content = glossaryData[termKey];
+        
+        if (!content) {
+            console.warn(`[Tooltip] Termo não encontrado: ${termKey}`);
+            return;
+        }
 
-/**
- * (PÚBLICO) Esconde o tooltip ativo e reseta o estado.
- */
-export function hideTooltip() {
-  if (state.currentTooltip) {
-    const img = state.currentTooltip.querySelector('img');
-    // Limpa blobs de URL para evitar vazamentos de memória
-    if (img && img.src.startsWith('blob:')) {
-      URL.revokeObjectURL(img.src);
+        // Preenche conteúdo
+        const body = this.activeTooltip.querySelector('#tooltip-body');
+        const title = this.activeTooltip.querySelector('.tooltip-title');
+        
+        title.textContent = content.title || 'Definição';
+        body.innerHTML = content.description; // Permite HTML (negrito, imagens)
+
+        // Ativa visualmente
+        this.activeTooltip.classList.add('active');
+        this.backdrop.classList.add('active');
+
+        // Posicionamento Inteligente
+        this.updatePosition(targetElement);
+    },
+
+    hide() {
+        if (this.activeTooltip) {
+            this.activeTooltip.classList.remove('active');
+            this.backdrop.classList.remove('active');
+        }
+    },
+
+    updatePosition(targetElement) {
+        const isMobile = window.innerWidth <= 768;
+
+        if (isMobile) {
+            // No mobile, o CSS resolve com position: fixed e transform translate center.
+            // Removemos estilos inline que poderiam conflitar.
+            this.activeTooltip.style.left = '';
+            this.activeTooltip.style.top = '';
+            return; 
+        }
+
+        // Lógica Desktop (Posicionar próximo ao elemento)
+        const rect = targetElement.getBoundingClientRect();
+        const tooltipRect = this.activeTooltip.getBoundingClientRect();
+        
+        // Centraliza horizontalmente em relação ao termo
+        let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+        
+        // Posiciona acima do termo por padrão
+        let top = rect.top - tooltipRect.height - 10; 
+
+        // Se sair da tela pela esquerda
+        if (left < 10) left = 10;
+        
+        // Se sair da tela pela direita
+        if (left + tooltipRect.width > window.innerWidth) {
+            left = window.innerWidth - tooltipRect.width - 10;
+        }
+
+        // Se não couber em cima, joga para baixo
+        if (top < 10) {
+            top = rect.bottom + 10;
+            this.activeTooltip.classList.add('bottom'); // Opcional: virar a setinha
+        } else {
+            this.activeTooltip.classList.remove('bottom');
+        }
+
+        // Aplica coordenadas (com scroll global considerado)
+        this.activeTooltip.style.left = `${left}px`;
+        this.activeTooltip.style.top = `${top + window.scrollY}px`;
     }
-    state.currentTooltip.style.opacity = '0';
-    state.currentTooltip.style.visibility = 'hidden';
-    state.currentTooltip.style.width = ''; // Reseta a largura
-    delete state.currentTooltip.dataset.currentElement;
-    state.setCurrentTooltip(null);
-  }
-}
+};
 
-/**
- * Agenda o fechamento do tooltip (para mouseleave).
- */
-function scheduleHideTooltip() {
-  clearTimeout(tooltipHideTimer);
-  tooltipHideTimer = setTimeout(hideTooltip, 200);
-}
-
-/**
- * Cancela o fechamento do tooltip (para mouseenter).
- */
-function cancelHideTooltip() {
-  clearTimeout(tooltipHideTimer);
-}
-
-/**
- * Posiciona o tooltip em relação a um elemento.
- * @param {HTMLElement} termElement O elemento (span) que ativou o tooltip.
- */
-function positionTooltip(termElement) {
-  if (!state.currentTooltip) return;
-
-  const rect = termElement.getBoundingClientRect();
-  const scrollY = window.scrollY;
-  const scrollX = window.scrollX;
-
-  // Usa requestAnimationFrame para garantir que o DOM foi atualizado
-  requestAnimationFrame(() => {
-    if (!state.currentTooltip) return;
-
-    const tooltipWidth = state.currentTooltip.offsetWidth;
-    const tooltipHeight = state.currentTooltip.offsetHeight;
-
-    // Tenta posicionar acima, se não houver espaço, posiciona abaixo
-    let topPos = (rect.top > tooltipHeight + 10) 
-      ? (rect.top + scrollY - tooltipHeight - 10) 
-      : (rect.bottom + scrollY + 10);
-
-    // Centraliza horizontalmente
-    let leftPos = rect.left + scrollX + (rect.width / 2) - (tooltipWidth / 2);
-
-    // Evita transbordar a tela
-    if (leftPos < scrollX + 10) leftPos = scrollX + 10;
-    if (leftPos + tooltipWidth > window.innerWidth + scrollX - 10) {
-      leftPos = window.innerWidth + scrollX - tooltipWidth - 10;
-    }
-
-    state.currentTooltip.style.top = `${topPos}px`;
-    state.currentTooltip.style.left = `${leftPos}px`;
-  });
-}
-
-// === 4. INTERAÇÕES DO GLOSSÁRIO (Privado) ===
-
-function showGlossaryTooltip(event) {
-  cancelHideTooltip();
-  const termElement = event.currentTarget;
-  const termKey = termElement.getAttribute('data-term-key');
-  const definition = glossaryTerms[termKey];
-  if (!definition) return;
-
-  const tooltip = createTooltip();
-  tooltip.style.width = '350px'; // Largura padrão para texto
-  tooltip.innerHTML = `<strong>${termElement.textContent}</strong>: ${definition}`;
-  
-  positionTooltip(termElement);
-  tooltip.style.opacity = '1';
-  tooltip.style.visibility = 'visible';
-  tooltip.dataset.currentElement = termElement.textContent;
-}
-
-function toggleGlossaryTooltip(event) {
-  event.preventDefault(); event.stopPropagation();
-  const tooltip = document.getElementById('glossary-tooltip');
-  const isCurrent = tooltip && tooltip.dataset.currentElement === event.currentTarget.textContent;
-
-  if (tooltip && tooltip.style.visibility === 'visible' && isCurrent) {
-    hideTooltip();
-  } else {
-    showGlossaryTooltip(event);
-  }
-}
-
-// === 5. INTERAÇÕES DE EQUIPAMENTOS (Privado) ===
-
-function showEquipmentTooltip(event) {
-  cancelHideTooltip();
-  const termElement = event.currentTarget;
-  const termKey = termElement.getAttribute('data-term-key');
-  const data = equipmentData[termKey];
-  if (!data) return;
-
-  const tooltip = createTooltip();
-  tooltip.style.width = '350px';
-  tooltip.innerHTML = `<strong>${termElement.textContent}</strong><p>${data.desc}</p>${imgTag(data.img, termElement.textContent)}`;
-  
-  positionTooltip(termElement);
-  tooltip.style.opacity = '1';
-  tooltip.style.visibility = 'visible';
-  tooltip.dataset.currentElement = termElement.textContent;
-}
-
-function toggleEquipmentTooltip(event) {
-  event.preventDefault(); event.stopPropagation();
-  const tooltip = document.getElementById('glossary-tooltip');
-  const isCurrent = tooltip && tooltip.dataset.currentElement === event.currentTarget.textContent;
-
-  if (tooltip && tooltip.style.visibility === 'visible' && isCurrent) {
-    hideTooltip();
-  } else {
-    showEquipmentTooltip(event);
-  }
-}
-
-// === 6. INTERAÇÕES DE PROPÓSITO (Privado) ===
-
-function showPurposeTooltip(event) {
-  cancelHideTooltip();
-  const termElement = event.currentTarget;
-  const termKey = termElement.getAttribute('data-term-key');
-  const data = podaPurposeData[termKey];
-  if (!data) return;
-
-  const tooltip = createTooltip();
-  tooltip.style.width = '350px';
-  tooltip.innerHTML = `<strong>${termElement.textContent}</strong><p>${data.desc}</p>${imgTag(data.img, termElement.textContent)}`;
-  
-  positionTooltip(termElement);
-  tooltip.style.opacity = '1';
-  tooltip.style.visibility = 'visible';
-  tooltip.dataset.currentElement = termElement.textContent;
-}
-
-function togglePurposeTooltip(event) {
-  event.preventDefault(); event.stopPropagation();
-  const tooltip = document.getElementById('glossary-tooltip');
-  const isCurrent = tooltip && tooltip.dataset.currentElement === event.currentTarget.textContent;
-
-  if (tooltip && tooltip.style.visibility === 'visible' && isCurrent) {
-    hideTooltip();
-  } else {
-    showPurposeTooltip(event);
-  }
-}
-
-// === 7. FUNÇÕES DE SETUP (Público) ===
-
-/**
- * Anexa listeners de tooltip aos termos do glossário.
- * @param {HTMLElement} detailView O elemento pai (view) onde o conteúdo foi carregado.
- */
-export function setupGlossaryInteractions(detailView) {
-  const glossaryTermsElements = detailView.querySelectorAll('.glossary-term');
-  glossaryTermsElements.forEach((termElement) => {
-    if (!isTouchDevice) {
-      termElement.addEventListener('mouseenter', showGlossaryTooltip);
-      termElement.addEventListener('mouseleave', scheduleHideTooltip);
-    }
-    termElement.addEventListener(termClickEvent, toggleGlossaryTooltip);
-  });
-}
-
-/**
- * Anexa listeners de tooltip aos termos de equipamento.
- * @param {HTMLElement} detailView O elemento pai (view).
- */
-export function setupEquipmentInteractions(detailView) {
-  const equipmentTermsElements = detailView.querySelectorAll('.equipment-term');
-  equipmentTermsElements.forEach((termElement) => {
-    if (!isTouchDevice) {
-      termElement.addEventListener('mouseenter', showEquipmentTooltip);
-      termElement.addEventListener('mouseleave', scheduleHideTooltip);
-    }
-    termElement.addEventListener(termClickEvent, toggleEquipmentTooltip);
-  });
-}
-
-/**
- * Anexa listeners de tooltip aos termos de propósito de poda.
- * @param {HTMLElement} detailView O elemento pai (view).
- */
-export function setupPurposeInteractions(detailView) {
-  const purposeTermsElements = detailView.querySelectorAll('.purpose-term');
-  purposeTermsElements.forEach((termElement) => {
-    if (!isTouchDevice) {
-      termElement.addEventListener('mouseenter', showPurposeTooltip);
-      termElement.addEventListener('mouseleave', scheduleHideTooltip);
-    }
-    termElement.addEventListener(termClickEvent, togglePurposeTooltip);
-  });
-}
+export default TooltipUI;
