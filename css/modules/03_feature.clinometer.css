@@ -1,176 +1,206 @@
-/* css/modules/03_feature.clinometer.css (v6.0 - Fix DAP HUD) */
+/**
+ * ARBORIA 2.0 - CLINOMETER & CAMERA HUD
+ * UI Imersiva para Ferramentas de Medição (Altura e DAP)
+ * Estilo: Dark Glassmorphism (HUD)
+ */
 
-/* Container Principal das Ferramentas (Altura e DAP) */
-#clinometro-view, #dap-estimator-view {
-    width: 100%;
-    height: 85vh; /* Altura fixa para ocupar a tela */
-    position: relative; /* Vital para os filhos absolutos */
-    background-color: #000;
-    border-radius: var(--border-radius-lg);
-    overflow: hidden;
-    display: none; 
-    margin-top: 10px;
-    padding: 0;
+/* --- CONTAINER TELA CHEIA (Fullscreen App) --- */
+/* Garante que a câmera ocupe 100% da tela, sobrepondo o menu */
+#clinometer-view,
+#dap-estimator-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000; /* Fundo preto enquando carrega a câmera */
+  z-index: 2000; /* Acima de tudo (Header, Menu, Map) */
+  
+  /* Layout Flex Vertical */
+  display: flex;
+  flex-direction: column;
+  
+  /* Inicialmente oculto (JS controla display: flex) */
+  display: none;
 }
 
-/* Container Interno (Câmera + HUD) */
-#camera-container, #dap-camera-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+/* Containers de Vídeo */
+#camera-container,
+#dap-camera-container {
+  position: relative;
+  flex: 1; /* Ocupa todo o espaço disponível */
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Vídeo */
-#camera-feed, #dap-camera-feed {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 1;
+/* Elemento de Vídeo (Feed da Câmera) */
+#camera-feed,
+#dap-camera-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Garante que preenche sem distorcer */
+  display: block;
 }
 
-/* MIRA (Crosshair) */
+/* --- MIRA CENTRAL (Crosshair) --- */
 .crosshair {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-    width: 50px;
-    height: 50px;
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    border-radius: 50%;
-    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.5); /* Escurece em volta */
-    pointer-events: none;
-}
-.crosshair::before, .crosshair::after {
-    content: ''; position: absolute; background: #FFEB3B;
-}
-.crosshair::before { top: 50%; left: -10px; width: 70px; height: 2px; transform: translateY(-50%); }
-.crosshair::after { left: 50%; top: -10px; width: 2px; height: 70px; transform: translateX(-50%); }
-
-/* HUD (Interface) */
-.hud-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 20;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 15px;
-    pointer-events: none; /* Deixa passar cliques para áreas vazias */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  
+  /* Desenho da Mira */
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%; /* Círculo */
+  box-shadow: 0 0 10px rgba(0,0,0,0.5); /* Sombra para contraste no sol */
+  pointer-events: none; /* Permite clicar através dela */
+  z-index: 10;
 }
 
-/* Topo */
+/* Linha horizontal da mira (opcional, estilo sniper) */
+.crosshair::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -10px;
+  right: -10px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.6);
+  transform: translateY(-50%);
+}
+
+/* --- HUD TOP (Barra Superior: Ângulo e Sair) --- */
 .hud-top {
-    display: flex;
-    justify-content: space-between;
-    pointer-events: auto;
-    width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 15px 20px;
+  
+  /* Gradiente escuro para leitura do texto branco */
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
 }
 
-#clinometer-angle, #dap-current-angle {
-    font-size: 1.5rem;
-    font-family: monospace;
-    color: #FFEB3B;
-    font-weight: bold;
-    background: rgba(0,0,0,0.6);
-    padding: 5px 10px;
-    border-radius: 6px;
+/* Leitura do Ângulo em Tempo Real */
+#clinometer-angle,
+#dap-current-angle {
+  font-family: monospace; /* Fonte técnica */
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #00e676; /* Verde Neon estilo Radar */
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
 
-.hud-close-btn {
-    background: #D32F2F;
-    color: white;
-    border: 1px solid white;
-    padding: 5px 15px;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
+/* --- HUD CONTROLS (Painel Inferior) --- */
+.hud-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 15px;
+  right: 15px;
+  
+  /* Efeito de Vidro Escuro (Dark Glass) */
+  background: rgba(15, 23, 42, 0.85); /* Azul escuro quase preto */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  
+  border-radius: 24px; /* Bem arredondado */
+  padding: 20px;
+  color: white;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  
+  /* Transição suave se mudar de tamanho */
+  transition: all 0.3s ease;
 }
 
-/* Área de Controles (Rodapé) */
-.hud-controls {
-    pointer-events: auto;
-    background: rgba(0, 0, 0, 0.85);
-    padding: 20px;
-    border-radius: 12px;
-    border-top: 3px solid var(--color-primary-medium);
-    color: white;
-    text-align: center;
-    width: 100%;
-    max-width: 500px;
-    align-self: center; /* Centraliza horizontalmente */
+/* --- STEPS (Passos da Medição) --- */
+.hud-step {
+  display: none; /* Ocultos por padrão */
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  animation: fadeInHud 0.3s ease-out;
 }
 
-.hud-step { display: none; }
-.hud-step.active { display: block; animation: slideUp 0.3s ease; }
-
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+.hud-step.active {
+  display: flex; /* Apenas o passo ativo aparece */
 }
 
-.hud-step p, .hud-step label {
-    font-size: 1.1rem;
-    margin-bottom: 10px;
-    color: #eee;
-}
-.hud-step strong { color: #FFEB3B; font-size: 1.2rem; }
-.instruction-text { font-size: 0.9rem !important; color: #ccc !important; margin-bottom: 15px; }
-
-/* Inputs e Botões */
-#clino-distance, #dap-distance-input {
-    font-size: 1.3rem;
-    padding: 8px;
-    width: 80px;
-    text-align: center;
-    border-radius: 6px;
-    border: none;
-    margin-right: 10px;
+@keyframes fadeInHud {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.hud-action-btn {
-    background-color: var(--color-primary-medium);
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
+/* Tipografia do HUD */
+.hud-step p {
+  font-size: 1rem;
+  margin: 0;
+  color: #cbd5e1; /* Cinza claro */
 }
 
-.hud-capture-btn {
-    width: 100%;
-    padding: 15px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    background-color: rgba(255,255,255,0.2);
-    border: 2px solid white;
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
+.hud-step strong {
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
 }
-.hud-capture-btn:active { background-color: white; color: black; }
 
-/* Resultado */
-#tree-height-result, #dap-estimated-result {
-    font-size: 3rem;
-    color: #69F0AE;
-    margin: 10px 0;
-    font-weight: 800;
-    text-shadow: 0 2px 5px black;
+.hud-step label {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* Input de Distância no HUD */
+.hud-step input[type="number"] {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  text-align: center;
+  font-size: 1.5rem;
+  padding: 10px;
+  border-radius: 12px;
+  width: 120px;
+}
+
+.hud-step input[type="number"]:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2);
+}
+
+/* --- RESULTADO FINAL (Display Grande) --- */
+#tree-height-result,
+#dap-estimated-result {
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  margin: 10px 0;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.result-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.result-actions button {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+/* Botão "Salvar" específico do HUD */
+.hud-action-btn.save {
+  background: #00e676; /* Verde Neon */
+  color: #003300; /* Texto escuro para contraste */
 }
