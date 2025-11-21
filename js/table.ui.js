@@ -1,185 +1,219 @@
 /**
- * ARBORIA 2.0 - TABLE UI (Refatorado)
- * Renderiza a tabela de resumo e gerencia ações de linha.
+ * ARBORIA 2.0 - CALCULATOR & SUMMARY TABLE
+ * Layout: Abas de Navegação, Formulários e Tabelas de Dados
  */
 
-import * as State from './state.js';
-import * as Features from './features.js';
-import { showConfirmModal, openPhotoViewer } from './modal.ui.js';
-import { getImageFromDB } from './database.js';
+/* --- HEADER DA CALCULADORA --- */
+#calculadora-view h3 {
+  color: var(--color-forest);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-export const TableUI = {
-    container: null,
-    badgeElement: null,
+#calculadora-view > p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
 
-    /**
-     * Renderiza a tabela completa com base no estado atual.
-     */
-    render() {
-        this.container = document.getElementById('summary-table-container');
-        this.badgeElement = document.getElementById('summary-badge');
+/* --- SUB-NAVEGAÇÃO (Abas) --- */
+/* Mantido original */
+.sub-nav {
+  display: flex;
+  background-color: #e2e8f0;
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  gap: 4px;
+  overflow-x: auto; 
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
 
-        if (!this.container) return;
+.sub-nav::-webkit-scrollbar { display: none; }
 
-        const trees = State.registeredTrees || [];
-        this.updateBadge(trees.length);
+.sub-nav-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  position: relative;
+}
 
-        // Estado Vazio
-        if (trees.length === 0) {
-            this.container.innerHTML = `
-                <div class="text-center" style="padding: 40px; color: #999;">
-                    <p style="font-size: 3rem; margin-bottom: 10px;">🌳</p>
-                    <p>Nenhuma árvore cadastrada.</p>
-                    <p style="font-size: 0.9rem;">Use a aba "Registrar" ou importe um arquivo.</p>
-                </div>
-            `;
-            
-            // Esconde botões de exportação se vazio
-            this.toggleExportButtons(false);
-            return;
-        }
+.sub-nav-btn.active {
+  background-color: #ffffff;
+  color: var(--color-forest);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-weight: 700;
+}
 
-        // Mostra botões de exportação
-        this.toggleExportButtons(true);
+.sub-nav-btn .badge {
+  font-size: 0.7em;
+  padding: 2px 6px;
+  margin-left: 4px;
+  vertical-align: top;
+}
 
-        // Ordenação (Decrescente por ID padrão)
-        const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
+/* --- CONTEÚDO DAS ABAS --- */
+.sub-tab-content {
+  animation: fadeInTab 0.3s ease-out;
+}
 
-        let html = `
-            <table class="risk-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Espécie</th>
-                        <th>Local</th>
-                        <th>Risco</th>
-                        <th style="text-align: center;">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+@keyframes fadeInTab {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-        sortedTrees.forEach(tree => {
-            // Badges de Risco
-            let badgeClass = 'badge-low'; 
-            // Mapeamento de classes CSS novas
-            if (tree.riscoClass === 'risk-high' || tree.risco === 'Alto Risco') badgeClass = 'badge-high';
-            else if (tree.riscoClass === 'risk-medium' || tree.risco === 'Médio Risco') badgeClass = 'badge-medium';
+/* --- CONTROLES DA TABELA (Novo Layout Flex) --- */
+/* Permite que o botão de colunas fique ao lado da busca */
+.table-controls-wrapper {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 1rem;
+  align-items: center;
+}
 
-            const photoIcon = tree.hasPhoto ? '📷' : '';
+.table-filter-container {
+  flex-grow: 1; /* Ocupa o espaço restante */
+  margin-bottom: 0; /* Remove margem antiga */
+}
 
-            html += `
-                <tr id="row-${tree.id}">
-                    <td><strong>${tree.id}</strong></td>
-                    <td>
-                        <div style="font-weight:600; color:#333;">${tree.especie}</div>
-                        <div style="font-size:0.8rem; color:#777;">${tree.data} ${photoIcon}</div>
-                    </td>
-                    <td style="font-size:0.9rem;">${tree.local}</td>
-                    <td><span class="badge ${badgeClass}">${tree.risco}</span></td>
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 8px; justify-content: center;">
-                            
-                            <button class="action-btn-icon btn-map" data-id="${tree.id}" title="Ver no Mapa" 
-                                style="background:#e3f2fd; color:#0277BD; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;">
-                                📍
-                            </button>
-                            
-                            ${tree.hasPhoto ? `
-                            <button class="action-btn-icon btn-photo" data-id="${tree.id}" title="Ver Foto" 
-                                style="background:#e8f5e9; color:#2e7d32; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;">
-                                📷
-                            </button>` : ''}
+.table-filter-container input {
+  width: 100%;
+  padding: 10px 12px 10px 35px; /* Espaço para lupa */
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background-color: #fafafa;
+  /* Ícone de lupa SVG inline mantido */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23718096' viewBox='0 0 24 24'%3E%3Cpath d='M21.71 20.29l-5.01-5.01C17.54 13.68 18 11.91 18 10c0-4.41-3.59-8-8-8S2 5.59 2 10s3.59 8 8 8c1.91 0 3.68-.46 5.28-1.29l5.01 5.01c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41zM10 16c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  background-size: 20px;
+}
 
-                            <button class="action-btn-icon btn-edit" data-id="${tree.id}" title="Editar" 
-                                style="background:#fff3e0; color:#f57c00; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;">
-                                ✏️
-                            </button>
-                            
-                            <button class="action-btn-icon btn-delete" data-id="${tree.id}" title="Excluir" 
-                                style="background:#ffebee; color:#d32f2f; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;">
-                                🗑️
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
+/* Estilo do Botão Toggle Colunas */
+#toggle-cols-btn {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  color: var(--color-tech);
+  border-radius: 12px;
+  padding: 10px 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#toggle-cols-btn:hover { background: #f0f9ff; }
 
-        html += `</tbody></table>`;
-        this.container.innerHTML = html;
+/* --- TABELA DE RESUMO (.summary-table) --- */
+/* Separamos da .risk-table para garantir que apareça no mobile */
+#summary-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
 
-        this.bindEvents();
-    },
+.summary-table {
+  width: 100%;
+  border-collapse: collapse; /* Essencial para gradiente contínuo */
+  min-width: 100%;
+  font-size: 0.9rem;
+}
 
-    /**
-     * Atualiza o badge de contagem na aba.
-     */
-    updateBadge(count) {
-        if (this.badgeElement) {
-            this.badgeElement.textContent = count;
-            if (count > 0) this.badgeElement.classList.add('badge-medium');
-            else this.badgeElement.classList.remove('badge-medium');
-        }
-    },
+/* CORREÇÃO DO GRADIENTE: Aplicado no THEAD */
+.summary-table thead {
+  background: var(--gradient-main); /* Gradiente contínuo na barra */
+}
 
-    /**
-     * Controla visibilidade dos botões de exportação
-     */
-    toggleExportButtons(show) {
-        const ctrls = document.getElementById('import-export-controls');
-        if (!ctrls) return;
-        
-        // Mantemos Importar visível, escondemos Exportar/Limpar se vazio
-        const exportBtns = ctrls.querySelectorAll('#export-data-btn, #generate-pdf-btn, #send-email-btn, #clear-all-btn');
-        exportBtns.forEach(btn => {
-            btn.style.display = show ? 'inline-flex' : 'none';
-        });
-    },
+.summary-table th {
+  color: white;
+  padding: 12px 10px;
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: transparent; /* Transparente para ver o gradiente do thead */
+  white-space: nowrap;
+}
 
-    /**
-     * Anexa listeners aos botões gerados dinamicamente.
-     */
-    bindEvents() {
-        // Ver Mapa
-        this.container.querySelectorAll('.btn-map').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.dataset.id);
-                Features.handleZoomToPoint(id);
-            });
-        });
+.summary-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-main);
+  vertical-align: middle;
+}
 
-        // Editar
-        this.container.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.dataset.id);
-                Features.handleEditTree(id);
-            });
-        });
+/* Zebrado */
+.summary-table tbody tr:nth-child(even) { background-color: #f8fafc; }
+.summary-table tbody tr:hover { background-color: #f1f5f9; }
 
-        // Excluir
-        this.container.querySelectorAll('.btn-delete').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.dataset.id);
-                showConfirmModal(
-                    "Excluir Registro?", 
-                    `Deseja apagar a árvore ID ${id}?`, 
-                    () => Features.handleDeleteTree(id)
-                );
-            });
-        });
+/* --- LÓGICA DE COLUNAS RESPONSIVAS --- */
+/* Por padrão no mobile, esconde colunas secundárias */
+@media (max-width: 768px) {
+  .col-hide-mobile {
+    display: none;
+  }
+  
+  /* Quando a classe .compact-view é REMOVIDA (ou toggle ativado), mostra tudo */
+  /* Mas como definimos no JS: se compact-view ESTÁ lá, esconde. Se não, mostra. */
+  /* Vamos alinhar com o JS: .summary-table.compact-view ESCONDE coisas */
+  
+  .summary-table.compact-view .col-hide-mobile {
+    display: none;
+  }
+  
+  /* Se a tabela NÃO tiver a classe compact-view, as colunas aparecem (display: table-cell padrão) */
+  .summary-table:not(.compact-view) .col-hide-mobile {
+    display: table-cell;
+  }
+}
 
-        // Ver Foto
-        this.container.querySelectorAll('.btn-photo').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.dataset.id);
-                getImageFromDB(id, (blob) => {
-                    if (blob) {
-                        const url = URL.createObjectURL(blob);
-                        openPhotoViewer(url);
-                    }
-                });
-            });
-        });
-    }
-};
+/* --- TABELA DE CHECKLIST (.risk-table) --- */
+/* Mantida apenas para o Desktop na aba Registrar */
+.risk-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.risk-table th {
+  background: var(--gradient-main); /* Gradiente aqui também */
+  color: white;
+  padding: 12px;
+  text-align: left;
+}
+
+.risk-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Checkbox centralizado */
+.risk-table input[type="checkbox"] {
+  margin: 0 auto;
+  display: block;
+}
+
+/* --- BOTÕES DE AÇÃO EM GRUPO --- */
+#import-export-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#import-export-controls button {
+  flex: 1 1 auto;
+}
