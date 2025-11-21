@@ -1,71 +1,338 @@
-/* css/modules/02_feature.manual_content.css */
+/* 02_feature.manual_content.css 
+   Estilização do Conteúdo Interno do Manual (HTML Injetado)
+   Design System: ArborIA (Modern, Clean, Rounded)
+*/
 
-/* -------------------------------------- */
-/* 5. ESTILOS DE CONTEÚDO (CARD PRINCIPAL) */
-/* -------------------------------------- */
-
-.conteudo-detalhe,
-.app-view {
-  background-color: var(--bg-surface);
-  border: none;
-  border-radius: var(--border-radius-lg);
-  padding: var(--space-lg);
-  margin-bottom: var(--space-lg);
-  box-shadow: var(--shadow-md);
+/* --- CONTAINER GERAL --- */
+#detalhe-view {
+    background: #ffffff;
+    padding: 10px;
+    /* O container pai já tem padding e bordas, aqui cuidamos do fluxo do texto */
+    line-height: 1.7; /* Leitura confortável */
+    color: #37474f;   /* Cinza escuro (não preto puro) para conforto visual */
+    font-size: 1rem;
+    animation: fadeIn 0.4s ease-out;
 }
 
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- TÍTULOS E HIERARQUIA --- */
 #detalhe-view h3 {
-  color: var(--color-primary-dark);
-  margin-bottom: var(--space-md);
-  border-bottom: 3px solid var(--color-accent);
-  padding-bottom: var(--space-sm);
-  font-size: 1.4rem;
+    color: #00796b; /* Verde Principal */
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    
+    /* Identidade: Linha decorativa abaixo do título */
+    border-bottom: 2px solid rgba(0, 121, 107, 0.1);
+    position: relative;
 }
 
+/* Detalhe visual no H3 (pequena barra degradê) */
+#detalhe-view h3::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(to right, #00796b, #0277BD);
+}
+
+#detalhe-view h4 {
+    color: #0277BD; /* Azul Tech */
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Adiciona um bullet visual antes do H4 */
+#detalhe-view h4::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    background: #0277BD;
+    border-radius: 50%;
+}
+
+/* --- PARÁGRAFOS E TEXTOS --- */
 #detalhe-view p {
-  margin-bottom: var(--space-md);
-  font-size: 1em;
+    margin-bottom: 1rem;
+    text-align: justify; /* Aparência de livro */
 }
 
-#detalhe-view ul,
-#detalhe-view ol {
-  padding-left: 25px;
-  margin-bottom: var(--space-md);
+/* Destaques no texto (negrito) */
+#detalhe-view strong {
+    color: #004d40;
+    font-weight: 700;
 }
 
-#detalhe-view li {
-  margin-bottom: var(--space-sm);
-  font-size: 1em;
-}
-
+/* --- IMAGENS DO MANUAL --- */
 .manual-img {
-  max-width: 100%;
-  height: auto;
-  border-radius: var(--border-radius-md);
-  margin: var(--space-md) 0;
-  box-shadow: var(--shadow-sm);
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    
+    /* Design System: Arredondado e Sombra */
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+    
+    margin: 1.5rem 0;
+    transition: transform 0.3s ease;
+    display: block;
 }
 
-/* Estilos da Tabela de Glossário */
+.manual-img:hover {
+    transform: scale(1.01); /* Leve zoom interativo */
+}
+
+/* --- LISTAS (UL / OL) --- */
+#detalhe-view ul, 
+#detalhe-view ol {
+    padding-left: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Itens de lista padrão */
+#detalhe-view li {
+    margin-bottom: 0.8rem;
+    padding-left: 0.5rem;
+    position: relative;
+    list-style-type: none; /* Remove bolinha padrão feia */
+}
+
+/* Bolinha personalizada (Check ou Dot) */
+#detalhe-view ul li::before {
+    content: '•';
+    color: #00796b;
+    font-weight: bold;
+    font-size: 1.2em;
+    position: absolute;
+    left: -1em;
+    top: -2px;
+}
+
+/* --- LISTAS ESPECIAIS (Equipamentos e Finalidades) --- 
+   Transforma listas em GRIDS DE CARDS modernos
+*/
+.equipment-list, 
+.purpose-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsivo automático */
+    gap: 12px;
+    padding: 0 !important;
+}
+
+.equipment-list li, 
+.purpose-list li {
+    background: #f8f9fa;
+    border: 1px solid #eceff1;
+    border-radius: 12px;
+    padding: 15px;
+    margin: 0 !important; /* Remove margem da lista padrão */
+    
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.equipment-list li:hover, 
+.purpose-list li:hover {
+    background: #e0f2f1; /* Fundo verde claro ao passar mouse */
+    border-color: #00796b;
+    transform: translateY(-2px);
+}
+
+/* Remove o bullet points das listas especiais */
+.equipment-list li::before, 
+.purpose-list li::before {
+    content: none !important;
+}
+
+/* Termos clicáveis dentro das listas especiais */
+.equipment-term, .purpose-term {
+    font-weight: 600;
+    color: #0277BD;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* --- TABELAS (GLOSSÁRIO) --- */
 .glossary-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: var(--space-md);
-  font-size: 0.9em;
+    width: 100%;
+    border-collapse: separate; /* Necessário para border-radius */
+    border-spacing: 0;
+    margin-top: 1rem;
+    border-radius: 16px;
+    overflow: hidden; /* Corta as pontas quadradas */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid #eceff1;
 }
-.glossary-table th, .glossary-table td {
-  border: 1px solid var(--gray-300);
-  padding: var(--space-sm) var(--space-md);
-  text-align: left;
-  vertical-align: middle;
+
+.glossary-table thead {
+    background: linear-gradient(to right, #00796b, #004d40);
+    color: white;
 }
+
 .glossary-table th {
-  background-color: var(--gray-100);
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
 }
+
+.glossary-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eceff1;
+    font-size: 0.95rem;
+    vertical-align: top;
+}
+
+/* Linhas zebradas */
+.glossary-table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+/* Título de Categoria na Tabela (colspan) */
 .glossary-category-header {
-  background-color: var(--color-primary-medium);
-  color: #fff;
-  font-weight: bold;
-  font-size: 1.1em;
-  text-align: center !important;
+    background-color: #e1f5fe !important; /* Azul muito claro */
+    color: #01579b;
+    font-weight: 700;
+    text-align: center !important;
+    padding: 10px !important;
+    font-size: 0.9rem;
+    border-bottom: 2px solid #b3e5fc !important;
+}
+
+/* Hover na linha da tabela */
+.glossary-table tbody tr:hover td {
+    background-color: #f1f8e9;
+    color: #004d40;
+}
+
+/* --- TERMOS INTERATIVOS (Links no texto) --- */
+.glossary-term {
+    color: #0277BD;
+    border-bottom: 1px dashed rgba(2, 119, 189, 0.4);
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0 2px;
+    border-radius: 4px;
+}
+
+.glossary-term:hover {
+    background-color: #e1f5fe;
+    color: #01579b;
+    border-bottom-style: solid;
+    text-decoration: none;
+}
+
+/* --- CARD "SOBRE O AUTOR" --- */
+#sobre-o-autor {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+}
+
+.autor-container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    border: 1px solid #eceff1;
+    padding: 2rem;
+    max-width: 600px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Faixa decorativa no topo do card do autor */
+.autor-container::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(to right, #0277BD, #00796b);
+}
+
+.autor-texto p {
+    color: #546E7A;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.autor-links {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eceff1;
+    font-size: 0.9rem;
+}
+
+.autor-links a {
+    color: #0277BD;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.autor-links a:hover {
+    background: #e1f5fe;
+}
+
+/* --- ALERTAS / PROIBIÇÕES (Caixas de Destaque) --- */
+/* Detecta parágrafos que começam com emoji de alerta ou texto forte */
+p:has(strong:first-child) {
+   /* Suporte moderno a CSS :has, ou aplicamos classes manuais se preferir. 
+      Como o conteúdo é injetado, vamos estilizar genericamente */
+}
+
+/* Estilo para blocos de Proibição/Atenção encontrados no texto */
+#detalhe-view p:contains("⚠️"), 
+#detalhe-view p:contains("⛔") {
+    background: #fff8e1; /* Amarelo claro */
+    border-left: 4px solid #ffc107;
+    padding: 15px;
+    border-radius: 0 8px 8px 0;
+    color: #5d4037;
+}
+
+/* Ajuste Mobile */
+@media (max-width: 768px) {
+    #detalhe-view {
+        padding: 0; /* Ganha espaço no mobile */
+    }
+    
+    #detalhe-view h3 {
+        font-size: 1.2rem;
+        margin-top: 1.5rem;
+    }
+    
+    .equipment-list, 
+    .purpose-list {
+        grid-template-columns: 1fr; /* Uma coluna no mobile */
+    }
+    
+    .manual-img {
+        border-radius: 12px;
+        margin: 1rem 0;
+    }
 }
