@@ -1,37 +1,48 @@
-/* js/main.js (vFinal) - Controller Principal */
+/* js/main.js (vFinal Corrigido)
+   Importa e inicia TODOS os módulos.
+*/
 
 import UI from './ui.js';
 import TooltipUI from './tooltip.ui.js';
 import MapUI from './map.ui.js';
-import { manualContent, glossaryData } from './data-content.js'; // Importando dados
+import CalculatorUI from './calculator.form.ui.js'; // <--- IMPORTANTE
 import State from './state.js';
+import Features from './features.js';
+import Clinometer from './clinometer.js';
+import DapEstimator from './dap.estimator.js';
 
-// Inicialização Principal
+import { manualContent } from './data-content.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('[ArborIA] Inicializando Sistema...');
+    console.log('[ArborIA] Booting...');
 
-    // 1. Inicializa UI e Componentes
+    // 1. Iniciar Estado e Hardware
+    State.init();
+    Features.init();
+    
+    // 2. Iniciar Componentes de UI
     UI.init();
+    TooltipUI.init();
     
-    // CRÍTICO: Passar os dados para o TooltipUI ou garantir que ele leia do módulo correto
-    // Aqui apenas iniciamos os listeners
-    TooltipUI.init(); 
-    
-    // 2. Renderiza conteúdo inicial (opcional ou vazio)
-    // Não carregamos nada por padrão para deixar o menu limpo, 
-    // ou carregamos 'conceitos-basicos' mas sem esconder o menu no desktop.
+    // 3. Iniciar Mapa (Prepara container, mas só renderiza quando visível)
+    MapUI.init();
 
-    // 3. Configura Navegação (Botões do Painel)
+    // 4. Iniciar Calculadora (Liga os listeners das abas e form)
+    CalculatorUI.init(); // <--- ISSO ESTAVA FALTANDO ANTES!
+    
+    // 5. Iniciar Componentes de Câmera (Listeners)
+    Clinometer.init();
+    DapEstimator.init();
+
+    // 6. Configurar Navegação Principal
     setupNavigation();
 
-    // 4. Configura Service Worker (PWA)
+    // 7. PWA
     if ('serviceWorker' in navigator) {
         try {
-            const reg = await navigator.serviceWorker.register('./service-worker.js');
-            console.log('[SW] Registrado:', reg.scope);
-        } catch (err) {
-            console.error('[SW] Falha:', err);
-        }
+            await navigator.serviceWorker.register('./service-worker.js');
+            console.log('[SW] OK');
+        } catch (e) { console.error('[SW] Fail', e); }
     }
 });
 
@@ -41,70 +52,55 @@ function setupNavigation() {
     const contentSection = document.getElementById('manual-view');
     const detailView = document.getElementById('detalhe-view');
 
-    // Cria o botão "Voltar" dinamicamente se não existir
+    // Botão Voltar
     let backBtn = document.getElementById('btn-voltar-painel');
     if (!backBtn) {
         backBtn = document.createElement('button');
         backBtn.id = 'btn-voltar-painel';
         backBtn.innerHTML = '⬅ Voltar ao Painel';
-        // Insere ANTES do conteúdo do manual
         contentSection.insertBefore(backBtn, detailView);
     }
 
-    // Ação do Botão Voltar
     backBtn.addEventListener('click', () => {
-        // Esconde conteúdo, Mostra painel
-        contentSection.style.display = 'none'; // Ou classe .hidden
-        
-        // Limpa Views Especiais (Calculadora, Câmeras)
+        contentSection.style.display = 'none';
         document.querySelectorAll('.app-view').forEach(el => el.style.display = 'none');
         
-        navContainer.style.display = 'block'; // Reexibe painel
+        navContainer.style.display = 'block';
         navContainer.classList.remove('hidden');
-        
-        // Reseta estado ativo dos botões
-        buttons.forEach(btn => btn.classList.remove('active'));
-        
-        // Scroll para o topo suavemente
+        buttons.forEach(b => b.classList.remove('active'));
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    // Ação dos Botões de Tópico
     buttons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', () => {
             const targetId = btn.dataset.target;
             const isMobile = window.innerWidth <= 768;
 
-            // 1. UI Feedback
             buttons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            // 2. Roteamento de Conteúdo
+            // Roteamento
             if (manualContent[targetId]) {
-                // É um conteúdo de texto (HTML)
+                // Texto do Manual
                 UI.renderSection(targetId);
                 hideSpecialViews();
                 contentSection.style.display = 'block';
             } else {
-                // É uma Funcionalidade (Calculadora, Câmera)
+                // Funcionalidade (Calculadora, Câmera)
                 handleSpecialView(targetId);
             }
 
-            // 3. Lógica Mobile "Single View"
+            // UI Mobile
             if (isMobile) {
-                navContainer.classList.add('hidden'); // Esconde Painel
-                
-                // Mostra o botão voltar apenas se não for Câmera (Câmeras tem seu próprio botão de sair)
+                navContainer.classList.add('hidden');
+                // Botão voltar aparece para tudo, MENOS para câmeras fullscreen
                 if (!targetId.includes('view') || targetId === 'calculadora-risco') {
-                     backBtn.classList.add('visible');
                      backBtn.style.display = 'flex';
                 } else {
                      backBtn.style.display = 'none';
                 }
-                
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
-                // Desktop: Botão voltar não é necessário normalmente, mas se quiser:
                 backBtn.style.display = 'none';
             }
         });
@@ -112,28 +108,23 @@ function setupNavigation() {
 }
 
 function hideSpecialViews() {
-    document.querySelectorAll('.app-view').forEach(view => {
-        view.style.display = 'none';
-    });
-    // Garante que o container de texto padrão apareça
+    document.querySelectorAll('.app-view').forEach(view => view.style.display = 'none');
     document.getElementById('manual-view').style.display = 'block';
 }
 
 function handleSpecialView(targetId) {
-    // Esconde texto padrão
     document.getElementById('manual-view').style.display = 'none';
-    
-    // Esconde todas as views especiais primeiro
     document.querySelectorAll('.app-view').forEach(view => view.style.display = 'none');
 
-    // Mostra a view alvo
     const targetView = document.getElementById(targetId);
     if (targetView) {
         targetView.style.display = 'block';
         
-        // Inicia scripts específicos se necessário
+        // Se abriu a calculadora, força refresh do mapa e aba padrão
         if (targetId === 'calculadora-risco') {
-            MapUI.init(); // Garante que o mapa renderize corretamente (resize issue)
+            // Opcional: pode forçar abrir na aba 1 sempre
+            // CalculatorUI.switchTab('tab-content-register'); 
+            MapUI.refresh();
         }
     }
 }
