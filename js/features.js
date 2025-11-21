@@ -1,6 +1,6 @@
 /**
- * ARBORIA 2.0 - FEATURES (v74.0 - Checklist Wizard Fix)
- * Contém: Lógica de GPS, CRUD, Importação e WIZARD MOBILE.
+ * ARBORIA 2.0 - FEATURES (v75.1 - Final Stable)
+ * Contém: Lógica de GPS, CRUD, Importação e WIZARD MOBILE (Fixado).
  */
 
 import * as state from './state.js';
@@ -17,7 +17,7 @@ export async function handleGetGPS() {
 
   if (!navigator.geolocation) {
     if(gpsStatus) { 
-        gpsStatus.textContent = "Sem GPS."; 
+        gpsStatus.textContent = "Sem GPS disponível."; 
         gpsStatus.className = 'instruction-text text-center error'; 
     }
     return;
@@ -118,7 +118,7 @@ export function clearPhotoPreview() {
   }
   state.setEditingTreeId(null);
   
-  // Reinicia o wizard
+  // Reinicia o wizard (Garantido pela chamada)
   setTimeout(() => initMobileChecklist(), 100);
 }
 
@@ -197,8 +197,6 @@ export function handleAddTreeSubmit(event) {
   if(document.activeElement) document.activeElement.blur();
 
   TableUI.render();
-  
-  // Reset Wizard
   initMobileChecklist();
 
   return { success: true, tree: resultTree };
@@ -211,7 +209,9 @@ export function handleDeleteTree(id) {
   const n = state.registeredTrees.filter(tree => tree.id !== id);
   state.setRegisteredTrees(n); 
   state.saveDataToStorage();
+  
   TableUI.render();
+  initMobileChecklist();
   
   utils.showToast(`Árvore removida.`, 'info'); 
   return true;
@@ -259,7 +259,6 @@ export function handleEditTree(id) {
   
   utils.showToast(`Editando ID ${id}...`, "info");
   
-  // Sync Wizard
   setTimeout(() => initMobileChecklist(), 200);
 
   return t;
@@ -269,7 +268,10 @@ export function handleClearAll() {
   state.registeredTrees.forEach(t => { if (t.hasPhoto) db.deleteImageFromDB(t.id); });
   state.setRegisteredTrees([]); 
   state.saveDataToStorage();
+  
   TableUI.render();
+  initMobileChecklist();
+  
   utils.showToast('Banco limpo.', 'success'); 
   return true;
 }
@@ -486,30 +488,24 @@ export function initMobileChecklist() {
         const row = tableRows[index];
         if (!row) return;
 
-        // Pega os dados da linha oculta
-        const questionHTML = row.cells[1].innerHTML; // HTML para preservar tooltips
+        const questionHTML = row.cells[1].innerHTML; 
         const originalCheckbox = row.querySelector('input[type="checkbox"]');
 
-        // Atualiza o Card
         cardTitle.textContent = `Critério ${index + 1} / ${tableRows.length}`;
         cardText.innerHTML = questionHTML;
         
-        // Sincroniza estado
         toggleInput.checked = originalCheckbox.checked;
         
-        // Estilo do Card se marcado
         const card = wrapper.querySelector('.mobile-checklist-card');
         if (originalCheckbox.checked) card.classList.add('answered-yes');
         else card.classList.remove('answered-yes');
 
-        // Atualiza UI
         counter.textContent = `${index + 1} / ${tableRows.length}`;
         btnPrev.disabled = index === 0;
         btnNext.innerHTML = index === tableRows.length - 1 ? 'Concluir' : 'Próxima ❯';
 
         // Listener do Toggle
         toggleInput.onchange = () => {
-            // Marca/Desmarca o checkbox original na tabela
             originalCheckbox.checked = toggleInput.checked;
             
             if (toggleInput.checked) card.classList.add('answered-yes');
