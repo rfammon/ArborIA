@@ -1,5 +1,6 @@
-/* js/main.js (vFinal Blindado)
-   Inicialização robusta com tratamento de erros.
+/* js/main.js (vFinal 7.0)
+   Controlador Principal (Entry Point).
+   Inicializa módulos, gerencia roteamento e garante integridade da UI.
 */
 
 import UI from './ui.js';
@@ -13,10 +14,10 @@ import DapEstimator from './dap.estimator.js';
 import { manualContent } from './data-content.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('[ArborIA] Inicializando...');
+    console.log('[ArborIA] Inicializando sistema...');
 
     // 1. Configurar Navegação (PRIORIDADE MÁXIMA)
-    // Roda primeiro para garantir que os botões funcionem mesmo se o resto falhar
+    // Deve rodar antes de tudo para garantir que os botões respondam
     try {
         setupNavigation();
         console.log('[Main] Navegação configurada.');
@@ -24,38 +25,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('[Main] Erro fatal na navegação:', e);
     }
 
-    // 2. Iniciar Estado e UI Básica
+    // 2. Iniciar Estado e Hardware
     try {
         State.init();
+        Features.init();
+    } catch (e) { console.error('[Main] Falha em State/Features:', e); }
+
+    // 3. Iniciar UI Básica
+    try {
         UI.init();
         TooltipUI.init();
-        Features.init();
-    } catch (e) {
-        console.error('[Main] Erro em módulos core:', e);
-    }
+    } catch (e) { console.error('[Main] Falha em UI/Tooltip:', e); }
     
-    // 3. Iniciar Módulos Complexos (Com proteção de erro)
+    // 4. Iniciar Módulos Complexos (Com proteção de erro individual)
     try {
         MapUI.init();
-    } catch (e) { console.warn('[Main] Mapa falhou:', e); }
+    } catch (e) { console.warn('[Main] Mapa falhou na inicialização:', e); }
 
     try {
         CalculatorUI.init();
-    } catch (e) { console.warn('[Main] Calculadora falhou:', e); }
+    } catch (e) { console.warn('[Main] Calculadora falhou na inicialização:', e); }
     
     try {
         Clinometer.init();
         DapEstimator.init();
-    } catch (e) { console.warn('[Main] Sensores falharam:', e); }
+    } catch (e) { console.warn('[Main] Sensores/Câmera falharam:', e); }
 
-    // 4. Service Worker (PWA)
+    // 5. Service Worker (PWA Offline)
     if ('serviceWorker' in navigator) {
         try {
-            await navigator.serviceWorker.register('./service-worker.js');
-            console.log('[SW] Registrado.');
+            const reg = await navigator.serviceWorker.register('./service-worker.js');
+            console.log('[SW] Registrado:', reg.scope);
         } catch (e) { console.error('[SW] Falha:', e); }
     }
 });
+
+/* --- LÓGICA DE NAVEGAÇÃO --- */
 
 function setupNavigation() {
     const buttons = document.querySelectorAll('.topico-btn');
@@ -63,70 +68,70 @@ function setupNavigation() {
     const contentSection = document.getElementById('manual-view');
     const detailView = document.getElementById('detalhe-view');
 
-    // Cria botão Voltar
+    // 1. Criação do Botão "Voltar" (Mobile/App Style)
     let backBtn = document.getElementById('btn-voltar-painel');
     if (!backBtn) {
         backBtn = document.createElement('button');
         backBtn.id = 'btn-voltar-painel';
         backBtn.innerHTML = '⬅ Voltar ao Painel';
+        // Insere antes do conteúdo para ficar no topo
         contentSection.insertBefore(backBtn, detailView);
     }
 
-    // Ação Voltar
+    // 2. Ação do Botão Voltar
     backBtn.addEventListener('click', () => {
-        // Esconde tudo
+        // Esconde todas as views
         contentSection.style.display = 'none';
         document.querySelectorAll('.app-view').forEach(el => el.style.display = 'none');
         
-        // Mostra Painel
+        // Mostra o Painel de Ícones
         navContainer.style.display = 'block';
         navContainer.classList.remove('hidden');
         
-        // Limpa ativos
+        // Reseta estado ativo dos botões
         buttons.forEach(b => b.classList.remove('active'));
         
-        // Scroll topo
+        // Rola para o topo
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    // Ação Botões do Menu
+    // 3. Ação dos Botões do Menu Principal
     buttons.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            // Feedback Visual Imediato
-            console.log('Clique no botão:', btn.dataset.target); // Debug
-            
             const targetId = btn.dataset.target;
             const isMobile = window.innerWidth <= 768;
 
+            // Feedback Visual
             buttons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            // Roteamento
+            // ROTEAMENTO
             if (manualContent[targetId]) {
-                // É Texto
+                // Rota A: Conteúdo de Texto (Manual)
                 UI.renderSection(targetId);
                 hideSpecialViews();
                 contentSection.style.display = 'block';
             } else {
-                // É Funcionalidade (Calc, Map, Cam)
+                // Rota B: Funcionalidade (App View)
                 handleSpecialView(targetId);
             }
 
-            // Lógica Mobile Single-View
+            // UX Mobile: "Single Page Feel"
             if (isMobile) {
-                // Esconde o menu
                 navContainer.classList.add('hidden');
                 navContainer.style.display = 'none'; 
                 
-                // Controla botão voltar
+                // Lógica do botão voltar
+                // Se for Câmera (Clinometro/DAP), eles têm botão 'Sair' próprio
                 if (!targetId.includes('view') || targetId === 'calculadora-risco') {
                      backBtn.style.display = 'flex';
                 } else {
-                     backBtn.style.display = 'none'; // Câmeras tem seu próprio botão X
+                     backBtn.style.display = 'none';
                 }
                 
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
+                // Desktop: Não precisa de botão voltar
                 backBtn.style.display = 'none';
             }
         });
@@ -134,22 +139,39 @@ function setupNavigation() {
 }
 
 function hideSpecialViews() {
+    // Esconde Calculadora, Mapa, Câmeras
     document.querySelectorAll('.app-view').forEach(view => view.style.display = 'none');
+    
+    // Garante que o container de texto esteja visível
     const manualView = document.getElementById('manual-view');
     if(manualView) manualView.style.display = 'block';
 }
 
 function handleSpecialView(targetId) {
+    // Esconde o container de texto
     const manualView = document.getElementById('manual-view');
     if(manualView) manualView.style.display = 'none';
     
+    // Esconde todas as views primeiro (reset)
     document.querySelectorAll('.app-view').forEach(view => view.style.display = 'none');
 
+    // Mostra a view alvo
     const targetView = document.getElementById(targetId);
     if (targetView) {
         targetView.style.display = 'block';
+        
+        // === TRATAMENTO ESPECIAL PARA A CALCULADORA ===
         if (targetId === 'calculadora-risco') {
-            try { MapUI.refresh(); } catch(e){}
+            try { 
+                // 1. Força o Mapa a recalcular tamanho (evita tela cinza)
+                MapUI.refresh(); 
+                
+                // 2. Força a aba "Registrar" a abrir (evita abas vazias)
+                CalculatorUI.openTab('tab-content-register');
+                
+            } catch(e) {
+                console.warn('[Main] Erro ao resetar visual da calculadora:', e);
+            }
         }
     }
 }
