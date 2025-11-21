@@ -5,57 +5,42 @@
 
 :root {
   /* --- PALETA DE CORES (Identidade Visual) --- */
-  --color-forest: #00796b;       /* Verde Floresta Principal */
-  --color-tech: #0277BD;         /* Azul Tecnológico Secundário */
+  --color-forest: #00796b;       /* Verde Floresta Principal (IA/Natureza) */
+  --color-tech: #0277BD;         /* Azul Tecnológico Secundário (Arbor/Tech) */
   --color-accent: #00bfa5;       /* Destaque (Teal Vibrante) */
   
-  /* Degradês (A alma do novo Design) */
+  /* Degradês */
   --gradient-main: linear-gradient(135deg, var(--color-forest), var(--color-tech));
+  --gradient-header: linear-gradient(90deg, var(--color-tech), var(--color-forest)); /* Azul -> Verde */
   --gradient-hover: linear-gradient(135deg, #00695c, #01579b);
-  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f4f6f9 100%);
   
   /* --- CORES DE FUNCIONALIDADE --- */
-  --color-bg-body: #f0f2f5;      /* Cinza muito suave para fundo */
+  --color-bg-body: #f0f2f5;
   --color-bg-card: #ffffff;
   --color-text-main: #1a202c;
   --color-text-muted: #718096;
   --color-border: #e2e8f0;
 
-  /* Cores de Risco (Semáforo) */
-  --risk-high: #d32f2f;          /* Vermelho */
-  --risk-medium: #f57c00;        /* Laranja */
-  --risk-low: #388e3c;           /* Verde */
+  /* Cores de Risco */
+  --risk-high: #d32f2f;
+  --risk-medium: #f57c00;
+  --risk-low: #388e3c;
 
-  /* --- FORMAS & ESPAÇAMENTO (App-like Feel) --- */
-  --header-height: 60px;
-  
-  /* Bordas Arredondadas Modernas */
-  --radius-sm: 8px;
-  --radius-md: 16px;             /* Padrão para Cards */
-  --radius-lg: 24px;
-  --radius-pill: 50px;           /* Padrão para Botões */
-
-  /* Profundidade (Sombras) */
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-  --shadow-floating: 0 8px 30px rgba(0, 121, 107, 0.20); /* Sombra colorida suave */
+  /* --- UI --- */
+  --header-height: 70px; /* Aumentado levemente para acomodar logo */
+  --radius-md: 16px;
+  --radius-pill: 50px;
   
   /* Animações */
   --transition-fast: 0.2s ease;
-  --transition-smooth: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* --- RESET BÁSICO & ESTRUTURA --- */
+/* --- RESET BÁSICO --- */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  /* Remove o highlight azul padrão ao tocar em botões no mobile */
   -webkit-tap-highlight-color: transparent;
-}
-
-html {
-  scroll-behavior: smooth;
 }
 
 body {
@@ -63,54 +48,105 @@ body {
   background-color: var(--color-bg-body);
   color: var(--color-text-main);
   line-height: 1.5;
-  /* Previne o efeito elástico de scroll no topo/fundo (overscroll) para parecer app nativo */
   overscroll-behavior-y: none;
   font-size: 16px;
 }
 
-/* Links e Imagens globais */
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
-img {
-  max-width: 100%;
-  display: block;
-}
-
-/* Classes Utilitárias de Texto */
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
 .text-center { text-align: center; }
-.text-muted { color: var(--color-text-muted); }
 .hidden { display: none !important; }
 
-/* --- LAYOUT MESTRE (GRID DESKTOP) --- */
-/* Correção Crítica: Organiza Menu e Conteúdo lado a lado em telas grandes */
+/* --- HEADER (Identidade Visual Restaurada) --- */
+.header-main {
+  background-color: #fff;
+  height: var(--header-height);
+  
+  /* Layout */
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Logo na esq, Descrição na dir (desktop) */
+  padding: 0 1.5rem;
+  
+  /* Fixação */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  
+  /* Efeito de Profundidade e Separação */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  
+  /* LINHA GRADIENTE (Azul para Verde) */
+  border-bottom: 4px solid;
+  border-image: var(--gradient-header) 1;
+}
 
+/* Container da Logo + Título */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Logotipo (Imagem) */
+.header-logo {
+  height: 38px;
+  width: auto;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+/* Tipografia da Marca (ArborIA) */
+.arboria-text {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+/* Cores da Marca */
+.arboria-text .blue { color: var(--color-tech); }   /* Arbor */
+.arboria-text .green { color: var(--color-forest); } /* IA */
+
+/* Subtítulo (Sistema de Manejo...) */
+.app-description {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  border-left: 1px solid var(--color-border);
+  padding-left: 15px;
+  margin-left: 15px;
+  display: none; /* Oculto no mobile por padrão */
+}
+
+/* --- LAYOUT MESTRE (GRID DESKTOP) --- */
 @media (min-width: 769px) {
+  /* Exibe a descrição apenas no Desktop */
+  .app-description {
+    display: block;
+  }
+
   #app-content {
     display: grid;
-    /* Coluna 1: Menu (280px fixo) | Coluna 2: Conteúdo (Restante) */
+    /* Grid: Menu (280px) | Conteúdo (Auto) */
     grid-template-columns: 280px 1fr; 
     gap: 30px;
     max-width: 1400px;
-    margin: 0 auto;
-    padding: 20px;
-    align-items: start; /* Impede que o menu estique a altura desnecessariamente */
+    margin: 30px auto;
+    padding: 0 20px;
+    align-items: start;
   }
 
-  /* Garante que os elementos respeitem as colunas do grid */
-  .content-section, 
-  .mapa-navegacao {
-    grid-column: auto; 
-  }
-  
-  /* Comportamento Sticky para o Menu Desktop */
+  /* Menu Lateral Fixo */
   .mapa-navegacao {
     position: sticky;
-    top: 90px; /* Margem abaixo do header fixo */
-    max-height: calc(100vh - 110px); /* Altura máxima para permitir scroll interno se necessário */
+    top: 100px; /* Abaixo do header + margem */
+    max-height: calc(100vh - 120px);
     overflow-y: auto;
     z-index: 10;
+  }
+  
+  /* Ajuste fino no header desktop */
+  .header-main {
+    padding: 0 2rem;
   }
 }
