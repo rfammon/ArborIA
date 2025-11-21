@@ -10,7 +10,6 @@ import * as db from './database.js';
 import { TableUI } from './table.ui.js'; 
 
 // === WIZARD STATE & LISTENERS (Refatorado para estabilidade) ===
-let currentChecklistIndex = 0; // [CRÍTICO] Declarado UMA ÚNICA VEZ aqui.
 let checklistListenersAttached = false; // Flag para anexo de listeners
 
 // Helper para pegar elementos do Wizard (DOM)
