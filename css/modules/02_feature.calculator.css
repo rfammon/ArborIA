@@ -1,6 +1,6 @@
 /**
- * ARBORIA 2.0 - CALCULATOR & SUMMARY TABLE (v28.0 - Overflow & Toggle Global Fix)
- * Layout: Abas, Formulários e Tabelas Responsivas
+ * ARBORIA 2.0 - CALCULATOR & SUMMARY TABLE (v29.0 - Scroll Fix)
+ * Layout: Abas, Formulários e Tabela com Scroll Interno (No-Wrap)
  */
 
 /* --- HEADER DA CALCULADORA --- */
@@ -73,7 +73,6 @@
 
 .table-filter-container {
   flex-grow: 1;
-  margin-bottom: 0;
   min-width: 200px;
 }
 
@@ -104,13 +103,15 @@
 }
 #toggle-cols-btn:active { background: #e0f2f1; }
 
-/* --- CONTAINER DA TABELA (CRÍTICO PARA OVERFLOW) --- */
+/* --- CONTAINER DA TABELA (SCROLL FIX) --- */
 #summary-table-container {
-  display: block; /* Garante comportamento de bloco */
-  width: 100%;    /* Ocupa 100% do pai */
-  max-width: 100%; /* Segurança extra */
-  overflow-x: auto; /* Habilita o scroll interno */
-  -webkit-overflow-scrolling: touch;
+  display: block;
+  width: 100%;
+  /* Garante que o container nunca exceda o pai, forçando o scroll interno */
+  max-width: 100%; 
+  overflow-x: auto; /* A barra de rolagem aparece AQUI */
+  -webkit-overflow-scrolling: touch; /* Scroll suave iOS */
+  
   border-radius: 12px;
   border: 1px solid var(--color-border);
   margin-bottom: 1rem;
@@ -118,47 +119,32 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* --- TABELA DE RESUMO (.summary-table) --- */
+/* --- TABELA DE RESUMO --- */
 .summary-table {
   width: 100%;
   border-collapse: separate; 
   border-spacing: 0; 
-  /* min-width removido para permitir modo compacto responsivo */
   font-size: 0.9rem;
+  /* [IMPORTANTE] Garante que a tabela preencha o espaço se tiver pouco conteúdo */
+  /* Mas permite crescer infinitamente se tiver muito conteúdo (graças ao nowrap abaixo) */
+  min-width: 100%; 
 }
 
-/* --- LÓGICA DE EXIBIÇÃO DE COLUNAS (GLOBAL) --- */
-/* Funciona em qualquer tamanho de tela baseada na classe .compact-mode */
-
-/* 1. Estado COMPACTO (Padrão no Mobile / Opcional no Desktop) */
-.summary-table.compact-mode .col-secondary {
-  display: none;
+/* --- CÉLULAS (NO-WRAP) --- */
+/* Isso é o que força a barra de rolagem aparecer em vez de quebrar linha */
+.summary-table th, 
+.summary-table td {
+  white-space: nowrap; /* Texto em uma linha só */
+  padding: 14px 12px;
+  vertical-align: middle;
 }
 
-/* 2. Estado EXPANDIDO (Padrão no Desktop / Botão no Mobile) */
-.summary-table:not(.compact-mode) .col-secondary {
-  display: table-cell;
-}
-
-/* Resumo Mobile (Só aparece no modo compacto para dar contexto) */
-.col-mobile-summary {
-  display: none;
-}
-.summary-table.compact-mode .col-mobile-summary {
-  display: block;
-  font-size: 0.75rem;
-  color: #666;
-  margin-top: 4px;
-}
-
-/* --- CABEÇALHO STICKY COM GRADIENTE --- */
+/* --- CABEÇALHO STICKY --- */
 .summary-table th {
   background: var(--gradient-main);
   color: white;
-  padding: 14px 10px;
   text-align: left;
   font-weight: 600;
-  white-space: nowrap;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -169,46 +155,59 @@
 .summary-table th:last-child { border-top-right-radius: 10px; border-right: none; }
 
 .summary-table td {
-  padding: 12px 10px;
   border-bottom: 1px solid #eee;
   color: var(--color-text-main);
-  vertical-align: middle;
-  background-color: #fff;
+  background-color: #fff; /* Fundo opaco para sobrepor ao rolar */
 }
 
 /* Zebrado */
 .summary-table tbody tr:nth-child(even) td { background-color: #f8fafc; }
 .summary-table tbody tr:hover td { background-color: #f1f5f9; }
 
-/* Colunas Específicas */
+/* Coluna ID e Ações */
 .summary-table td.col-id { font-weight: 700; color: var(--color-tech); }
 
 /* --- RESPONSIVIDADE --- */
 @media (max-width: 768px) {
   #summary-table-container {
-    /* Ajuste fino para aproveitar a largura total no mobile */
-    margin-left: -5px;
-    margin-right: -5px;
-    width: calc(100% + 10px);
-    max-width: 95vw; /* Garante que não estoure a viewport */
-    border-radius: 0;
+    /* Força limites no mobile para garantir scroll */
+    width: 100vw; 
+    max-width: 100vw;
+    margin-left: -1rem; /* Compensa o padding do #app-content para ir de borda a borda */
+    margin-right: -1rem;
+    padding-left: 1rem; /* Devolve o respiro visual */
+    padding-right: 1rem;
+    
+    border-radius: 0; 
     border-left: none;
     border-right: none;
   }
+
+  /* Lógica de Ocultar/Mostrar colunas */
+  .summary-table.compact-mode .col-secondary { display: none; }
+  .summary-table:not(.compact-mode) .col-secondary { display: table-cell; }
   
+  .col-mobile-summary { display: none; }
+  .summary-table.compact-mode .col-mobile-summary {
+    display: block;
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 4px;
+    white-space: normal; /* Permite quebra de linha apenas no sub-texto */
+  }
+
   .summary-table td, .summary-table th {
-    padding: 10px 6px;
+    padding: 12px 8px;
     font-size: 0.85rem;
   }
 }
 
-/* --- TABELA DE CHECKLIST (.risk-table) --- */
-/* Mantida apenas para o Desktop na aba Registrar */
+/* Desktop Checklist Table (Mantido) */
 .risk-table { width: 100%; border-collapse: collapse; min-width: 600px; }
 .risk-table th { background: var(--gradient-main); color: white; padding: 12px; text-align: left; }
 .risk-table td { padding: 10px; border-bottom: 1px solid var(--color-border); }
 .risk-table input[type="checkbox"] { margin: 0 auto; display: block; }
 
-/* Botões de Ação em Grupo */
+/* Botões */
 #import-export-controls { display: flex; flex-wrap: wrap; gap: 10px; }
 #import-export-controls button { flex: 1 1 auto; }
