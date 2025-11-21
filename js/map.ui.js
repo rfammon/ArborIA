@@ -1,139 +1,91 @@
-/* js/map.ui.js
-   Gerenciador do Mapa Leaflet (GIS)
-   Correção: Adicionado export default e proteção contra reinicialização
+/* js/map.ui.js (vFinal 5.0)
+   Gerenciador de Mapa Leaflet.
+   Correção: refresh() robusto para abas ocultas.
 */
 
 const MapUI = {
     map: null,
     markers: [],
-    userMarker: null,
     tileLayer: null,
 
     init() {
-        // 1. Verifica se o container existe
-        const container = document.getElementById('map-container');
-        if (!container) return;
-
-        // 2. Evita erro "Map container is already initialized"
+        // Evita re-inicializar se já existe
         if (this.map) {
-            // Se já existe, apenas atualiza o tamanho (correção para abas)
-            this.map.invalidateSize();
+            this.refresh();
             return;
         }
 
-        console.log('[MapUI] Inicializando Mapa...');
+        const container = document.getElementById('map-container');
+        if (!container) return;
 
-        // 3. Cria o mapa (Leaflet)
-        // Centraliza inicialmente no Brasil ou numa coordenada padrão
+        console.log('[MapUI] Criando mapa...');
+
+        // 1. Cria Instância do Leaflet
         this.map = L.map('map-container').setView([-23.5505, -46.6333], 13);
 
-        // 4. Adiciona camada de visualização (OpenStreetMap)
+        // 2. Adiciona Tiles (OpenStreetMap)
         this.tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
+            attribution: '© OpenStreetMap',
             maxZoom: 19
         }).addTo(this.map);
 
-        // 5. Configura botões de controle do mapa
+        // 3. Adiciona Controles
         this.setupControls();
+        
+        // 4. Força renderização inicial após um instante
+        setTimeout(() => this.refresh(), 500);
     },
 
-    // Corrige problema do mapa cinza quando está em aba oculta
     refresh() {
         if (this.map) {
-            setTimeout(() => {
-                this.map.invalidateSize();
-            }, 200);
+            // invalidateSize() força o Leaflet a recalcular o tamanho da div.
+            // Essencial quando o mapa estava em uma aba display:none.
+            this.map.invalidateSize();
         }
     },
 
-    setupControls() {
-        // Botão de Localização do Usuário
-        const btnGeo = document.getElementById('show-my-location-btn');
-        if (btnGeo) {
-            btnGeo.addEventListener('click', () => this.locateUser());
-        }
-
-        // Botão de Zoom Extent (Ver todos os pontos)
-        const btnZoom = document.getElementById('zoom-to-extent-btn');
-        if (btnZoom) {
-            btnZoom.addEventListener('click', () => this.zoomToMarkers());
-        }
-
-        // Botão de Camadas (Satélite/Rua) - Opcional, lógica básica
-        const btnLayer = document.getElementById('toggle-map-layer-btn');
-        if (btnLayer) {
-            btnLayer.addEventListener('click', () => {
-                // Lógica futura para trocar satélite/rua
-                alert('Funcionalidade de satélite em desenvolvimento.');
-            });
-        }
-    },
-
-    locateUser() {
+    addTreeMarker(lat, lng, title, risk) {
         if (!this.map) return;
 
-        this.map.locate({ setView: true, maxZoom: 16 });
+        let color = '#2e7d32'; // Verde
+        if (risk === 'Alto Risco') color = '#c62828'; // Vermelho
+        else if (risk === 'Médio Risco') color = '#ef6c00'; // Laranja
 
-        this.map.once('locationfound', (e) => {
-            const radius = e.accuracy / 2;
-
-            if (this.userMarker) {
-                this.map.removeLayer(this.userMarker);
-            }
-
-            this.userMarker = L.marker(e.latlng).addTo(this.map)
-                .bindPopup(`Você está aqui (Precisão: ${radius.toFixed(0)}m)`).openPopup();
-
-            L.circle(e.latlng, radius).addTo(this.map);
-        });
-
-        this.map.once('locationerror', (e) => {
-            alert('Não foi possível obter sua localização: ' + e.message);
-        });
-    },
-
-    addTreeMarker(lat, lng, title, riskLevel) {
-        if (!this.map) return;
-
-        // Define cor baseada no risco
-        let color = 'blue';
-        if (riskLevel === 'Alto Risco') color = 'red';
-        if (riskLevel === 'Médio Risco') color = 'orange';
-        if (riskLevel === 'Baixo Risco') color = 'green';
-
-        // Cria ícone colorido (simples)
-        const iconHtml = `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`;
+        const iconHtml = `<div style="background-color:${color}; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>`;
         
         const customIcon = L.divIcon({
-            className: 'custom-tree-marker',
+            className: 'custom-pin',
             html: iconHtml,
-            iconSize: [16, 16],
-            iconAnchor: [8, 8]
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
         });
 
         const marker = L.marker([lat, lng], { icon: customIcon })
             .addTo(this.map)
-            .bindPopup(`<b>${title}</b><br>Risco: ${riskLevel}`);
+            .bindPopup(`<strong>${title}</strong><br>${risk}`);
 
         this.markers.push(marker);
     },
 
-    zoomToMarkers() {
-        if (this.markers.length > 0) {
-            const group = new L.featureGroup(this.markers);
-            this.map.fitBounds(group.getBounds());
-        } else {
-            alert('Nenhum ponto cadastrado no mapa ainda.');
-        }
-    },
-    
     clearMap() {
         if (!this.map) return;
-        // Remove marcadores antigos
         this.markers.forEach(m => this.map.removeLayer(m));
         this.markers = [];
+    },
+
+    setupControls() {
+        const btnZoom = document.getElementById('zoom-to-extent-btn');
+        if (btnZoom) {
+            btnZoom.addEventListener('click', () => {
+                if (this.markers.length > 0) {
+                    const group = new L.featureGroup(this.markers);
+                    this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+                } else {
+                    alert('Nenhum ponto no mapa.');
+                }
+            });
+        }
     }
 };
 
-/* CORREÇÃO CRÍTICA: Exportação Padrão para o main.js */
 export default MapUI;
