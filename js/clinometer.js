@@ -1,6 +1,7 @@
 /**
- * ARBORIA 2.0 - CLINOMETER (v66.1 Refatorado)
- * Lógica de medição de altura via Realidade Aumentada (Câmera + Giroscópio).
+ * ARBORIA 2.0 - CLINOMETER (v66.2 Sensor Fix)
+ * Correção: Prioriza o pedido de permissão dos sensores antes da câmera
+ * para evitar perda do "User Gesture" no iOS.
  */
 
 import { showToast } from './utils.js';
@@ -8,11 +9,11 @@ import { showToast } from './utils.js';
 // Estado interno
 let stream = null;
 let currentAngle = 0;
-let distance = 10; // Metros (padrão inicial)
-let angleBase = null; // Ângulo da base (em graus)
-let angleTop = null;  // Ângulo do topo (em graus)
+let distance = 10; 
+let angleBase = null; 
+let angleTop = null;  
 
-// Referências DOM (capturadas sob demanda para evitar erros de init)
+// Referências DOM
 const getElements = () => ({
     videoEl: document.getElementById('camera-feed'),
     angleDisplay: document.getElementById('clinometer-angle'),
@@ -26,55 +27,65 @@ const getElements = () => ({
 });
 
 /**
- * Inicia o Clinômetro (Câmera + Sensores).
+ * Inicia o Clinômetro.
+ * IMPORTANTE: A ordem aqui é vital. Sensores primeiro, Câmera depois.
  */
 export async function startClinometer() {
     const els = getElements();
     
-    // 1. Resetar Estado e UI
+    // 1. Resetar UI
     resetMeasurement();
 
-    // 2. Sincroniza distância: Tenta pegar do form principal se tiver valor
+    // 2. Sincronizar Distância
     const mainDistInput = document.getElementById('risk-distancia-obs');
     if (mainDistInput && mainDistInput.value && parseFloat(mainDistInput.value) > 0) {
         distance = parseFloat(mainDistInput.value);
     }
-    
-    if (els.distInput) {
-        els.distInput.value = distance;
+    if (els.distInput) els.distInput.value = distance;
+
+    // 3. ATIVAR SENSORES (Prioridade Máxima)
+    // Tentamos conectar o giroscópio antes de qualquer operação pesada (como câmera)
+    if (typeof DeviceOrientationEvent !== 'undefined') {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            // iOS 13+ (Precisa de permissão explícita)
+            try {
+                const permissionState = await DeviceOrientationEvent.requestPermission();
+                if (permissionState === 'granted') {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                } else {
+                    showToast("Permissão de sensores negada. O ângulo não funcionará.", "error");
+                }
+            } catch (e) {
+                console.warn("Erro ao solicitar permissão iOS:", e);
+                // Tenta adicionar mesmo assim (alguns Androids antigos)
+                window.addEventListener('deviceorientation', handleOrientation);
+            }
+        } else {
+            // Android / iOS antigo (Permissão automática)
+            window.addEventListener('deviceorientation', handleOrientation);
+        }
+    } else {
+        showToast("Seu dispositivo não possui giroscópio.", "error");
     }
 
-    // 3. Acessar Câmera
+    // 4. ATIVAR CÂMERA (Secundário)
     try {
+        // Tenta câmera traseira (environment)
         stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: { exact: "environment" } } 
+            video: { facingMode: "environment" } 
         }).catch(() => {
-            return navigator.mediaDevices.getUserMedia({ video: true }); // Fallback
+            // Fallback para qualquer câmera
+            return navigator.mediaDevices.getUserMedia({ video: true }); 
         });
         
         if (els.videoEl) {
             els.videoEl.srcObject = stream;
-            els.videoEl.setAttribute("playsinline", true); 
-            els.videoEl.play().catch(e => console.warn("Play error:", e));
+            els.videoEl.setAttribute("playsinline", true); // iOS fix
+            els.videoEl.play().catch(e => console.warn("Erro ao iniciar vídeo:", e));
         }
     } catch (err) {
         console.error("Erro na câmera:", err);
-        showToast("Erro ao acessar câmera. Verifique permissões no navegador.", "error");
-    }
-
-    // 4. Acessar Giroscópio (DeviceOrientation)
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission()
-            .then(response => {
-                if (response === 'granted') {
-                    window.addEventListener('deviceorientation', handleOrientation);
-                } else {
-                    showToast("Permissão de giroscópio negada. O ângulo não funcionará.", "error");
-                }
-            })
-            .catch(console.error);
-    } else {
-        window.addEventListener('deviceorientation', handleOrientation);
+        showToast("Erro ao acessar câmera. Verifique se é HTTPS.", "error");
     }
 }
 
@@ -93,32 +104,36 @@ export function stopClinometer() {
 }
 
 /**
- * Lógica do Sensor de Orientação.
+ * Lógica do Sensor de Orientação (Beta = Inclinação Vertical)
  */
 function handleOrientation(event) {
     const els = getElements();
     const rawBeta = event.beta; 
     
-    // Filtro simples para evitar saltos se o sensor falhar momentaneamente
-    if (rawBeta !== null) {
-        // Ajuste de calibração: Beta 90 = Celular em pé. Subtraímos 90 para que o horizonte seja 0.
-        const calibratedAngle = rawBeta - 90; 
+    if (rawBeta === null) return; // Sensor não disponível
+
+    // Calibração:
+    // Beta 90° = Celular em pé (Retrato)
+    // Beta 0° = Celular deitado (Mesa)
+    // Queremos: 0° no horizonte (celular em pé apontando pro horizonte)
+    // Então: Angulo = Beta - 90
+    
+    const calibratedAngle = rawBeta - 90; 
+    
+    // Filtro Suavizador (Low-pass) para evitar tremedeira nos números
+    currentAngle = (currentAngle * 0.9) + (calibratedAngle * 0.1); 
+    
+    if (els.angleDisplay) {
+        // Mostra valor absoluto para o usuário não ver negativo
+        els.angleDisplay.textContent = `${Math.abs(currentAngle).toFixed(1)}°`;
         
-        // Suavização (Low-pass filter) para o número não tremer demais
-        currentAngle = (currentAngle * 0.85) + (calibratedAngle * 0.15); 
-        
-        // Inverte sinal se necessário (depende da orientação do device, mas geralmente olhar pra cima deve ser positivo)
-        // Vamos usar Math.abs na visualização se preferir, mas matematicamente precisamos do sinal.
-        // Aqui assumimos o padrão do navegador.
-        
-        if (els.angleDisplay) {
-             // Mostra valor absoluto para não confundir usuário com negativo
-            els.angleDisplay.textContent = `${Math.abs(currentAngle).toFixed(1)}°`;
-        }
+        // Muda cor se estiver muito inclinado (feedback visual)
+        if (Math.abs(currentAngle) > 85) els.angleDisplay.style.color = '#ff5252';
+        else els.angleDisplay.style.color = '#00e676';
     }
 }
 
-// === FLUXO DE MEDIÇÃO ===
+// === FLUXO DE MEDIÇÃO (UI) ===
 
 function showStep(stepName) {
     const els = getElements();
@@ -126,40 +141,35 @@ function showStep(stepName) {
     if (els.steps[stepName]) els.steps[stepName].classList.add('active');
 }
 
-/**
- * Inicializa os botões do Clinômetro (Chamado uma vez no main.js).
- */
 export function initClinometerListeners() {
-    // Botão Fechar (Volta para a calculadora)
+    // Botão Fechar
     const closeBtn = document.getElementById('close-clinometer');
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             stopClinometer();
-            // CORREÇÃO: Usa o seletor correto do novo HTML (calculadora-view)
-            // Tenta simular clique na navegação
             const calcBtn = document.querySelector('.topico-btn[data-target="calculadora-view"]');
             if (calcBtn) calcBtn.click();
         });
     }
 
-    // Passo 1: Iniciar (Lê a distância do input do Clinômetro)
+    // Passo 1: Iniciar
     const startBtn = document.getElementById('btn-start-measure');
     if (startBtn) {
         startBtn.addEventListener('click', () => {
             const distInput = document.getElementById('clino-distance');
             const val = parseFloat(distInput.value);
             if (!val || val <= 0) {
-                showToast("Informe uma distância válida (> 0m).", "error");
+                showToast("Distância inválida.", "error");
                 return;
             }
             distance = val;
             
-            // Atualiza também o formulário principal para manter consistência
+            // Sincroniza reverso
             const mainDistInput = document.getElementById('risk-distancia-obs');
             if(mainDistInput) mainDistInput.value = distance;
             
             showStep('base');
-            showToast(`Distância definida: ${distance}m`, "success");
+            showToast("Aponte para a base do tronco.", "info");
         });
     }
 
@@ -167,22 +177,22 @@ export function initClinometerListeners() {
     const baseBtn = document.getElementById('btn-capture-base');
     if (baseBtn) {
         baseBtn.addEventListener('click', () => {
-            angleBase = currentAngle; // Salva ângulo atual
-            showToast(`Base: ${Math.abs(angleBase).toFixed(1)}°`, "info");
-            setTimeout(() => showStep('top'), 300);
+            angleBase = currentAngle;
+            showToast(`Base: ${Math.abs(angleBase).toFixed(1)}°`, "success");
+            setTimeout(() => showStep('top'), 400);
         });
     }
 
-    // Passo 3: Capturar Topo e Calcular
+    // Passo 3: Capturar Topo
     const topBtn = document.getElementById('btn-capture-top');
     if (topBtn) {
         topBtn.addEventListener('click', () => {
-            angleTop = currentAngle; // Salva ângulo atual
+            angleTop = currentAngle;
             calculateHeight();
         });
     }
 
-    // Passo 4: Resultado e Ações
+    // Passo 4: Ações
     const resetBtn = document.getElementById('btn-reset-measure');
     if (resetBtn) resetBtn.addEventListener('click', resetMeasurement);
 
@@ -190,14 +200,12 @@ export function initClinometerListeners() {
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
             const resultText = document.getElementById('tree-height-result').textContent;
-            const numericHeight = parseFloat(resultText);
-            
             const heightInput = document.getElementById('risk-altura');
+            
             if (heightInput) {
-                heightInput.value = numericHeight.toFixed(1);
-                showToast("Altura salva no formulário!", "success");
+                heightInput.value = parseFloat(resultText).toFixed(1);
+                showToast("Altura salva!", "success");
                 
-                // Volta para a calculadora
                 stopClinometer();
                 const calcBtn = document.querySelector('.topico-btn[data-target="calculadora-view"]');
                 if (calcBtn) calcBtn.click();
@@ -207,18 +215,11 @@ export function initClinometerListeners() {
 }
 
 function calculateHeight() {
-    // Matemática Trigonométrica: h = d * (tan(top) - tan(base))
-    // Conversão para Radianos
+    // h = d * (tan(top) - tan(base))
     const radTop = angleTop * (Math.PI / 180);
     const radBase = angleBase * (Math.PI / 180);
-
-    // O cálculo depende se a base está abaixo ou acima do nível dos olhos (horizonte)
-    // Se angleBase for negativo (olhando pra baixo) e angleTop positivo (olhando pra cima),
-    // a tangente de base será negativa. Subtrair um negativo = somar. A fórmula funciona universalmente.
     
     let height = distance * (Math.tan(radTop) - Math.tan(radBase));
-
-    // Tratamento de erro/sinal
     height = Math.abs(height); 
     
     document.getElementById('tree-height-result').textContent = `${height.toFixed(1)} m`;
