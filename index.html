@@ -277,8 +277,12 @@
                                 <div class="mobile-checklist-card">
                                     <h4>Critério 1/16</h4>
                                     <p>Há <span class="checklist-term">galhos mortos</span> com diâmetro superior a 5 cm?</p>
+                                    
                                     <div class="mobile-checklist-toggle">
-                                        <label><input type="checkbox"> Sim, Identificado</label>
+                                        <label for="mobile-toggle-input">Não</label>
+                                        <input type="checkbox" id="mobile-toggle-input">
+                                        <label class="toggle-label" for="mobile-toggle-input"></label>
+                                        <label for="mobile-toggle-input">Sim</label>
                                     </div>
                                 </div>
                                 <div class="mobile-checklist-nav">
@@ -291,7 +295,7 @@
                         
                         <div class="risk-buttons-area">
                             <button type="submit" id="add-tree-btn">➕ Registrar Árvore</button>
-                            <button type="button" id="reset-risk-form-btn" class="export-btn btn-danger">Limpar</button>
+                            <button type="button" id="reset-risk-form-btn" class="btn-danger-filled">Limpar</button>
                         </div>
                     </form>
                 </div>
@@ -310,7 +314,7 @@
                             <button type="button" id="import-data-btn" class="export-btn">📤 Importar</button>
                             <button type="button" id="export-data-btn" class="export-btn">📥 CSV/JSON</button>
                             <button type="button" id="generate-pdf-btn" class="export-btn" style="color: var(--risk-high); border-color: var(--risk-high);">📄 Laudo PDF</button>
-                            <button type="button" id="clear-all-btn" class="export-btn btn-danger">🗑️ Excluir Tudo</button>
+                            <button type="button" id="clear-all-btn" class="btn-danger-filled">🗑️ Excluir Tudo</button>
                         </div>
                         <div id="zip-status" style="display: none;"><span class="spinner"></span><span id="zip-status-text">Processando...</span></div>
                     </fieldset>
