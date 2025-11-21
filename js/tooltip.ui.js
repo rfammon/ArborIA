@@ -1,6 +1,5 @@
-/* js/tooltip.ui.js 
-   Gerenciador de Tooltips (Refatorado com requestAnimationFrame)
-   Correção: Layout Thrashing e Posicionamento
+/* js/tooltip.ui.js (vFinal)
+   Gerenciador Híbrido: Hover (Desktop) / Click (Mobile)
 */
 
 import { glossaryData } from './data-content.js';
@@ -9,14 +8,15 @@ const TooltipUI = {
     activeTooltip: null,
     backdrop: null,
     isMobile: false,
+    hideTimeout: null, // Para evitar que o tooltip feche rápido demais no hover
 
     init() {
-        // Detecta mobile uma vez na inicialização
-        this.isMobile = window.innerWidth <= 768;
+        // 1. Detecção de Mobile (Baseado em toque ou largura)
+        this.isMobile = ('ontouchstart' in window) || (window.innerWidth <= 768);
         
-        // Atualiza flag de mobile se redimensionar
+        // Atualiza se a tela for redimensionada
         window.addEventListener('resize', () => {
-            this.isMobile = window.innerWidth <= 768;
+            this.isMobile = ('ontouchstart' in window) || (window.innerWidth <= 768);
         });
 
         this.createTooltipElement();
@@ -24,9 +24,9 @@ const TooltipUI = {
     },
 
     createTooltipElement() {
-        // Evita duplicar se já existir
         if (document.getElementById('arboria-tooltip')) return;
 
+        // Estrutura do Card
         const tooltipDiv = document.createElement('div');
         tooltipDiv.className = 'tooltip-card';
         tooltipDiv.id = 'arboria-tooltip';
@@ -41,6 +41,7 @@ const TooltipUI = {
         document.body.appendChild(tooltipDiv);
         this.activeTooltip = tooltipDiv;
 
+        // Estrutura do Fundo Escuro (Mobile)
         const backdropDiv = document.createElement('div');
         backdropDiv.className = 'tooltip-backdrop';
         document.body.appendChild(backdropDiv);
@@ -48,34 +49,74 @@ const TooltipUI = {
     },
 
     setupEventListeners() {
-        // Delegação de eventos para abrir tooltip
+        // Delegação de eventos no DOCUMENTO inteiro (para pegar elementos injetados via JS)
+        
+        // A) COMPORTAMENTO DE CLICK (Mobile e Desktop Click)
         document.addEventListener('click', (e) => {
-            const termElement = e.target.closest('.checklist-term, [data-term-key]');
+            const termElement = e.target.closest('.glossary-term, [data-term-key]');
             
-            if (termElement) {
+            // No mobile, o click é o gatilho principal
+            if (this.isMobile && termElement) {
                 e.preventDefault();
                 e.stopPropagation();
                 const termKey = termElement.getAttribute('data-term-key');
                 this.show(termElement, termKey);
-            } else {
-                // Fechar se clicar fora
-                if (this.activeTooltip && 
-                    this.activeTooltip.classList.contains('active') && 
-                    !e.target.closest('.tooltip-card')) {
+                return;
+            }
+
+            // Fechar ao clicar no X
+            if (e.target.closest('.tooltip-close')) {
+                e.preventDefault();
+                this.hide();
+                return;
+            }
+
+            // Fechar ao clicar fora (Mobile ou Desktop fixo)
+            if (this.activeTooltip.classList.contains('active') && !e.target.closest('.tooltip-card')) {
+                // Se foi um clique num termo (no desktop), não fecha, pois o hover cuida
+                if (!termElement) {
                     this.hide();
                 }
             }
         });
 
-        // Botão Fechar
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.tooltip-close')) {
-                e.preventDefault();
-                e.stopPropagation();
-                this.hide();
+        // B) COMPORTAMENTO DE HOVER (Apenas Desktop)
+        document.addEventListener('mouseover', (e) => {
+            if (this.isMobile) return; // Ignora hover no celular
+
+            const termElement = e.target.closest('.glossary-term, [data-term-key]');
+            
+            if (termElement) {
+                // Limpa timer de esconder se o mouse voltou pro termo
+                if (this.hideTimeout) clearTimeout(this.hideTimeout);
+                
+                const termKey = termElement.getAttribute('data-term-key');
+                this.show(termElement, termKey);
+            }
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            if (this.isMobile) return;
+
+            const termElement = e.target.closest('.glossary-term, [data-term-key]');
+            if (termElement) {
+                // Dá um pequeno delay antes de fechar para o mouse poder ir até o tooltip se necessário
+                this.hideTimeout = setTimeout(() => {
+                    // Verifica se o mouse não está EM CIMA do próprio tooltip
+                    if (!this.activeTooltip.matches(':hover')) {
+                        this.hide();
+                    }
+                }, 300); // 300ms de tolerância
             }
         });
         
+        // Garante que o tooltip não feche se o mouse estiver sobre ELE (Desktop)
+        if (this.activeTooltip) {
+            this.activeTooltip.addEventListener('mouseleave', () => {
+                if (!this.isMobile) this.hide();
+            });
+        }
+
         // Tecla ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') this.hide();
@@ -83,31 +124,24 @@ const TooltipUI = {
     },
 
     show(targetElement, termKey) {
-        // Verificação de segurança: Dados existem?
-        if (!glossaryData) {
-            console.error('[ArborIA] Erro: glossaryData não importado ou vazio.');
-            return;
-        }
-
+        if (!glossaryData) return;
         const content = glossaryData[termKey];
         
         if (!content) {
-            console.warn(`[ArborIA] Termo não encontrado no glossário: ${termKey}`);
+            console.warn(`Termo não encontrado: ${termKey}`);
             return;
         }
 
         const body = this.activeTooltip.querySelector('#tooltip-body');
         const title = this.activeTooltip.querySelector('.tooltip-title');
         
-        // 1. ESCRITA (Altera o DOM)
         title.textContent = content.title || 'Definição';
         body.innerHTML = content.description;
 
-        // 2. LEITURA E POSICIONAMENTO (Agendado para o próximo frame)
-        // Isso evita o erro "Layout Forced"
+        // requestAnimationFrame para evitar "layout thrashing"
         requestAnimationFrame(() => {
             this.activeTooltip.classList.add('active');
-            this.backdrop.classList.add('active');
+            if (this.isMobile) this.backdrop.classList.add('active');
             this.updatePosition(targetElement);
         });
     },
@@ -115,29 +149,27 @@ const TooltipUI = {
     hide() {
         if (this.activeTooltip) {
             this.activeTooltip.classList.remove('active');
-            this.backdrop.classList.remove('active');
+            if (this.backdrop) this.backdrop.classList.remove('active');
         }
     },
 
     updatePosition(targetElement) {
         if (this.isMobile) {
-            // Resetar estilos inline no mobile para o CSS controlar (Fixed Center)
+            // Mobile: Centralizado via CSS (classe .active + media query)
+            // Limpa estilos inline para não conflitar
             this.activeTooltip.style.left = '';
             this.activeTooltip.style.top = '';
             return;
         }
 
-        // Lógica Desktop
+        // Desktop: Posicionamento inteligente
         const rect = targetElement.getBoundingClientRect();
         const tooltipRect = this.activeTooltip.getBoundingClientRect();
         
-        // Centraliza horizontalmente
         let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-        
-        // Posiciona ACIMA por padrão
-        let top = rect.top - tooltipRect.height - 12; // 12px de margem
+        let top = rect.top - tooltipRect.height - 10; // Acima do termo
 
-        // Correção de bordas (Viewport)
+        // Correção lateral (não sair da tela)
         if (left < 10) left = 10;
         if (left + tooltipRect.width > window.innerWidth) {
             left = window.innerWidth - tooltipRect.width - 10;
@@ -145,13 +177,12 @@ const TooltipUI = {
 
         // Se não couber em cima, joga para baixo
         if (top < 0) {
-            top = rect.bottom + 12;
+            top = rect.bottom + 10;
             this.activeTooltip.classList.add('bottom');
         } else {
             this.activeTooltip.classList.remove('bottom');
         }
 
-        // Aplica coordenadas (com scroll global)
         this.activeTooltip.style.left = `${left}px`;
         this.activeTooltip.style.top = `${top + window.scrollY}px`;
     }
