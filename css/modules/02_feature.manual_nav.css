@@ -1,134 +1,201 @@
-/* 02_feature.manual_nav.css 
-   Refatorado: Identidade ArborIA (Blue/Green), Botões Arredondados e Alto Contraste
-*/
+/**
+ * ARBORIA 2.0 - NAVIGATION FEATURE
+ * Design: App Launcher Grid (Mobile) -> Sidebar (Desktop)
+ */
 
+/* --- CONTAINER PRINCIPAL DO MENU --- */
 .mapa-navegacao {
-    background: white;
-    border-radius: 16px; /* Mais arredondado */
-    padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Sombra suave no card */
-    margin-bottom: 1.5rem;
-    border: 1px solid #e0e0e0;
+  padding: 10px;
+  /* No mobile, o menu é a "Home Page" */
 }
 
 .mapa-navegacao h2 {
-    /* Identidade: Azul Tecnológico */
-    color: #0277BD; 
-    margin-bottom: 1.2rem;
-    font-size: 1.3rem;
-    font-weight: 700;
-    
-    /* Substituindo a linha laranja por um degradê da marca */
-    border-bottom: 3px solid;
-    border-image-slice: 1;
-    border-image-source: linear-gradient(to right, #0277BD, #00796b);
-    
-    padding-bottom: 0.5rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
 }
 
-/* Container dos botões */
+/* --- GRID DE ÍCONES (Mobile "Launcher") --- */
 .topicos-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 Colunas exatas */
+  gap: 15px; /* Espaçamento entre ícones */
+  padding-bottom: 20px;
+}
+
+/* --- BOTÕES DO MENU (Estilo Card/Ícone) --- */
+.topico-btn {
+  background: var(--color-bg-card);
+  border: none;
+  border-radius: var(--radius-card); /* 16px */
+  padding: 15px 5px;
+  
+  /* Layout Flex Vertical (Ícone em cima, Texto embaixo) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  
+  /* Visual */
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  min-height: 110px; /* Altura fixa para uniformidade */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Estado Ativo/Toque */
+.topico-btn:active {
+  transform: scale(0.95);
+  background-color: #f9f9f9;
+}
+
+/* Ícones (PNG) */
+.topico-btn img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  pointer-events: none; /* O clique deve passar para o botão */
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); /* Sombra no ícone para "pop" */
+  margin-bottom: 2px;
+}
+
+/* Texto do Botão */
+.topico-btn span,
+.topico-btn {
+  font-size: 0.75rem; /* Texto pequeno estilo App */
+  font-weight: 600;
+  color: var(--color-text-main);
+  text-align: center;
+  line-height: 1.2;
+  word-wrap: break-word; /* Quebra palavras longas se necessário */
+}
+
+/* Separador Visual (Linha) */
+.nav-separator {
+  grid-column: 1 / -1; /* Ocupa toda a largura */
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+  margin: 10px 0;
+}
+
+/* --- BOTÃO VOLTAR (Header de Navegação) --- */
+/* Aparece apenas quando entramos em uma seção no Mobile */
+#back-btn-container {
+  display: none; /* JS controla o display: flex */
+  align-items: center;
+  padding: 10px 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+  
+  position: sticky;
+  top: var(--header-height); /* Logo abaixo do Header Principal */
+  z-index: 900;
+}
+
+#btn-back-dashboard {
+  background: none;
+  border: none;
+  color: var(--color-tech);
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 5px 0;
+}
+
+/* Seta SVG via CSS (opcional, ou use caractere unicode) */
+#btn-back-dashboard::before {
+  content: '⬅';
+  font-size: 1.2rem;
+}
+
+/* --- DESKTOP (Sidebar Layout) --- */
+@media (min-width: 769px) {
+  /* Sidebar Fixa */
+  .mapa-navegacao {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    height: fit-content;
+    position: sticky;
+    top: 90px; /* Espaço do header */
+    max-height: calc(100vh - 100px);
+    overflow-y: auto; /* Scroll interno se a tela for pequena verticalmente */
+  }
+
+  .mapa-navegacao h2 {
+    text-align: left;
+    margin-bottom: 1rem;
+    padding-left: 10px;
+  }
+
+  /* Lista Vertical */
+  .topicos-container {
     display: flex;
     flex-direction: column;
-    gap: 10px; /* Espaçamento entre botões */
-}
+    gap: 6px;
+    padding-bottom: 0;
+  }
 
-/* ESTILO DO BOTÃO (Estado Normal) */
-.topico-btn {
-    /* Formato de Botão */
-    background: #ffffff;
-    border: 1px solid #cfd8dc; /* Borda cinza azulada suave */
-    border-radius: 12px; /* Bordas bem arredondadas */
-    padding: 12px 16px;
-    
-    /* Tipografia */
-    color: #455A64; /* Cinza escuro para leitura confortável */
-    font-size: 1rem;
-    font-weight: 600; /* Negrito para destaque */
-    text-align: left;
-    
-    /* Comportamento */
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Sombra leve para dar volume */
-    
-    /* Layout Flexbox */
-    display: flex;
+  /* Botão Estilo Lista (Horizontal) */
+  .topico-btn {
+    flex-direction: row; /* Ícone ao lado do texto */
     align-items: center;
+    justify-content: flex-start;
+    min-height: auto; /* Altura automática */
+    padding: 10px 12px;
+    background: transparent; /* Fundo transparente até hover */
+    box-shadow: none;
+    border-radius: 8px;
     gap: 12px;
-}
+  }
 
-/* Hover (Passar o mouse) */
-.topico-btn:hover {
-    transform: translateY(-2px); /* O botão "flutua" levemente */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    border-color: #00796b; /* Borda verde ao passar o mouse */
-    background: #f1f8e9; /* Fundo verde muito pálido */
-    color: #004d40;
-}
+  .topico-btn:hover {
+    background-color: #e0f2f1; /* Verde bem claro */
+  }
 
-/* ESTILO DO BOTÃO (Ativo/Selecionado) */
-.topico-btn.active {
-    /* Identidade: Degradê ArborIA (Verde -> Azul) */
-    background: linear-gradient(135deg, #00796b 0%, #0277BD 100%);
-    
-    color: #ffffff !important; /* Texto Branco Forçado */
-    border: none; /* Remove borda para o degradê brilhar */
-    
-    box-shadow: 0 4px 10px rgba(0, 121, 107, 0.4); /* Sombra colorida (Glow) */
-    transform: scale(1.02); /* Levemente maior para indicar seleção */
-}
+  /* Estado Ativo (Desktop precisa de indicador de "onde estou") */
+  .topico-btn.active {
+    background-color: #b2dfdb;
+    color: var(--color-forest);
+  }
 
-/* Ajuste para não mover demais no hover se já estiver ativo */
-.topico-btn.active:hover {
-    transform: scale(1.02) translateY(0);
-    box-shadow: 0 5px 12px rgba(0, 121, 107, 0.5);
-}
+  .topico-btn.active span {
+    color: var(--color-forest);
+    font-weight: 800;
+  }
 
-/* --- ÍCONES (Imagens PNG) --- */
-.topico-btn img {
-    width: 24px;
+  .topico-btn img {
+    width: 24px; /* Ícone menor no desktop */
     height: 24px;
-    object-fit: contain;
-    
-    /* SAFETY LOCK: Impede que o clique quebre a navegação */
-    pointer-events: none; 
-    
-    transition: filter 0.2s ease;
-    
-    /* Filtro padrão: Deixa o ícone levemente acinzentado para combinar com o texto */
-    filter: grayscale(100%) opacity(0.7);
-}
+    filter: none; /* Remove sombra pesada */
+    margin-bottom: 0;
+  }
 
-/* Ícone quando passa o mouse (Hover) */
-.topico-btn:hover img {
-    filter: none; /* Mostra a cor original do ícone */
-    transform: scale(1.1); /* Ícone cresce um pouquinho */
-}
+  .topico-btn span {
+    font-size: 0.95rem;
+    text-align: left;
+  }
 
-/* Ícone quando Ativo (Selecionado) */
-.topico-btn.active img {
-    /* Inverte totalmente para Branco Brilhante */
-    filter: brightness(0) invert(1); 
-}
-
-/* Separador Visual (Linha divisória entre seções) */
-.nav-separator {
-    height: 2px;
-    /* Degradê suave e transparente */
-    background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+  .nav-separator {
+    background: var(--color-border);
     margin: 10px 0;
-    width: 100%;
-}
-
-/* Responsividade Mobile */
-@media (max-width: 768px) {
-    .mapa-navegacao {
-        padding: 1rem;
-    }
-    
-    .topico-btn {
-        padding: 12px;
-        font-size: 0.95rem;
-    }
+  }
+  
+  /* Oculta container de voltar no Desktop (sempre visível) */
+  #back-btn-container {
+    display: none !important;
+  }
 }
