@@ -1,308 +1,329 @@
-/* js/calculator.form.ui.js (vFinal Restaurado)
-   Gerencia o formulário de registro e checklist mobile.
+/* js/calculator.form.ui.js (vFinal 8.1 - Database Integrated)
+   Controlador Mestre da Calculadora.
+   Integra: Form, GPS, Mapa, Tabela e IndexedDB (Imagens).
 */
 
 import State from './state.js';
-import Utils from './utils.js'; // Import default
-import { optimizeImage } from './utils.js'; // Import nomeado
-import * as features from './features.js';
-import { getImageFromDB } from './database.js';
-
-// Importa funções da tabela (assumindo que table.ui.js exporta essas funções ou default)
-// Se table.ui.js exportar default TableUI, usaremos TableUI.update()
-import TableUI from './table.ui.js'; 
-
-// Estado local do checklist mobile
-const mobileChecklist = {
-    currentIndex: 0,
-    totalQuestions: 0,
-    questions: null,
-    wrapper: null,
-    card: null,
-    navPrev: null,
-    navNext: null,
-    counter: null,
-};
+import Utils from './utils.js';
+import MapUI from './map.ui.js';
+import TableUI from './table.ui.js';
+import { saveImageToDB } from './database.js'; // Import correto para salvar imagens
 
 const CalculatorUI = {
-    init(isTouchDevice) {
+    form: null,
+    photoBlob: null, // Armazena o blob da foto temporariamente
+
+    // === 1. INICIALIZAÇÃO ===
+    init() {
         console.log('[CalculatorUI] Inicializando...');
-        const form = document.getElementById('risk-calculator-form');
         
-        if (!form) {
-            console.warn('[CalculatorUI] Formulário não encontrado.');
+        this.form = document.getElementById('risk-calculator-form');
+        
+        // Retry se o DOM não estiver pronto
+        if (!this.form) {
+            console.warn('[CalculatorUI] Form não encontrado. Tentando novamente...');
+            setTimeout(() => this.init(), 500);
             return;
         }
 
-        this.setupFormListeners(form, isTouchDevice);
-        this.setupPhotoListeners();
+        // Inicializa dependências
+        if (TableUI && TableUI.init) TableUI.init();
+
+        // Configurações iniciais
+        this.setupTabs();
+        this.setupFormListeners();
+        this.setupMobileChecklist();
+        this.safeUpdateSummary();
+
+        // Força abertura da primeira aba
+        this.openTab('tab-content-register');
         
-        // Inicia checklist mobile se for touch
-        if (isTouchDevice) {
-            this.setupMobileChecklist();
-        }
+        // Listener para atualizações externas
+        document.addEventListener('arboria:tree-updated', () => this.updateBadge());
     },
 
-    setupFormListeners(form, isTouchDevice) {
-        const getGpsBtn = document.getElementById('get-gps-btn');
-        const resetBtn = document.getElementById('reset-risk-form-btn');
-        const gpsStatus = document.getElementById('gps-status');
+    // === 2. SISTEMA DE ABAS ===
+    setupTabs() {
+        const tabButtons = document.querySelectorAll('.sub-nav-btn');
+        
+        tabButtons.forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
 
-        // GPS Listener
-        if (getGpsBtn) {
-            getGpsBtn.addEventListener('click', () => this.handleGetGPS());
-        }
+            newBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = newBtn.getAttribute('data-target');
+                this.openTab(targetId);
+            });
+        });
+    },
 
-        // Submit Listener
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            await this.handleSubmit(event, isTouchDevice);
+    openTab(tabId) {
+        // Atualiza botões
+        document.querySelectorAll('.sub-nav-btn').forEach(btn => {
+            if (btn.getAttribute('data-target') === tabId) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
         });
 
-        // Reset Listener
-        if (resetBtn) {
-            resetBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.resetForm(form, isTouchDevice);
-            });
-        }
-    },
-
-    setupPhotoListeners() {
-        const photoInput = document.getElementById('tree-photo-input');
-        const removeBtn = document.getElementById('remove-photo-btn');
-
-        if (photoInput) {
-            photoInput.addEventListener('change', async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                try {
-                    Utils.showToast('Processando foto...', 'info');
-                    const blob = await optimizeImage(file, 800, 0.7);
-                    
-                    // Salva no State
-                    State.setCurrentTreePhoto(blob);
-                    
-                    // Preview
-                    const url = URL.createObjectURL(blob);
-                    const container = document.getElementById('photo-preview-container');
-                    
-                    // Limpa anterior
-                    const old = document.getElementById('photo-preview');
-                    if(old) old.remove();
-
-                    const img = document.createElement('img');
-                    img.id = 'photo-preview';
-                    img.src = url;
-                    img.style.maxWidth = '100%';
-                    img.style.borderRadius = '8px';
-                    img.style.marginTop = '10px';
-                    
-                    container.prepend(img);
-                    if(removeBtn) removeBtn.style.display = 'block';
-
-                } catch (err) {
-                    console.error(err);
-                    Utils.showToast('Erro na foto.', 'error');
+        // Atualiza conteúdo (Força visualização)
+        document.querySelectorAll('.sub-tab-content').forEach(content => {
+            if (content.id === tabId) {
+                content.classList.add('active');
+                content.style.display = 'block'; // Override CSS
+                
+                // Lógica específica da aba
+                if (tabId === 'tab-content-mapa') {
+                    setTimeout(() => { if(MapUI) MapUI.refresh(); }, 100);
                 }
-            });
-        }
+                if (tabId === 'tab-content-summary') {
+                    this.safeUpdateSummary();
+                }
+            } else {
+                content.classList.remove('active');
+                content.style.display = 'none';
+            }
+        });
+    },
 
-        if (removeBtn) {
-            removeBtn.addEventListener('click', () => {
-                State.setCurrentTreePhoto(null);
-                const img = document.getElementById('photo-preview');
-                if(img) img.remove();
-                removeBtn.style.display = 'none';
-                document.getElementById('tree-photo-input').value = '';
-            });
+    safeUpdateSummary() {
+        if (TableUI && TableUI.update) {
+            TableUI.update();
+            this.updateBadge();
         }
     },
 
-    async handleSubmit(event, isTouchDevice) {
-        // Lógica de coleta de dados
-        const formData = new FormData(event.target);
-        const risk = this.calculateRisk();
-        
-        const tree = {
-            id: State.getEditingTreeId() || Utils.generateId(),
-            createdAt: new Date().toISOString(),
-            // Campos
-            especie: formData.get('risk-especie'),
-            local: formData.get('risk-local'),
-            data: formData.get('risk-data'), // nome no html é risk-data
-            altura: formData.get('risk-altura'),
-            dap: formData.get('risk-dap'),
-            coordX: formData.get('risk-coord-x'),
-            coordY: formData.get('risk-coord-y'),
-            avaliador: formData.get('risk-avaliador'),
-            observacoes: formData.get('risk-obs'),
-            // Risco
-            riskScore: risk.score,
-            riskLevel: risk.level,
-            riskFactors: this.getRiskFactors(),
-            // Foto
-            hasPhoto: !!State.getCurrentTreePhoto()
+    // === 3. LISTENERS E AÇÕES ===
+    setupFormListeners() {
+        this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+
+        const bind = (id, cb) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('click', cb);
         };
 
-        // Salva no State
-        if (State.getEditingTreeId()) {
-            State.updateTree(tree);
-            Utils.showToast('Árvore atualizada!', 'success');
-        } else {
+        bind('reset-risk-form-btn', () => this.resetForm());
+        bind('get-gps-btn', () => this.handleGps());
+        bind('remove-photo-btn', () => this.clearPhoto());
+        bind('export-data-btn', () => this.handleExport());
+        
+        // Input Foto
+        const photoInput = document.getElementById('tree-photo-input');
+        if (photoInput) photoInput.addEventListener('change', (e) => this.handlePhoto(e));
+
+        // Atalhos Câmera
+        bind('btn-measure-height-form', () => this.triggerNav('clinometro-view'));
+        bind('btn-measure-dap-form', () => this.triggerNav('dap-estimator-view'));
+
+        // Filtro
+        const filterInput = document.getElementById('table-filter-input');
+        if (filterInput) {
+            filterInput.addEventListener('input', Utils.debounce((e) => {
+                if(TableUI) TableUI.update(e.target.value);
+            }, 300));
+        }
+
+        // Limpar Tudo
+        bind('clear-all-btn', () => {
+            if(confirm('Apagar tudo?')) {
+                State.clearAll();
+                if(MapUI) MapUI.clearMap();
+                this.safeUpdateSummary();
+                Utils.showToast('Limpo!', 'warning');
+            }
+        });
+    },
+
+    triggerNav(id) {
+        const btn = document.querySelector(`[data-target="${id}"]`);
+        if(btn) btn.click();
+    },
+
+    // === 4. SUBMIT E SALVAMENTO ===
+    async handleSubmit(e) {
+        e.preventDefault();
+        
+        try {
+            const fd = new FormData(this.form);
+            const risk = this.calculateRisk();
+            
+            const tree = {
+                id: Utils.generateId(),
+                createdAt: new Date().toISOString(),
+                especie: fd.get('risk-especie'),
+                local: fd.get('risk-local'),
+                dataColeta: fd.get('risk-data'),
+                altura: fd.get('risk-altura'),
+                dap: fd.get('risk-dap'),
+                coordX: fd.get('risk-coord-x'),
+                coordY: fd.get('risk-coord-y'),
+                avaliador: fd.get('risk-avaliador'),
+                obs: fd.get('risk-obs'),
+                riskScore: risk.score,
+                riskLevel: risk.level,
+                checklist: this.getChecklistData(),
+                hasPhoto: !!this.photoBlob // Flag para saber se tem foto
+            };
+
+            // 1. Salva dados leves no State (LocalStorage)
             State.addTree(tree);
-            Utils.showToast(`Árvore adicionada! Risco: ${risk.level}`, 'success');
-        }
 
-        // Atualiza Tabela (Integração com TableUI)
-        if (TableUI && TableUI.update) TableUI.update();
+            // 2. Salva imagem pesada no IndexedDB (Evita erro de cota)
+            if (this.photoBlob) {
+                try {
+                    await saveImageToDB(tree.id, this.photoBlob);
+                    console.log('[CalculatorUI] Imagem salva no IndexedDB.');
+                } catch (dbErr) {
+                    console.error('[CalculatorUI] Erro ao salvar imagem:', dbErr);
+                    Utils.showToast('Aviso: Foto não pode ser salva (erro de DB).', 'warning');
+                }
+            }
+            
+            // 3. Atualiza Mapa
+            if (tree.coordX && tree.coordY && MapUI) {
+                MapUI.addTreeMarker(tree.coordY, tree.coordX, tree.especie, tree.riskLevel);
+            }
+            
+            Utils.showToast(`Salvo: ${tree.riskLevel}`);
+            this.resetForm();
+            this.openTab('tab-content-summary');
 
-        // Limpa form
-        this.resetForm(event.target, isTouchDevice);
-    },
-
-    resetForm(form, isTouchDevice) {
-        form.reset();
-        // Restaura defaults
-        document.getElementById('risk-data').value = new Date().toISOString().split('T')[0];
-        
-        // Limpa foto
-        State.setCurrentTreePhoto(null);
-        const img = document.getElementById('photo-preview');
-        if(img) img.remove();
-        const btn = document.getElementById('remove-photo-btn');
-        if(btn) btn.style.display = 'none';
-        
-        State.setEditingTreeId(null);
-        
-        // Reseta UI Mobile
-        if (isTouchDevice) this.setupMobileChecklist();
-        
-        // Volta botão para "Adicionar"
-        const addBtn = document.getElementById('add-tree-btn');
-        if(addBtn) {
-            addBtn.textContent = '➕ Adicionar Árvore';
-            addBtn.style.background = ''; // Volta ao CSS original
+        } catch (err) {
+            console.error(err);
+            Utils.showToast('Erro ao salvar.', 'error');
         }
     },
 
-    // === LÓGICA DE RISCO ===
+    // === 5. HELPERS DE DADOS ===
     calculateRisk() {
-        let total = 0;
-        document.querySelectorAll('.risk-checkbox:checked').forEach(cb => {
-            total += parseInt(cb.getAttribute('data-weight') || 0);
-        });
-        let level = 'Baixo Risco';
-        if (total >= 15) level = 'Alto Risco';
-        else if (total >= 8) level = 'Médio Risco';
-        return { score: total, level };
+        let t = 0;
+        this.form.querySelectorAll('.risk-checkbox:checked').forEach(c => t += parseInt(c.dataset.weight||0));
+        return { score: t, level: t>=15 ? 'Alto Risco' : (t>=8 ? 'Médio Risco' : 'Baixo Risco') };
     },
 
-    getRiskFactors() {
-        // Retorna array de 0s e 1s mapeando os checkboxes
-        const factors = [];
-        document.querySelectorAll('.risk-checkbox').forEach(cb => {
-            factors.push(cb.checked ? 1 : 0);
-        });
-        return factors;
+    getChecklistData() {
+        const i = [];
+        this.form.querySelectorAll('.risk-checkbox').forEach((c, idx) => { if(c.checked) i.push(idx+1); });
+        return i;
     },
 
-    // === GPS (Simples) ===
-    handleGetGPS() {
+    // === 6. GPS E MÍDIA ===
+    handleGps() {
         const status = document.getElementById('gps-status');
-        if(status) status.textContent = 'Buscando...';
-
-        if (!navigator.geolocation) return Utils.showToast('GPS não suportado.', 'error');
+        if(status) status.textContent = '...';
+        
+        if(!navigator.geolocation) return Utils.showToast('Sem GPS');
 
         navigator.geolocation.getCurrentPosition(pos => {
-            const { latitude, longitude, accuracy } = pos.coords;
+            const {latitude, longitude, accuracy} = pos.coords;
+            
+            // Preenche Lat/Lon nos inputs ocultos/visíveis
             document.getElementById('risk-coord-y').value = latitude.toFixed(6);
             document.getElementById('risk-coord-x').value = longitude.toFixed(6);
             
-            // Conversão UTM via Utils
+            // Converte para UTM
             const utm = Utils.convertLatLonToUtm(latitude, longitude);
-            if (utm) {
+            if(utm) {
                 document.getElementById('risk-coord-x').value = utm.easting;
                 document.getElementById('risk-coord-y').value = utm.northing;
-                if(status) status.textContent = `UTM ${utm.zoneNum}${utm.zoneLetter} (±${accuracy.toFixed(0)}m)`;
+                
+                const zone = document.getElementById('default-utm-zone');
+                if(zone) zone.value = `${utm.zoneNum}${utm.zoneLetter}`;
+                
+                if(status) status.textContent = `UTM ±${accuracy.toFixed(0)}m`;
             } else {
-                if(status) status.textContent = `Lat/Lon (±${accuracy.toFixed(0)}m)`;
+                if(status) status.textContent = `Lat/Lon ±${accuracy.toFixed(0)}m`;
             }
-            Utils.showToast('Localização capturada!');
+            Utils.showToast('GPS OK');
         }, err => {
-            Utils.showToast('Erro GPS.', 'error');
+            Utils.showToast('Erro GPS', 'error');
             if(status) status.textContent = 'Erro';
-        }, { enableHighAccuracy: true });
+        }, {enableHighAccuracy: true});
     },
 
-    // === CHECKLIST MOBILE (Restaurado) ===
-    setupMobileChecklist() {
-        const wrapper = document.querySelector('.mobile-checklist-wrapper');
-        if (!wrapper) return;
+    async handlePhoto(e) {
+        const f = e.target.files[0];
+        if(!f) return;
+        try {
+            this.photoBlob = await Utils.optimizeImage(f);
+            const url = URL.createObjectURL(this.photoBlob);
+            document.getElementById('photo-preview-container').innerHTML = `<img src="${url}" style="max-width:100px; margin-top:10px; border-radius:8px;">`;
+            document.getElementById('remove-photo-btn').style.display = 'inline-block';
+        } catch(e) { console.error(e); }
+    },
 
-        const card = wrapper.querySelector('.mobile-checklist-card');
+    clearPhoto() {
+        this.photoBlob = null;
+        document.getElementById('photo-preview-container').innerHTML = '';
+        document.getElementById('tree-photo-input').value = '';
+        document.getElementById('remove-photo-btn').style.display = 'none';
+    },
+
+    resetForm() {
+        this.form.reset();
+        this.clearPhoto();
+        document.getElementById('risk-data').value = new Date().toISOString().split('T')[0];
+    },
+
+    // === 7. EXPORTAÇÃO E UI AUXILIAR ===
+    updateBadge() {
+        const c = State.getAllTrees().length;
+        const b = document.getElementById('summary-badge');
+        if(b) { b.textContent = c||''; b.style.display = c?'inline-flex':'none'; }
+    },
+
+    handleExport() {
+        const d = State.exportData();
+        const b = new Blob([d], {type:'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = `arboria_backup_${Date.now()}.json`;
+        a.click();
+    },
+
+    setupMobileChecklist() {
         const prev = document.getElementById('checklist-prev');
         const next = document.getElementById('checklist-next');
-        const counter = document.querySelector('.checklist-counter');
-        const rows = document.querySelectorAll('.risk-table tbody tr');
+        const wrapper = document.querySelector('.mobile-checklist-wrapper');
+        
+        if(prev && next && wrapper) {
+            const card = wrapper.querySelector('.mobile-checklist-card');
+            const rows = document.querySelectorAll('.risk-table tbody tr');
+            let idx = 0;
 
-        if (!rows.length) return;
+            const show = (i) => {
+                const row = rows[i];
+                const q = row.cells[1].innerHTML;
+                const input = row.querySelector('input');
+                
+                card.innerHTML = `
+                    <div class="mobile-card-header">Item ${i+1}</div>
+                    <div class="mobile-card-body"><p class="q-text">${q}</p></div>
+                    <div class="mobile-card-action">
+                        <label style="display:flex;align-items:center;gap:10px;width:100%;padding:10px">
+                            <input type="checkbox" id="m-cb-${i}" ${input.checked?'checked':''} style="transform:scale(1.5)">
+                            <span>Sim</span>
+                        </label>
+                    </div>`;
+                
+                document.getElementById(`m-cb-${i}`).onchange = (e) => input.checked = e.target.checked;
+                
+                document.querySelector('.checklist-counter').textContent = `${i+1}/${rows.length}`;
+                prev.disabled = i===0;
+                next.textContent = i===rows.length-1 ? "Fim" : "Próxima";
+            };
 
-        let currentIndex = 0;
+            // Limpa e readiciona listeners
+            const nPrev = prev.cloneNode(true); prev.parentNode.replaceChild(nPrev, prev);
+            const nNext = next.cloneNode(true); next.parentNode.replaceChild(nNext, next);
 
-        const showItem = (index) => {
-            const row = rows[index];
-            const num = row.cells[0].textContent;
-            const question = row.cells[1].innerHTML; // Mantém HTML
-            const checkbox = row.querySelector('input');
-
-            card.innerHTML = `
-                <div class="mobile-card-header">Item ${num}</div>
-                <div class="mobile-card-body"><p class="q-text">${question}</p></div>
-                <div class="mobile-card-action">
-                    <label style="display:flex; align-items:center; gap:10px; width:100%; padding:10px;">
-                        <input type="checkbox" id="mob-cb-${index}" ${checkbox.checked?'checked':''} style="transform:scale(1.5);">
-                        <span style="font-weight:bold;">Sim (Risco)</span>
-                    </label>
-                </div>
-            `;
-
-            // Sync
-            document.getElementById(`mob-cb-${index}`).addEventListener('change', (e) => {
-                checkbox.checked = e.target.checked;
-            });
-
-            counter.textContent = `${index + 1} / ${rows.length}`;
-            prev.disabled = index === 0;
-            if (index === rows.length - 1) {
-                next.textContent = "Concluir";
-            } else {
-                next.textContent = "Próxima ❯";
-            }
-        };
-
-        // Limpa listeners antigos (clone)
-        const newPrev = prev.cloneNode(true);
-        prev.parentNode.replaceChild(newPrev, prev);
-        const newNext = next.cloneNode(true);
-        next.parentNode.replaceChild(newNext, next);
-
-        newPrev.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (currentIndex > 0) showItem(--currentIndex);
-        });
-
-        newNext.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (currentIndex < rows.length - 1) {
-                showItem(++currentIndex);
-            } else {
-                document.querySelector('.risk-buttons-area').scrollIntoView({behavior:'smooth'});
-            }
-        });
-
-        showItem(0);
+            nPrev.onclick = (e) => { e.preventDefault(); if(idx>0) show(--idx); };
+            nNext.onclick = (e) => { e.preventDefault(); if(idx<rows.length-1) show(++idx); };
+            
+            show(0);
+        }
     }
 };
 
