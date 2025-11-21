@@ -579,23 +579,3 @@ export async function handleChatSend() {}
 export function handleContactForm(e) { e.preventDefault(); }
 
 
-// === 3. CHECKLIST WIZARD MOBILE ===
-// Esta é a lógica que faz os botões "Próxima" e o Toggle funcionarem
-let currentChecklistIndex = 0;
-let checklistListenersAttached = false; // Flag para garantir que os botões só sejam ligados 1x
-
-const getChecklistElements = () => {
-    const wrapper = document.querySelector('.mobile-checklist-wrapper');
-    if (!wrapper) return null;
-    return {
-        tableRows: document.querySelectorAll('.risk-table tbody tr'),
-        cardTitle: wrapper.querySelector('h4'),
-        cardText: wrapper.querySelector('p'),
-        toggleInput: wrapper.querySelector('.mobile-checklist-toggle input'),
-        btnPrev: document.getElementById('checklist-prev'),
-        btnNext: document.getElementById('checklist-next'),
-        counter: wrapper.querySelector('.checklist-counter'),
-        card: wrapper.querySelector('.mobile-checklist-card')
-    };
-};
-
