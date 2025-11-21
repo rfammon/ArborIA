@@ -1,20 +1,16 @@
-/**
- * ARBORIA 2.0 - FEATURES (v78.1 - Estabilidade Final)
- * Contém: Lógica de GPS, CRUD, Importação e WIZARD MOBILE (Estável).
- * Correção: Implementação de lógica de 'Retry' para inicialização do Wizard.
- */
 
+/** 
+ * ARBORIA 2.0 - FEATURES (v76.2 - Final Stable Fix)
+ * Contém: Lógica de GPS, CRUD, Importação e WIZARD MOBILE (Finalizado).
+ */
 import * as state from './state.js';
 import * as utils from './utils.js';
 import * as db from './database.js';
-// [Importação necessária]
-import { TableUI } from './table.ui.js'; 
+import { TableUI } from './table.ui.js';
 
-
-// === WIZARD STATE & LISTENERS (Declarações de Escopo Único) ===
-let currentChecklistIndex = 0; 
-let checklistListenersAttached = false; 
-let initChecklistInterval = null; // Para controlar o loop de inicialização
+// === WIZARD STATE & LISTENERS ===
+let currentChecklistIndex = 0;
+let checklistListenersAttached = false;
 
 // Helper para pegar elementos do Wizard (DOM)
 const getChecklistElements = () => {
@@ -34,7 +30,6 @@ const getChecklistElements = () => {
 
 /**
  * Atualiza o Card do Wizard com a pergunta e o estado do checkbox.
- * @param {number} index 
  */
 function updateChecklistCard(index) {
     const els = getChecklistElements();
@@ -43,199 +38,170 @@ function updateChecklistCard(index) {
     const row = els.tableRows[index];
     const originalCheckbox = row.querySelector('input[type="checkbox"]');
 
-    // Extrai o HTML da pergunta da tabela oculta
-    const questionCell = row.cells[1].cloneNode(true); 
+    const questionCell = row.cells[1].cloneNode(true);
     const tooltipSpan = questionCell.querySelector('.checklist-term');
-    if (tooltipSpan) {
-        tooltipSpan.classList.add('tooltip-trigger'); 
-    }
+    if (tooltipSpan) tooltipSpan.classList.add('tooltip-trigger');
 
-    // [FIX] Injeção da Pergunta e Sincronização
     els.cardTitle.textContent = `Critério ${index + 1} / ${els.tableRows.length}`;
-    els.cardText.innerHTML = questionCell.innerHTML; 
+    els.cardText.innerHTML = questionCell.innerHTML;
     els.toggleInput.checked = originalCheckbox.checked;
-    
+
     const card = els.card;
-    if (originalCheckbox.checked) card.classList.add('answered-yes');
-    else card.classList.remove('answered-yes');
+    card.classList.toggle('answered-yes', originalCheckbox.checked);
 
     els.counter.textContent = `${index + 1} / ${els.tableRows.length}`;
     els.btnPrev.disabled = index === 0;
     els.btnNext.innerHTML = index === els.tableRows.length - 1 ? 'Concluir' : 'Próxima ❯';
 
-    // Listener do Toggle (Anexado de forma segura no update)
-    if (els.toggleInput._oldHandler) els.toggleInput.removeEventListener('change', els.toggleInput._oldHandler);
-    
-    const toggleHandler = () => {
+    // Listener do Toggle
+    els.toggleInput.onchange = () => {
         originalCheckbox.checked = els.toggleInput.checked;
-        
-        if (els.toggleInput.checked) card.classList.add('answered-yes');
-        else card.classList.remove('answered-yes');
+        card.classList.toggle('answered-yes', els.toggleInput.checked);
 
-        // Auto-Avanço
         if (els.toggleInput.checked && index < els.tableRows.length - 1) {
             setTimeout(() => {
                 currentChecklistIndex++;
                 updateChecklistCard(currentChecklistIndex);
-            }, 350); 
+            }, 350);
         }
     };
-    
-    els.toggleInput.addEventListener('change', toggleHandler);
-    els.toggleInput._oldHandler = toggleHandler; // Salva o handler para remover na próxima vez
 }
 
 /**
- * Anexa listeners de navegação (Próxima/Voltar) apenas uma única vez.
+ * Anexa listeners de navegação (Próxima/Voltar) apenas uma vez.
  */
 function attachChecklistListenersOnce() {
     if (checklistListenersAttached) return;
     const els = getChecklistElements();
     if (!els) return;
 
-    // Listener para o botão ANTERIOR
     els.btnPrev.addEventListener('click', (e) => {
         e.preventDefault();
-        if (currentChecklistIndex > 0) {
+        const els = getChecklistElements();
+        if (els && currentChecklistIndex > 0) {
             currentChecklistIndex--;
             updateChecklistCard(currentChecklistIndex);
         }
     });
 
-    // Listener para o botão PRÓXIMA / CONCLUIR
     els.btnNext.addEventListener('click', (e) => {
         e.preventDefault();
-        const tableRows = els.tableRows; 
-        
-        if (currentChecklistIndex < tableRows.length - 1) {
+        const els = getChecklistElements();
+        if (els && currentChecklistIndex < els.tableRows.length - 1) {
             currentChecklistIndex++;
             updateChecklistCard(currentChecklistIndex);
         } else {
-            // Fim do Wizard: Rola para botões de salvar
             document.getElementById('add-tree-btn').scrollIntoView({ behavior: 'smooth' });
         }
     });
-    
-    checklistListenersAttached = true; // Seta a flag
+
+    checklistListenersAttached = true;
 }
 
-
 /**
- * [PÚBLICO] Função de inicialização e reset do Wizard.
- * Adicionamos um TRY/RETRY para estabilizar o carregamento.
+ * Inicializa o Wizard Mobile.
  */
-export function initMobileChecklist(retry = 0) {
-    if (window.innerWidth > 768) return; 
-
-    const els = getChecklistElements();
-    
-    // [FIX CRÍTICO]: Se as linhas da tabela ainda não carregaram, espera e tenta de novo.
-    if (!els || els.tableRows.length === 0) {
-        if (retry < 5) {
-            // Tenta novamente a cada 150ms
-            setTimeout(() => initMobileChecklist(retry + 1), 150);
-        } else {
-            console.warn("Mobile Checklist: Falha ao carregar linhas de critério após várias tentativas. O HTML pode estar faltando o tbody da .risk-table.");
-        }
-        return;
-    }
-    
-    // Sucesso: anexa listeners e inicia a UI
+export function initMobileChecklist() {
+    if (window.innerWidth > 768) return;
     attachChecklistListenersOnce();
+    const els = getChecklistElements();
+    if (!els || els.tableRows.length === 0) return;
 
-    // Reset UI e começa no primeiro card
     currentChecklistIndex = 0;
     updateChecklistCard(currentChecklistIndex);
 }
 
-// === 1. GPS ===
+// === GPS ===
 export async function handleGetGPS() {
-  const gpsStatus = document.getElementById('gps-status');
-  const coordXField = document.getElementById('risk-coord-x');
-  const coordYField = document.getElementById('risk-coord-y');
-  const getGpsBtn = document.getElementById('get-gps-btn');
+    const gpsStatus = document.getElementById('gps-status');
+    const coordXField = document.getElementById('risk-coord-x');
+    const coordYField = document.getElementById('risk-coord-y');
+    const getGpsBtn = document.getElementById('get-gps-btn');
 
-  if (!navigator.geolocation) {
-    if(gpsStatus) { 
-        gpsStatus.textContent = "Sem GPS disponível."; 
-        gpsStatus.className = 'instruction-text text-center error'; 
+    if (!navigator.geolocation) {
+        if (gpsStatus) {
+            gpsStatus.textContent = "Sem GPS disponível.";
+            gpsStatus.className = 'instruction-text text-center error';
+        }
+        return;
     }
-    return;
-  }
-  
-  const CAPTURE_TIME_MS = 10000;
-  const options = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
-  let readings = [];
-  let watchId = null;
-  let timerInterval = null;
-  let startTime = Date.now();
-  
-  if(getGpsBtn) getGpsBtn.disabled = true;
 
-  const cleanup = () => {
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-      if (timerInterval !== null) clearInterval(timerInterval);
-      const btn = document.getElementById('get-gps-btn'); 
-      if (btn) { btn.disabled = false; btn.innerHTML = '🛰️ Capturar GPS Preciso'; }
-  };
+    const CAPTURE_TIME_MS = 10000;
+    const options = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
+    let readings = [];
+    let watchId = null;
+    let timerInterval = null;
+    let startTime = Date.now();
 
-  const updateUI = () => {
-      const btn = document.getElementById('get-gps-btn');
-      if (!btn) { cleanup(); return; } 
+    if (getGpsBtn) getGpsBtn.disabled = true;
 
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.ceil((CAPTURE_TIME_MS - elapsed) / 1000);
-      
-      let batteryIcon = '📡'; 
-      btn.innerHTML = `${batteryIcon} Calibrando... ${remaining}s`;
-      
-      if (elapsed >= CAPTURE_TIME_MS) finishCapture();
-  };
+    const cleanup = () => {
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        if (timerInterval !== null) clearInterval(timerInterval);
+        const btn = document.getElementById('get-gps-btn');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '🛰️ Capturar GPS Preciso';
+        }
+    };
 
-  const finishCapture = () => {
-      cleanup();
-      if (readings.length === 0) {
-          utils.showToast("Sem sinal de satélite.", "error");
-          return;
-      }
+    const updateUI = () => {
+        const btn = document.getElementById('get-gps-btn');
+        if (!btn) {
+            cleanup();
+            return;
+        }
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.ceil((CAPTURE_TIME_MS - elapsed) / 1000);
+        btn.innerHTML = `📡 Calibrando... ${remaining}s`;
+        if (elapsed >= CAPTURE_TIME_MS) finishCapture();
+    };
 
-      let sumLat = 0, sumLon = 0, sumAcc = 0;
-      readings.forEach(r => { sumLat += r.latitude; sumLon += r.longitude; sumAcc += r.accuracy; });
-      
-      const avgLat = sumLat / readings.length;
-      const avgLon = sumLon / readings.length;
-      const avgAcc = sumAcc / readings.length;
+    const finishCapture = () => {
+        cleanup();
+        if (readings.length === 0) {
+            utils.showToast("Sem sinal de satélite.", "error");
+            return;
+        }
+        let sumLat = 0, sumLon = 0, sumAcc = 0;
+        readings.forEach(r => {
+            sumLat += r.latitude;
+            sumLon += r.longitude;
+            sumAcc += r.accuracy;
+        });
+        const avgLat = sumLat / readings.length;
+        const avgLon = sumLon / readings.length;
+        const avgAcc = sumAcc / readings.length;
+        const utmCoords = utils.convertLatLonToUtm(avgLat, avgLon);
+        if (utmCoords) {
+            if (coordXField) coordXField.value = utmCoords.easting.toFixed(0);
+            if (coordYField) coordYField.value = utmCoords.northing.toFixed(0);
+            if (state.setLastUtmZone) state.setLastUtmZone(utmCoords.zoneNum, utmCoords.zoneLetter);
+            const dz = document.getElementById('default-utm-zone');
+            if (dz) dz.value = `${utmCoords.zoneNum}${utmCoords.zoneLetter}`;
+            const gs = document.getElementById('gps-status');
+            if (gs) {
+                const color = avgAcc <= 5 ? 'var(--color-forest)' : '#E65100';
+                gs.innerHTML = `Precisão: <span style="color:${color}">±${avgAcc.toFixed(1)}m</span>`;
+            }
+            utils.showToast("Coordenadas capturadas!", "success");
+        } else {
+            utils.showToast("Erro na conversão UTM.", "error");
+        }
+    };
 
-      const utmCoords = utils.convertLatLonToUtm(avgLat, avgLon); 
-
-      if (utmCoords) {
-          if(coordXField) coordXField.value = utmCoords.easting.toFixed(0);
-          if(coordYField) coordYField.value = utmCoords.northing.toFixed(0);
-          
-          if(state.setLastUtmZone) state.setLastUtmZone(utmCoords.zoneNum, utmCoords.zoneLetter);
-          
-          const dz = document.getElementById('default-utm-zone');
-          if (dz) dz.value = `${utmCoords.zoneNum}${utmCoords.zoneLetter}`;
-          
-          const gs = document.getElementById('gps-status');
-          if(gs) {
-              const color = avgAcc <= 5 ? 'var(--color-forest)' : '#E65100';
-              gs.innerHTML = `Precisão: <span style="color:${color}">±${avgAcc.toFixed(1)}m</span>`;
-          }
-          utils.showToast("Coordenadas capturadas!", "success");
-      } else {
-          utils.showToast("Erro na conversão UTM.", "error");
-      }
-  };
-
-  watchId = navigator.geolocation.watchPosition(
-      (pos) => { if (pos.coords.accuracy < 150) readings.push(pos.coords); },
-      (err) => console.warn("GPS:", err),
-      options
-  );
-  timerInterval = setInterval(updateUI, 1000);
-  updateUI();
+    watchId = navigator.geolocation.watchPosition(
+        (pos) => { if (pos.coords.accuracy < 150) readings.push(pos.coords); },
+        (err) => console.warn("GPS:", err),
+        options
+    );
+    timerInterval = setInterval(updateUI, 1000);
+    updateUI();
 }
+
+// === CRUD, IMPORTAÇÃO, EXPORTAÇÃO ===
+// (Mantém toda a lógica original daqui para baixo, sem alterações)
+
 
 // === 2. CRUD & ACTIONS ===
 
