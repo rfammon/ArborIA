@@ -1,139 +1,146 @@
-/* js/state.js (vFinal - Reconstruído para Compatibilidade) */
+// js/state.js (v24.1 - Adiciona Rastreamento de Localização)
 
-const State = {
-    // Dados em memória
-    registeredTrees: [],
-    activeTab: 'conceitos-basicos',
-    lastEvaluatorName: '',
-    currentTreePhoto: null, // Blob da foto atual
-    editingTreeId: null,    // ID da árvore sendo editada
+// === 1. Chaves de Armazenamento ===
+const STORAGE_KEY = 'manualPodaData';
+const ACTIVE_TAB_KEY = 'manualPodaActiveTab';
 
-    // Configurações
-    storageKey: 'arboria_trees_v1',
+// === 2. Estado Global da Aplicação ===
 
-    // === 1. INICIALIZAÇÃO ===
-    init() {
-        console.log('[State] Carregando dados...');
-        this.loadDataFromStorage();
-    },
+export let registeredTrees = [];
+export let db = null;
+export let mapInstance = null;
+export let mapMarkerGroup = null;
+export let currentTooltip = null;
 
-    // === 2. GETTERS & SETTERS ===
-    getAllTrees() {
-        return this.registeredTrees;
-    },
-
-    getTreeById(id) {
-        return this.registeredTrees.find(t => t.id === id);
-    },
-
-    getActiveTab() {
-        return this.activeTab;
-    },
-
-    saveActiveTab(tabId) {
-        this.activeTab = tabId;
-    },
-
-    setCurrentTreePhoto(blob) {
-        this.currentTreePhoto = blob;
-    },
-
-    getCurrentTreePhoto() {
-        return this.currentTreePhoto;
-    },
-
-    setEditingTreeId(id) {
-        this.editingTreeId = id;
-    },
-
-    getEditingTreeId() {
-        return this.editingTreeId;
-    },
-    
-    setLastEvaluatorName(name) {
-        this.lastEvaluatorName = name;
-        // Opcional: Salvar em localStorage separado
-        localStorage.setItem('arboria_last_evaluator', name);
-    },
-
-    // === 3. CRUD (Dados) ===
-    addTree(treeData) {
-        this.registeredTrees.push(treeData);
-        this.saveToStorage();
-        this.notifyChange(); // Avisa a UI
-        return treeData;
-    },
-
-    updateTree(updatedTree) {
-        const index = this.registeredTrees.findIndex(t => t.id === updatedTree.id);
-        if (index !== -1) {
-            this.registeredTrees[index] = updatedTree;
-            this.saveToStorage();
-            this.notifyChange();
-            return true;
-        }
-        return false;
-    },
-
-    removeTree(id) {
-        const initialLength = this.registeredTrees.length;
-        this.registeredTrees = this.registeredTrees.filter(t => t.id !== id);
-        
-        if (this.registeredTrees.length < initialLength) {
-            this.saveToStorage();
-            this.notifyChange();
-            return true;
-        }
-        return false;
-    },
-
-    clearAll() {
-        this.registeredTrees = [];
-        this.saveToStorage();
-        this.notifyChange();
-    },
-
-    // === 4. PERSISTÊNCIA ===
-    saveToStorage() {
-        try {
-            const json = JSON.stringify(this.registeredTrees);
-            localStorage.setItem(this.storageKey, json);
-        } catch (e) {
-            console.error('[State] Erro ao salvar:', e);
-        }
-    },
-
-    loadDataFromStorage() {
-        try {
-            const json = localStorage.getItem(this.storageKey);
-            if (json) {
-                this.registeredTrees = JSON.parse(json);
-            }
-            // Carrega avaliador
-            const evaluator = localStorage.getItem('arboria_last_evaluator');
-            if (evaluator) this.lastEvaluatorName = evaluator;
-        } catch (e) {
-            console.error('[State] Erro ao carregar:', e);
-            this.registeredTrees = [];
-        }
-    },
-
-    // Notificação simples via evento customizado
-    notifyChange() {
-        document.dispatchEvent(new CustomEvent('arboria:data-updated'));
-    }
+export let sortState = {
+  key: 'id',
+  direction: 'asc'
 };
 
-// Inicializa automaticamente
-State.init();
+// Variáveis de estado temporárias
+export let lastEvaluatorName = '';
+export let toastTimer = null;
+export let lastUtmZone = { num: 0, letter: 'Z' };
+export let zoomTargetCoords = null;
+export let highlightTargetId = null;
+export let currentTreePhoto = null;
+export let editingTreeId = null; // (v23.5)
+export let openInfoBoxId = null; // (v23.6)
 
-/* CORREÇÃO DO ERRO "does not provide an export named default" */
-export default State;
+// [NOVO v24.1] Rastreamento de localização do usuário
+export let userLocationWatchId = null;
+export let userLocationMarker = null;
 
-/* Mantém exportações nomeadas para compatibilidade com código antigo se houver */
-export const loadDataFromStorage = State.loadDataFromStorage.bind(State);
-export const saveActiveTab = State.saveActiveTab.bind(State);
-export const getActiveTab = State.getActiveTab.bind(State);
-export const setLastEvaluatorName = State.setLastEvaluatorName.bind(State);
-export const setCurrentTreePhoto = State.setCurrentTreePhoto.bind(State);
-export const setEditingTreeId = State.setEditingTreeId.bind(State);
+
+// === 3. Funções "Setters" ===
+
+export function setRegisteredTrees(newTrees) {
+  registeredTrees = newTrees;
+}
+export function setDb(databaseInstance) {
+  db = databaseInstance;
+}
+export function setMapInstance(map) {
+  mapInstance = map;
+}
+export function setMapMarkerGroup(group) {
+  mapMarkerGroup = group;
+}
+export function setCurrentTooltip(tooltip) {
+  currentTooltip = tooltip;
+}
+export function setSortState(key, direction) {
+  sortState.key = key;
+  sortState.direction = direction;
+}
+export function setLastEvaluatorName(name) {
+  lastEvaluatorName = name;
+}
+export function setToastTimer(timer) {
+  toastTimer = timer;
+}
+export function setLastUtmZone(num, letter) {
+  lastUtmZone.num = num;
+  lastUtmZone.letter = letter;
+}
+export function setZoomTargetCoords(coords) {
+  zoomTargetCoords = coords;
+}
+export function setHighlightTargetId(id) {
+  highlightTargetId = id;
+}
+export function setCurrentTreePhoto(photoBlob) {
+  currentTreePhoto = photoBlob;
+}
+export function setEditingTreeId(id) {
+  editingTreeId = id;
+}
+
+/**
+ * [NOVO v23.6] Define o ID do InfoBox que deve ser aberto no mapa.
+ * @param {number | null} id O ID da árvore ou null.
+ */
+export function setOpenInfoBoxId(id) {
+  openInfoBoxId = id;
+}
+
+// [NOVO v24.1] Setters de Localização
+export function setUserLocationWatchId(id) {
+  userLocationWatchId = id;
+}
+export function setUserLocationMarker(marker) {
+  userLocationMarker = marker;
+}
+
+// === 4. Funções de Persistência (LocalStorage) ===
+
+/**
+ * Salva o array 'registeredTrees' no LocalStorage.
+ */
+export function saveDataToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(registeredTrees));
+  } catch (e) {
+    console.error("Erro ao salvar dados no localStorage:", e);
+  }
+}
+
+/**
+ * Carrega os dados do LocalStorage para o estado 'registeredTrees'.
+ */
+export function loadDataFromStorage() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (data) {
+      registeredTrees = JSON.parse(data);
+    }
+  } catch (e) {
+    console.error("Erro ao ler dados do localStorage:", e);
+    registeredTrees = []; // Garante que o estado seja limpo em caso de erro
+  }
+}
+
+/**
+ * Salva a última aba ativa no LocalStorage.
+ * @param {string} tabKey O 'data-target' da aba (ex: 'conceitos-basicos')
+ */
+export function saveActiveTab(tabKey) {
+  try {
+    localStorage.setItem(ACTIVE_TAB_KEY, tabKey);
+  } catch (e) {
+    console.error("Erro ao salvar a aba ativa:", e);
+  }
+}
+
+/**
+ * Busca a última aba ativa salva no LocalStorage.
+ * @returns {string | null} A chave da última aba salva.
+ */
+export function getActiveTab() {
+  try {
+    return localStorage.getItem(ACTIVE_TAB_KEY);
+  } catch (e) {
+    console.error("Erro ao ler a aba ativa:", e);
+    return null;
+  }
+}

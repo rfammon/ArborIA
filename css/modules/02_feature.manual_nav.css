@@ -1,197 +1,134 @@
-/* 02_feature.manual_nav.css (vFinal 4.0)
-   Visual: Desktop (Lista) / Mobile (Grade de 3 Ícones)
+/* 02_feature.manual_nav.css 
+   Refatorado: Identidade ArborIA (Blue/Green), Botões Arredondados e Alto Contraste
 */
 
-/* --- CONTAINER PRINCIPAL --- */
 .mapa-navegacao {
     background: white;
-    border-radius: 20px;
+    border-radius: 16px; /* Mais arredondado */
     padding: 1.5rem;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Sombra suave no card */
     margin-bottom: 1.5rem;
-    border: 1px solid rgba(0,0,0,0.05);
-    transition: opacity 0.3s ease;
-}
-
-.mapa-navegacao.hidden {
-    display: none;
+    border: 1px solid #e0e0e0;
 }
 
 .mapa-navegacao h2 {
+    /* Identidade: Azul Tecnológico */
     color: #0277BD; 
-    margin-bottom: 1.5rem;
-    font-size: 1.2rem;
+    margin-bottom: 1.2rem;
+    font-size: 1.3rem;
     font-weight: 700;
-    text-transform: uppercase;
+    
+    /* Substituindo a linha laranja por um degradê da marca */
     border-bottom: 3px solid;
     border-image-slice: 1;
-    border-image-source: linear-gradient(to right, #0277BD, #00796b, transparent);
+    border-image-source: linear-gradient(to right, #0277BD, #00796b);
+    
     padding-bottom: 0.5rem;
 }
 
-/* --- GRID/LISTA CONTROLADOR --- */
+/* Container dos botões */
 .topicos-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    width: 100%;
+    gap: 10px; /* Espaçamento entre botões */
 }
 
-/* --- DESKTOP (PADRÃO) --- */
+/* ESTILO DO BOTÃO (Estado Normal) */
 .topico-btn {
-    position: relative;
-    width: 100%;
+    /* Formato de Botão */
     background: #ffffff;
-    border: 1px solid #eceff1;
-    border-radius: 16px;
-    padding: 14px 20px;
-    color: #546E7A;
-    font-size: 0.95rem;
-    font-weight: 600;
+    border: 1px solid #cfd8dc; /* Borda cinza azulada suave */
+    border-radius: 12px; /* Bordas bem arredondadas */
+    padding: 12px 16px;
+    
+    /* Tipografia */
+    color: #455A64; /* Cinza escuro para leitura confortável */
+    font-size: 1rem;
+    font-weight: 600; /* Negrito para destaque */
+    text-align: left;
+    
+    /* Comportamento */
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Sombra leve para dar volume */
+    
+    /* Layout Flexbox */
     display: flex;
     align-items: center;
-    justify-content: flex-start; 
-    text-align: left; 
-    gap: 16px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-    
-    /* Remove highlight azul padrão no mobile ao tocar */
-    -webkit-tap-highlight-color: transparent;
+    gap: 12px;
 }
 
+/* Hover (Passar o mouse) */
 .topico-btn:hover {
-    transform: translateX(6px);
-    border-color: #00796b;
-    background: #f0fcfc;
-    color: #00695c;
+    transform: translateY(-2px); /* O botão "flutua" levemente */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-color: #00796b; /* Borda verde ao passar o mouse */
+    background: #f1f8e9; /* Fundo verde muito pálido */
+    color: #004d40;
 }
 
+/* ESTILO DO BOTÃO (Ativo/Selecionado) */
 .topico-btn.active {
+    /* Identidade: Degradê ArborIA (Verde -> Azul) */
     background: linear-gradient(135deg, #00796b 0%, #0277BD 100%);
-    color: white !important;
-    border-color: transparent;
-    box-shadow: 0 8px 20px rgba(0, 121, 107, 0.4);
-    transform: scale(1.02);
-    z-index: 1;
+    
+    color: #ffffff !important; /* Texto Branco Forçado */
+    border: none; /* Remove borda para o degradê brilhar */
+    
+    box-shadow: 0 4px 10px rgba(0, 121, 107, 0.4); /* Sombra colorida (Glow) */
+    transform: scale(1.02); /* Levemente maior para indicar seleção */
 }
 
+/* Ajuste para não mover demais no hover se já estiver ativo */
+.topico-btn.active:hover {
+    transform: scale(1.02) translateY(0);
+    box-shadow: 0 5px 12px rgba(0, 121, 107, 0.5);
+}
+
+/* --- ÍCONES (Imagens PNG) --- */
 .topico-btn img {
-    width: 28px; 
-    height: 28px;
-    min-width: 28px;
+    width: 24px;
+    height: 24px;
     object-fit: contain;
-    pointer-events: none; /* CRÍTICO: Permite o clique passar */
+    
+    /* SAFETY LOCK: Impede que o clique quebre a navegação */
+    pointer-events: none; 
+    
+    transition: filter 0.2s ease;
+    
+    /* Filtro padrão: Deixa o ícone levemente acinzentado para combinar com o texto */
     filter: grayscale(100%) opacity(0.7);
-    transition: transform 0.3s ease;
 }
 
+/* Ícone quando passa o mouse (Hover) */
 .topico-btn:hover img {
-    filter: none;
-    transform: scale(1.1);
+    filter: none; /* Mostra a cor original do ícone */
+    transform: scale(1.1); /* Ícone cresce um pouquinho */
 }
 
+/* Ícone quando Ativo (Selecionado) */
 .topico-btn.active img {
-    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
-    opacity: 1;
-    transform: scale(1.15);
+    /* Inverte totalmente para Branco Brilhante */
+    filter: brightness(0) invert(1); 
 }
 
+/* Separador Visual (Linha divisória entre seções) */
 .nav-separator {
-    height: 1px;
-    background: linear-gradient(to right, transparent, #cfd8dc, transparent);
-    margin: 15px 0;
+    height: 2px;
+    /* Degradê suave e transparente */
+    background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+    margin: 10px 0;
     width: 100%;
 }
 
-/* Botão Voltar (Aparece só dentro do conteúdo) */
-#btn-voltar-painel {
-    display: none;
-    width: 100%;
-    padding: 12px;
-    background: #f5f5f5;
-    color: #455A64;
-    font-weight: 700;
-    border: 1px solid #cfd8dc;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
-
-/* --- MOBILE (GRADE DE ÍCONES - 3 COLUNAS) --- */
+/* Responsividade Mobile */
 @media (max-width: 768px) {
-    
     .mapa-navegacao {
-        background: transparent;
-        box-shadow: none;
-        border: none;
-        padding: 5px 10px;
-        margin-bottom: 0;
-    }
-
-    .mapa-navegacao h2 {
-        text-align: center;
-        font-size: 1rem;
-        background: white;
-        padding: 10px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        margin-bottom: 15px;
-        border-bottom: none;
-    }
-
-    /* Grade de 3 Colunas (Estilo App) */
-    .topicos-container {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr); /* 3 Ícones por linha */
-        gap: 10px; 
-    }
-
-    .topico-btn {
-        flex-direction: column; /* Ícone em cima */
-        justify-content: center; 
-        text-align: center;
-        padding: 12px 5px; 
-        border-radius: 18px;
-        gap: 8px;
-        min-height: 100px; /* Altura fixa para alinhar */
-        
-        background: white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    .topico-btn img {
-        width: 36px; /* Ícone um pouco menor para caber 3 */
-        height: 36px;
-        min-width: 36px;
-        filter: none; 
-        opacity: 1;
-    }
-
-    .topico-btn {
-        font-size: 0.7rem; /* Texto menor para caber */
-        line-height: 1.2;
+        padding: 1rem;
     }
     
-    /* Efeito de Toque no Mobile */
-    .topico-btn:active {
-        transform: scale(0.95);
-        background-color: #e0f2f1;
-        border-color: #00796b;
-    }
-    
-    /* Remove hover state no mobile (evita travar cor) */
-    .topico-btn:hover {
-        transform: none;
-        background: white; 
-    }
-
-    #btn-voltar-painel.visible {
-        display: flex;
+    .topico-btn {
+        padding: 12px;
+        font-size: 0.95rem;
     }
 }

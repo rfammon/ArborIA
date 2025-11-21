@@ -1,264 +1,86 @@
-/* 01_components.forms.css 
-   Estilos de Formulários (Modern & Clean)
-*/
+/* css/modules/01_components.forms.css */
 
-/* Containers de Formulário (Fieldset) */
-.risk-fieldset {
-    border: none; /* Removemos a borda padrão feia */
-    background: #fafafa;
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); /* Borda sutil interna */
+/* -------------------------------------- */
+/* 7. FORMULÁRIOS (CHAT & CONTATO) */
+/* -------------------------------------- */
+
+#fale-conosco,
+#gemini-chat {
+  padding: var(--space-lg);
+  background-color: var(--bg-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  border-top: 5px solid var(--color-primary-medium);
+  margin-top: var(--space-lg);
 }
 
-.risk-fieldset legend {
-    font-weight: 700;
-    color: #0277BD; /* Azul Tech */
-    font-size: 1.1rem;
-    padding: 0 10px;
-    background: transparent;
-    display: block;
-    width: 100%;
-    border-bottom: 2px solid rgba(2, 119, 189, 0.2);
-    margin-bottom: 15px;
+#gemini-chat {
+  background-color: var(--color-primary-lightest);
+  border-top-color: var(--color-primary-medium);
 }
 
-/* Inputs e Selects */
-input[type="text"],
-input[type="number"],
-input[type="email"],
-input[type="date"],
-select,
-textarea {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #cfd8dc;
-    border-radius: 10px; /* Arredondamento unificado */
-    background: white;
-    font-size: 1rem;
-    color: #37474f;
-    transition: all 0.2s ease;
-    
-    /* Sombra interna leve para profundidade */
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+#fale-conosco h2,
+#gemini-chat h2 {
+  color: var(--color-primary-dark);
+  margin-bottom: var(--space-md);
+  font-size: 1.4rem;
 }
 
-/* Foco (Highlight Blue/Green) */
-input:focus,
-select:focus,
-textarea:focus {
-    outline: none;
-    border-color: #00796b; /* Verde ArborIA */
-    box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.15);
-    background: #ffffff;
+.contact-form label,
+.chat-container label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  font-weight: 600;
+  color: var(--color-text);
 }
 
-/* Labels */
-label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 600;
-    color: #546E7A;
-    font-size: 0.9rem;
+/* Inputs e Textareas Padronizados */
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea,
+#chat-input,
+.form-grid input[type="text"],
+.form-grid input[type="number"],
+.form-grid input[type="date"],
+.risk-fieldset textarea,
+#table-filter-input
+{
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  font-family: var(--font-primary);
+  transition: all 0.2s ease-in-out;
+  margin-bottom: 0;
 }
 
-/* Grid de Formulário */
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-    margin-bottom: 15px;
+.contact-form input[type="text"]:focus,
+.contact-form input[type="email"]:focus,
+.contact-form textarea:focus,
+#chat-input:focus,
+.form-grid input[type="text"]:focus,
+.form-grid input[type="number"]:focus,
+.form-grid input[type="date"]:focus,
+.risk-fieldset textarea:focus,
+#table-filter-input:focus
+{
+  outline: none;
+  border-color: var(--color-primary-medium);
+  box-shadow: 0 0 0 3px var(--color-primary-lightest);
 }
 
-/* Área de Upload de Foto */
-.photo-upload-container {
-    margin-top: 15px;
-    text-align: center;
-    border: 2px dashed #b0bec5;
-    border-radius: 16px;
-    padding: 20px;
-    background: #eceff1;
-    transition: background 0.3s;
-}
-
-.photo-upload-container:hover {
-    background: #e1f5fe;
-    border-color: #0277BD;
-}
-
-.photo-btn {
-    background: #fff;
-    color: #0277BD;
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-block;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-/* --- SEÇÕES ESPECIAIS: CHATBOT E CONTATO --- */
-
-/* Container Geral dos Cards de Rodapé */
-#gemini-chat, 
-#fale-conosco {
-    background: #ffffff;
-    border-radius: 20px; /* Arredondamento ArborIA */
-    padding: 2rem;
-    margin-top: 2rem;
-    margin-bottom: 2rem;
-    
-    /* Sombra Flutuante */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.04);
-    position: relative;
-    overflow: hidden;
-}
-
-/* Barra Decorativa no Topo */
-#gemini-chat::before {
-    background: linear-gradient(to right, #7b1fa2, #4a148c); /* Roxo Tech AI */
-}
-#fale-conosco::before {
-    background: linear-gradient(to right, #00796b, #004d40); /* Verde ArborIA */
-}
-
-#gemini-chat::before, 
-#fale-conosco::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 6px;
-}
-
-/* Títulos das Seções */
-#gemini-chat h2, 
-#fale-conosco h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#gemini-chat h2 { color: #4a148c; }
-#fale-conosco h2 { color: #00695c; }
-
-/* --- CHATBOT ESPECÍFICO --- */
-.chat-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
+/* Chat específico */
 #chat-response-box {
-    background: #f3e5f5; /* Fundo roxo muito claro */
-    border-radius: 16px;
-    padding: 20px;
-    min-height: 80px;
-    border: 1px solid #e1bee7;
-    color: #4a148c;
-    font-size: 0.95rem;
-    line-height: 1.5;
+  background-color: var(--bg-surface);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--border-radius-md);
+  min-height: 100px;
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
 .chat-input-area {
-    display: flex;
-    gap: 10px;
-}
-
-.chat-input-area input {
-    flex: 1;
-    padding: 14px;
-    border-radius: 30px; /* Pílula */
-    border: 2px solid #e1bee7;
-    font-size: 1rem;
-    outline: none;
-    transition: border-color 0.3s;
-}
-
-.chat-input-area input:focus {
-    border-color: #9c27b0;
-}
-
-#chat-send-btn {
-    background: #9c27b0;
-    color: white;
-    border-radius: 30px;
-    padding: 0 24px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-#chat-send-btn:hover {
-    background: #7b1fa2;
-}
-
-/* --- FORMULÁRIO DE CONTATO --- */
-.contact-form-container {
-    max-width: 100%;
-}
-
-.contact-form {
-    display: grid;
-    gap: 15px;
-}
-
-.contact-form input, 
-.contact-form textarea {
-    width: 100%;
-    padding: 12px 15px;
-    border-radius: 12px;
-    border: 1px solid #cfd8dc;
-    font-family: inherit;
-    transition: all 0.3s;
-}
-
-.contact-form input:focus, 
-.contact-form textarea:focus {
-    border-color: #00796b;
-    box-shadow: 0 0 0 4px rgba(0, 121, 107, 0.1);
-    outline: none;
-}
-
-.send-btn {
-    background: linear-gradient(to right, #00796b, #004d40);
-    color: white;
-    padding: 14px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border: none;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    margin-top: 10px;
-}
-
-.send-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 121, 107, 0.3);
-}
-
-/* Mobile Ajustes */
-@media (max-width: 768px) {
-    #gemini-chat, #fale-conosco {
-        padding: 1.5rem;
-        border-radius: 16px;
-        margin-bottom: 1.5rem;
-    }
-    
-    .chat-input-area {
-        flex-direction: column;
-    }
-    
-    #chat-send-btn {
-        width: 100%;
-        padding: 12px;
-    }
+  display: flex;
+  gap: var(--space-sm);
 }

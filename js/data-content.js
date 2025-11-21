@@ -1,11 +1,9 @@
 // js/data-content.js (v19.4)
-// Contém os objetos de dados (glossário, equipamentos) e o conteúdo HTML do manual.
+// Contém apenas os objetos de dados e conteúdo do manual.
 
-// Helper para gerar tags de imagem padronizadas
 const imgTag = (src, alt) => `<img src="img/${src}" alt="${alt}" class="manual-img">`;
 
-// 1. Termos do Glossário (Definições Simples)
-export const glossaryTerms = {
+const glossaryTerms = {
     'colar do galho': 'Zona especializada na base do galho, responsável pela compartimentalização de ferimentos.',
     'crista da casca': 'Elevação cortical paralela ao ângulo de inserção do galho, indicadora da zona de união.',
     'lenho de cicatrização': 'Tecido formado para selar ferimentos, também conhecido como callus.',
@@ -57,9 +55,7 @@ export const glossaryTerms = {
     'mtr': 'Manifesto de Transporte de Resíduos (MTR): Documento que garante a rastreabilidade dos resíduos desde a origem até a destinação final, exigido em operações de transporte de resíduos sólidos.',
     'spi q': 'Sistema de Proteção Individual contra Quedas.'
 };
-
-// 2. Dados de Equipamentos (com imagens)
-export const equipmentData = {
+const equipmentData = {
     'serrote-manual': {
         desc: 'Utilizado para galhos com diâmetro entre 3 e 12 cm. Permite cortes precisos em locais de difícil acesso.',
         img: 'serrote-manual.jpg'
@@ -89,9 +85,7 @@ export const equipmentData = {
         img: 'podador.jpg'
     }
 };
-
-// 3. Finalidade da Poda
-export const podaPurposeData = {
+const podaPurposeData = {
     'conducao': {
         desc: 'Direcionar eixo de crescimento, remover ramos baixos/indesejáveis.',
         img: 'poda-conducao.jpg'
@@ -122,8 +116,7 @@ export const podaPurposeData = {
     }
 };
 
-// 4. Conteúdo HTML do Manual (Estrutura Principal)
-export const manualContent = {
+const manualContent = {
     'conceitos-basicos': {
         titulo: '💡 Definições, Termos e Técnicas',
         html: `
@@ -135,7 +128,7 @@ export const manualContent = {
             <h3>Compartimentalização de Árvores</h3>
             <p>As árvores possuem defesas naturais que protegem cortes e ferimentos, como os causados pela poda. Na casca, os ferimentos formam uma camada protetora chamada periderme necrofilática, que impede a entrada de microrganismos. Na madeira, ocorre um processo chamado compartimentalização, que isola a área danificada para evitar que o problema se espalhe pelo restante da árvore.</p>
             ${imgTag('compartimentalização.jpg', 'Diagrama do processo de compartimentalização')}
-            
+
             <h3>Instrumentos e Equipamentos</h3>
             <ul class="equipment-list">
                 <li><span class="equipment-term" data-term-key="serrote-manual">Serrote Manual</span></li>
@@ -375,7 +368,7 @@ export const manualContent = {
         `
     },
 
-    // HTML da Calculadora (View completa)
+    // (CORRIGIDO v19.3) HTML da Calculadora: HTML estático completo (sem auto-referência)
     'calculadora-risco': {
         titulo: '📊 Calculadora de Risco Arbóreo',
         html: `
@@ -545,15 +538,3 @@ export const manualContent = {
         `
     }
 };
-
-// 5. Adaptador de Compatibilidade para Tooltips (Cria glossaryData dinamicamente)
-// Isso permite que tooltip.ui.js continue funcionando esperando objetos {title, description}
-export const glossaryData = Object.fromEntries(
-    Object.entries(glossaryTerms).map(([key, value]) => [
-        key,
-        { 
-            title: key.charAt(0).toUpperCase() + key.slice(1), // Capitaliza o título
-            description: value 
-        }
-    ])
-);
