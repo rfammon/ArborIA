@@ -1,16 +1,17 @@
 /**
- * ARBORIA 2.0 - FEATURES (v72.2 Refatorado)
+ * ARBORIA 2.0 - FEATURES (v72.3 Final Fix)
  * Lógica de Negócios: GPS, CRUD de Árvores, Importação/Exportação e Chat
- * Correção: Integração com utils.convertLatLonToUtm restaurada e TableUI render.
+ * Correção: Integração com TableUI para atualização visual imediata.
  */
 
 import * as state from './state.js';
 import * as utils from './utils.js';
 import * as db from './database.js';
-import { TableUI } from './table.ui.js'; // Import TableUI for re-renders
+// [CRITICAL ADDITION] Import TableUI to update the table after changes
+import { TableUI } from './table.ui.js'; 
 
 // === 1. GPS ===
-// The GPS capture process uses multiple readings to increase precision (triangulation).
+// O processo de captura usa múltiplas leituras para aumentar a precisão (triangulação).
 // 
 export async function handleGetGPS() {
   const gpsStatus = document.getElementById('gps-status');
@@ -26,7 +27,7 @@ export async function handleGetGPS() {
     return;
   }
   
-  const CAPTURE_TIME_MS = 15000; // Calibration time
+  const CAPTURE_TIME_MS = 15000; // Tempo de calibração
   const options = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
   let readings = [];
   let watchId = null;
@@ -68,7 +69,7 @@ export async function handleGetGPS() {
           return;
       }
 
-      // Calculate average for better precision
+      // Cálculo da média das leituras para maior precisão
       let sumLat = 0, sumLon = 0, sumAcc = 0;
       readings.forEach(r => { 
           sumLat += r.latitude; 
@@ -80,21 +81,20 @@ export async function handleGetGPS() {
       const avgLon = sumLon / readings.length;
       const avgAcc = sumAcc / readings.length;
 
-      // Call restored utility function
       const utmCoords = utils.convertLatLonToUtm(avgLat, avgLon); 
 
       if (utmCoords) {
           if(coordXField) coordXField.value = utmCoords.easting.toFixed(0);
           if(coordYField) coordYField.value = utmCoords.northing.toFixed(0);
           
-          // Update global state
+          // Atualiza estado global
           if(state.setLastUtmZone) state.setLastUtmZone(utmCoords.zoneNum, utmCoords.zoneLetter);
           
-          // Update UTM Zone field if present
+          // Atualiza campo de Zona UTM (se existir no form)
           const dz = document.getElementById('default-utm-zone');
           if (dz) dz.value = `${utmCoords.zoneNum}${utmCoords.zoneLetter}`;
           
-          // Visual Feedback
+          // Feedback Visual
           const gs = document.getElementById('gps-status');
           if(gs) {
               const color = avgAcc <= 5 ? 'var(--color-forest)' : '#E65100'; 
@@ -109,7 +109,6 @@ export async function handleGetGPS() {
 
   watchId = navigator.geolocation.watchPosition(
       (pos) => { 
-          // Filter out poor readings (> 150m error)
           if (pos.coords.accuracy < 150) readings.push(pos.coords); 
       },
       (err) => console.warn("GPS Error:", err),
@@ -125,7 +124,6 @@ export function clearPhotoPreview() {
   const pc = document.getElementById('photo-preview-container');
   const rb = document.getElementById('remove-photo-btn');
   
-  // Remove <img> tag if exists
   const op = document.querySelector('#photo-preview-container img');
   if (op && pc) { 
       try { URL.revokeObjectURL(op.src); } catch(e){} 
@@ -144,7 +142,7 @@ export function handleAddTreeSubmit(event) {
   event.preventDefault();
   const form = event.target;
   
-  // Risk Score Calculation
+  // Cálculo de Pontuação de Risco
   let totalScore = 0;
   form.querySelectorAll('.risk-checkbox:checked').forEach(cb => totalScore += parseInt(cb.dataset.weight, 10));
   
@@ -157,14 +155,14 @@ export function handleAddTreeSubmit(event) {
   const especie = document.getElementById('risk-especie').value.trim();
   if (!especie) { utils.showToast("O nome da espécie é obrigatório.", 'error'); return { success: false }; }
 
-  // Safe input reading with fallbacks
+  // Leitura segura dos inputs
   const alturaInput = document.getElementById('risk-altura');
   const distInput = document.getElementById('risk-distancia-obs'); 
   
   const alturaVal = alturaInput ? alturaInput.value || '0.0' : '0.0';
   const distVal = distInput ? distInput.value || '0.0' : '0.0';
 
-  // Tree Object Assembly
+  // Montagem do Objeto Árvore
   const treeData = {
     data: document.getElementById('risk-data').value || new Date().toISOString().split('T')[0],
     especie: especie,
@@ -189,7 +187,7 @@ export function handleAddTreeSubmit(event) {
   
   let resultTree, mode;
 
-  // Add or Edit Mode
+  // Modo Adicionar ou Editar
   if (state.editingTreeId === null) {
     // ADD
     mode = 'add';
@@ -209,7 +207,7 @@ export function handleAddTreeSubmit(event) {
     resultTree = { ...treeData, id: state.editingTreeId };
     const original = state.registeredTrees[idx];
     
-    // Smart image management (save, keep, or delete)
+    // Smart image management
     if (resultTree.hasPhoto && !original.hasPhoto) db.saveImageToDB(resultTree.id, state.currentTreePhoto);
     else if (!resultTree.hasPhoto && original.hasPhoto) db.deleteImageFromDB(resultTree.id);
     else if (resultTree.hasPhoto && original.hasPhoto && state.currentTreePhoto) db.saveImageToDB(resultTree.id, state.currentTreePhoto);
@@ -225,7 +223,7 @@ export function handleAddTreeSubmit(event) {
   form.reset();
   clearPhotoPreview();
   
-  // Remove focus (close mobile keyboard)
+  // Remove foco
   if(document.activeElement) document.activeElement.blur();
 
   // [CRITICAL] Update Table UI
@@ -260,8 +258,7 @@ export function handleEditTree(id) {
   const tabBtn = document.querySelector('.sub-nav-btn[data-target="tab-content-register"]');
   if(tabBtn) tabBtn.click();
   
-  // Populate form logic should be handled here or in main/ui calling this
-  // For now, let's assume main.js or UI handles form population via this return
+  // Return object for main.js to populate form
   return t;
 }
 
@@ -280,7 +277,7 @@ export function handleClearAll() {
   return true;
 }
 
-// === UI HELPERS AND TABLE ===
+// === HELPERS DE UI E TABELA ===
 export function handleTableFilter() {
   const fi = document.getElementById('table-filter-input'); if (!fi) return;
   const ft = fi.value.toLowerCase();
@@ -301,13 +298,12 @@ export function getSortValue(tree, key) {
   return (tree[key] || '').toLowerCase();
 }
 
-// === MAP AND GEO UTILS ===
+// === MAPA E UTILS GEOGRÁFICOS ===
 export function convertToLatLon(tree) {
   if(tree.coordX === 'N/A' || tree.coordY === 'N/A') return null;
   if (typeof window.proj4 === 'undefined') return null;
   
   const e = parseFloat(tree.coordX); const n = parseFloat(tree.coordY);
-  // Fallback to default zone if tree doesn't have one
   const zn = tree.utmZoneNum || (state.lastUtmZone ? state.lastUtmZone.num : 23);
   const zl = tree.utmZoneLetter || (state.lastUtmZone ? state.lastUtmZone.letter : 'K');
   
@@ -329,7 +325,6 @@ export function handleZoomToPoint(id) {
   if (c) {
     state.setZoomTargetCoords(c); state.setHighlightTargetId(id); state.setOpenInfoBoxId(id);
     
-    // Navigate to map tab
     const b = document.querySelector('.sub-nav-btn[data-target="tab-content-mapa"]'); 
     if (b) b.click();
   } else { 
@@ -340,26 +335,24 @@ export function handleZoomToPoint(id) {
 export function handleMapMarkerClick(id) {
   state.setHighlightTargetId(id);
   
-  // Back to summary
   const b = document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]'); 
   if (b) b.click();
   
-  // Scroll and highlight row
   setTimeout(() => {
       const row = document.getElementById(`row-${id}`);
       if(row) {
           row.scrollIntoView({behavior: 'smooth', block: 'center'});
-          row.style.backgroundColor = '#e3f2fd'; // Temp Highlight
+          row.style.backgroundColor = '#e3f2fd'; 
           setTimeout(() => row.style.backgroundColor = '', 2000);
       }
   }, 300);
 }
 
 export function handleZoomToExtent() {
-    // Placeholder - Real logic in map.ui.js which listens to this event or button
+    // Placeholder
 }
 
-// === IMPORT / EXPORT ===
+// === IMPORTAÇÃO / EXPORTAÇÃO ===
 function getCSVData() {
   if (state.registeredTrees.length === 0) return null;
   
