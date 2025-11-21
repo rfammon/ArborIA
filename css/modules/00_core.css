@@ -1,6 +1,6 @@
 /**
  * ARBORIA 2.0 - CORE STYLES
- * Módulo Base: Variáveis, Reset e Tipografia
+ * Módulo Base: Variáveis, Reset, Tipografia e Layout Mestre
  */
 
 :root {
@@ -83,3 +83,34 @@ img {
 .text-center { text-align: center; }
 .text-muted { color: var(--color-text-muted); }
 .hidden { display: none !important; }
+
+/* --- LAYOUT MESTRE (GRID DESKTOP) --- */
+/* Correção Crítica: Organiza Menu e Conteúdo lado a lado em telas grandes */
+
+@media (min-width: 769px) {
+  #app-content {
+    display: grid;
+    /* Coluna 1: Menu (280px fixo) | Coluna 2: Conteúdo (Restante) */
+    grid-template-columns: 280px 1fr; 
+    gap: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    align-items: start; /* Impede que o menu estique a altura desnecessariamente */
+  }
+
+  /* Garante que os elementos respeitem as colunas do grid */
+  .content-section, 
+  .mapa-navegacao {
+    grid-column: auto; 
+  }
+  
+  /* Comportamento Sticky para o Menu Desktop */
+  .mapa-navegacao {
+    position: sticky;
+    top: 90px; /* Margem abaixo do header fixo */
+    max-height: calc(100vh - 110px); /* Altura máxima para permitir scroll interno se necessário */
+    overflow-y: auto;
+    z-index: 10;
+  }
+}
