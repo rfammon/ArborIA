@@ -10,6 +10,7 @@ import * as db from './database.js';
 import { TableUI } from './table.ui.js'; 
 
 // === WIZARD STATE & LISTENERS (Refatorado para estabilidade) ===
+let currentChecklistIndex = 0;
 let checklistListenersAttached = false; // Flag para anexo de listeners
 
 // Helper para pegar elementos do Wizard (DOM)
@@ -581,10 +582,7 @@ export async function handleChatSend() {}
 export function handleContactForm(e) { e.preventDefault(); }
 
 
-// === 3. CHECKLIST WIZARD MOBILE ===
-// Esta é a lógica que faz os botões "Próxima" e o Toggle funcionarem
-let currentChecklistIndex = 0;
-let checklistListenersAttached = false; // Flag para garantir que os botões só sejam ligados 1x
+
 
 const getChecklistElements = () => {
     const wrapper = document.querySelector('.mobile-checklist-wrapper');
