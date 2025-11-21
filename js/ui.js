@@ -1,11 +1,9 @@
 /**
  * ARBORIA 2.0 - UI CONTROLLER
  * Gerencia a navegação, responsividade e feedback visual.
- * Correção: Adaptação para importar o state.js legado corretamente.
+ * Correção: Adicionado fallback para abrir 'manual-view' quando o ID específico não existe.
  */
 
-// --- CORREÇÃO AQUI ---
-// Mudamos de { State } para * as State para agrupar as funções do seu arquivo original
 import * as State from './state.js';
 
 export const UI = {
@@ -96,13 +94,22 @@ export const UI = {
 
     /**
      * Lógica de Navegação Central (SPA)
-     * @param {string} targetId - ID da seção a ser exibida
+     * @param {string} targetId - ID da seção a ser exibida OU chave do conteúdo.
      */
     navigateTo(targetId) {
-        const targetSection = document.getElementById(targetId);
+        // Tenta achar a seção pelo ID exato (ex: 'calculadora-view')
+        let targetSection = document.getElementById(targetId);
         
+        // [CORREÇÃO DE FALLBACK]
+        // Se não existir uma seção com esse ID (ex: 'sobre-autor'), 
+        // assume que é um conteúdo de texto e abre o container genérico '#manual-view'.
         if (!targetSection) {
-            console.warn(`⚠️ Seção não encontrada: ${targetId}`);
+            targetSection = document.getElementById('manual-view');
+        }
+
+        // Se mesmo assim não achar nada (nem o manual-view), erro.
+        if (!targetSection) {
+            console.warn(`⚠️ Seção nem fallback encontrados para: ${targetId}`);
             return;
         }
 
