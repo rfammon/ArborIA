@@ -1,7 +1,6 @@
 /**
- * ARBORIA 2.0 - TABLE UI (V25.1 - Mobile Fix & Gradient)
+ * ARBORIA 2.0 - TABLE UI (V27.0 - Toggle Logic Fixed)
  * Responsável pela renderização e interatividade da tabela de resumo.
- * Correção: Integração do botão "Toggle Columns" para visualização mobile.
  */
 
 import * as State from './state.js';
@@ -13,11 +12,9 @@ export const TableUI = {
     
     container: null,
     badgeElement: null,
-    isCompactMode: false, // Estado do toggle de colunas (padrão: expandido/todos)
+    // DEFAULT STATE: false = Compact (Mobile columns hidden). true = Expanded (Show all).
+    isExpanded: false, 
 
-    /**
-     * Renderiza a tabela completa.
-     */
     render() {
         this.container = document.getElementById('summary-table-container');
         this.badgeElement = document.getElementById('summary-badge');
@@ -27,10 +24,9 @@ export const TableUI = {
         const trees = State.registeredTrees || [];
         this.updateBadge(trees.length);
 
-        // Injeta controles superiores (Filtro + Toggle Colunas)
+        // Render controls BEFORE checking empty state (so import button is visible)
         this.renderControls();
 
-        // Estado Vazio
         if (trees.length === 0) {
             this.container.innerHTML = `
                 <div class="text-center" style="padding: 40px; color: #999;">
@@ -45,17 +41,20 @@ export const TableUI = {
 
         this.toggleExportButtons(true);
 
-        // Ordenação (Decrescente por ID padrão)
         const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
 
-        // Monta a tabela com classe 'summary-table' e 'compact-view' se ativo
+        // Apply 'show-columns' class if expanded is true
+        let tableClass = 'summary-table';
+        if (this.isExpanded) tableClass += ' show-columns';
+
         let html = `
             <div class="table-responsive">
-            <table class="summary-table ${this.isCompactMode ? 'compact-view' : ''}">
+            <table class="${tableClass}">
                 <thead>
                     <tr>
-                        <th style="width: 50px;">ID</th>
-                        <th>Espécie/Data</th>
+                        <th style="width: 40px;">ID</th>
+                        <th>Espécie</th>
+                        <th class="col-hide-mobile">Data</th>
                         <th class="col-hide-mobile">Coord. UTM</th>
                         <th class="col-hide-mobile">DAP/Alt</th>
                         <th>Local</th>
@@ -68,56 +67,51 @@ export const TableUI = {
         `;
 
         sortedTrees.forEach(tree => {
-            // Badges de Risco
             let badgeClass = 'badge-low'; 
             if (tree.riscoClass === 'risk-high' || tree.risco === 'Alto Risco') badgeClass = 'badge-high';
             else if (tree.riscoClass === 'risk-medium' || tree.risco === 'Médio Risco') badgeClass = 'badge-medium';
 
             const photoIcon = tree.hasPhoto ? '📷' : '';
-            // Formata data simples
             const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
 
             html += `
                 <tr id="row-${tree.id}">
-                    <td class="col-id">#${tree.id}</td>
+                    <td class="col-id"><strong>${tree.id}</strong></td>
                     <td>
                         <div style="font-weight:700; color:#333;">${tree.especie}</div>
-                        <div style="font-size:0.75rem; color:#777;">${dateSimple} ${photoIcon}</div>
+                        <div class="col-show-mobile-only" style="font-size:0.7rem; color:#777;">${dateSimple}</div> 
                     </td>
+                    
+                    <td class="col-hide-mobile">${dateSimple}</td>
+                    
                     <td class="col-hide-mobile">
-                        <div style="font-size:0.8rem;">E: ${tree.coordX}</div>
-                        <div style="font-size:0.8rem;">N: ${tree.coordY}</div>
+                        <div style="font-size:0.75rem;">E:${tree.coordX}<br>N:${tree.coordY}</div>
                     </td>
+                    
                     <td class="col-hide-mobile">
-                        <div style="font-size:0.8rem;">DAP: ${tree.dap}</div>
-                        <div style="font-size:0.8rem;">Alt: ${tree.altura}</div>
+                        <div style="font-size:0.75rem;">D:${tree.dap} cm<br>H:${tree.altura} m</div>
                     </td>
+                    
                     <td style="font-size:0.85rem;">${tree.local}</td>
+                    
                     <td class="col-hide-mobile" style="font-size:0.8rem;">${tree.avaliador}</td>
-                    <td><span class="badge ${badgeClass}" style="font-size:0.7rem;">${tree.risco}</span></td>
+                    
+                    <td><span class="badge ${badgeClass}" style="font-size:0.7rem;">${tree.risco}</span> ${photoIcon}</td>
+                    
                     <td style="text-align: center;">
-                        <div style="display: flex; gap: 6px; justify-content: center;">
-                            
-                            <button class="action-btn-icon btn-map" data-id="${tree.id}" title="Ver no Mapa" 
-                                style="background:#e3f2fd; color:#0277BD; border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;">
-                                📍
-                            </button>
+                        <div style="display: flex; gap: 5px; justify-content: center;">
+                            <button class="action-btn-icon btn-map" data-id="${tree.id}" title="Mapa" 
+                                style="background:#e3f2fd; color:#0277BD; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">📍</button>
                             
                             ${tree.hasPhoto ? `
-                            <button class="action-btn-icon btn-photo" data-id="${tree.id}" title="Ver Foto" 
-                                style="background:#e8f5e9; color:#2e7d32; border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;">
-                                📷
-                            </button>` : ''}
+                            <button class="action-btn-icon btn-photo" data-id="${tree.id}" title="Foto" 
+                                style="background:#e8f5e9; color:#2e7d32; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">📷</button>` : ''}
 
                             <button class="action-btn-icon btn-edit" data-id="${tree.id}" title="Editar" 
-                                style="background:#fff3e0; color:#f57c00; border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;">
-                                ✏️
-                            </button>
+                                style="background:#fff3e0; color:#f57c00; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">✏️</button>
                             
                             <button class="action-btn-icon btn-delete" data-id="${tree.id}" title="Excluir" 
-                                style="background:#ffebee; color:#d32f2f; border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;">
-                                🗑️
-                            </button>
+                                style="background:#ffebee; color:#d32f2f; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -126,62 +120,50 @@ export const TableUI = {
 
         html += `</tbody></table></div>`;
         this.container.innerHTML = html;
-
         this.bindEvents();
     },
 
-    /**
-     * Renderiza o input de filtro e botão de toggle se não existirem.
-     * (Mantém os listeners originais do input ao mover no DOM).
-     */
     renderControls() {
         const wrapper = document.querySelector('.table-filter-container');
         if (!wrapper) return;
 
-        // Se já tem o botão, não faz nada
-        if (document.getElementById('toggle-cols-btn')) return;
+        // If button exists, update text and return
+        if (document.getElementById('toggle-cols-btn')) {
+            const btn = document.getElementById('toggle-cols-btn');
+            btn.innerHTML = this.isExpanded ? '➖ Compactar' : '👁️ + Colunas';
+            return;
+        }
 
-        // Transforma o container em Flexbox para acomodar o botão
-        wrapper.className = 'table-controls-wrapper'; // Classe CSS nova
-        
-        // Guarda referência ao input existente (para não perder o listener do features.js)
+        wrapper.className = 'table-controls-wrapper';
         const input = document.getElementById('table-filter-input');
         
-        // Cria o botão de toggle
+        // Create Toggle Button
         const btnToggle = document.createElement('button');
         btnToggle.id = 'toggle-cols-btn';
         btnToggle.type = 'button';
-        btnToggle.innerHTML = this.isCompactMode ? '➕ Detalhes' : '👁️ Colunas';
-        // No mobile, queremos esconder por padrão? Se sim, inverta a lógica aqui.
-        // Assumindo padrão: Mostra tudo, botão esconde.
+        // Initial state text
+        btnToggle.innerHTML = this.isExpanded ? '➖ Compactar' : '👁️ + Colunas';
         
-        btnToggle.onclick = () => this.toggleCompactMode(btnToggle);
+        btnToggle.onclick = () => {
+            this.isExpanded = !this.isExpanded;
+            btnToggle.innerHTML = this.isExpanded ? '➖ Compactar' : '👁️ + Colunas';
+            
+            // Toggle class on existing table
+            const table = this.container.querySelector('table');
+            if (table) {
+                if (this.isExpanded) table.classList.add('show-columns');
+                else table.classList.remove('show-columns');
+            }
+        };
 
-        // Limpa o wrapper e reconstrói
         wrapper.innerHTML = ''; 
         
-        // Wrapper do input (para manter estilo de largura total flex)
         const divInput = document.createElement('div');
         divInput.className = 'table-filter-container';
-        divInput.appendChild(input); // Move o elemento DOM existente
+        divInput.appendChild(input); 
 
         wrapper.appendChild(divInput);
         wrapper.appendChild(btnToggle);
-    },
-
-    /**
-     * Alterna a visualização compacta/expandida.
-     */
-    toggleCompactMode(btn) {
-        this.isCompactMode = !this.isCompactMode;
-        btn.innerHTML = this.isCompactMode ? '➕ Detalhes' : '👁️ Colunas';
-        
-        // Atualiza classe na tabela sem re-renderizar tudo (Performance)
-        const table = this.container.querySelector('table');
-        if (table) {
-            if (this.isCompactMode) table.classList.add('compact-view');
-            else table.classList.remove('compact-view');
-        }
     },
 
     updateBadge(count) {
@@ -202,7 +184,7 @@ export const TableUI = {
     },
 
     bindEvents() {
-        // Ver Mapa
+        // Map
         this.container.querySelectorAll('.btn-map').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.dataset.id);
@@ -210,7 +192,7 @@ export const TableUI = {
             });
         });
 
-        // Editar
+        // Edit
         this.container.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.dataset.id);
@@ -218,7 +200,7 @@ export const TableUI = {
             });
         });
 
-        // Excluir
+        // Delete
         this.container.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.dataset.id);
@@ -230,7 +212,7 @@ export const TableUI = {
             });
         });
 
-        // Ver Foto
+        // Photo
         this.container.querySelectorAll('.btn-photo').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.dataset.id);
