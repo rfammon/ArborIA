@@ -13,21 +13,6 @@ import { TableUI } from './table.ui.js';
 let currentChecklistIndex = 0;
 let checklistListenersAttached = false; // Flag para anexo de listeners
 
-// Helper para pegar elementos do Wizard (DOM)
-const getChecklistElements = () => {
-    const wrapper = document.querySelector('.mobile-checklist-wrapper');
-    if (!wrapper) return null;
-    return {
-        tableRows: document.querySelectorAll('.risk-table tbody tr'),
-        cardTitle: wrapper.querySelector('h4'),
-        cardText: wrapper.querySelector('p'),
-        toggleInput: wrapper.querySelector('.mobile-checklist-toggle input'),
-        btnPrev: document.getElementById('checklist-prev'),
-        btnNext: document.getElementById('checklist-next'),
-        counter: wrapper.querySelector('.checklist-counter'),
-        card: wrapper.querySelector('.mobile-checklist-card')
-    };
-};
 
 /**
  * Atualiza o Card do Wizard com a pergunta e o estado do checkbox.
