@@ -1,50 +1,117 @@
-/* css/modules/02_feature.manual_nav.css */
+/* 02_feature.manual_nav.css 
+   Estilos específicos da navegação do manual e botões de tópicos
+*/
 
-/* -------------------------------------- */
-/* 4. ESTILOS DO ÍNDICE (MAPA MENTAL) */
-/* -------------------------------------- */
+.mapa-navegacao {
+    background: white;
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 1.5rem;
+}
 
 .mapa-navegacao h2 {
-  color: var(--color-primary-dark);
-  text-align: center;
+    color: var(--color-primary-dark);
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+    border-bottom: 2px solid var(--color-accent);
+    padding-bottom: 0.5rem;
 }
 
+/* Container dos botões */
 .topicos-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--space-md);
-  margin-bottom: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
 }
 
+/* Botão de Tópico (Padrão) */
 .topico-btn {
-  padding: var(--space-md) var(--space-sm);
-  background-color: var(--bg-surface);
-  color: var(--color-primary-medium);
-  border: 2px solid var(--gray-200);
-  border-radius: var(--border-radius-md);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-align: center;
-  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
-  height: 75px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-sm);
+    background: var(--color-background);
+    border: 1px solid #e0e0e0;
+    border-radius: var(--border-radius-sm);
+    padding: 1rem 1.2rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    color: var(--color-text);
+    position: relative;
+    overflow: hidden;
+    
+    /* Layout Flexbox para alinhar Ícone + Texto */
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Espaço entre ícone e texto */
 }
 
 .topico-btn:hover {
-  background-color: var(--color-primary-lightest);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary-light);
+    background: #f5f5f5;
+    transform: translateX(5px);
+    border-color: var(--color-primary);
+    color: var(--color-primary-dark);
 }
 
+/* Estado Ativo (Selecionado) */
 .topico-btn.active {
-  background-color: var(--color-accent);
-  color: var(--color-dark);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-accent-dark);
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-sm);
+    font-weight: 600;
+}
+
+.topico-btn.active:hover {
+    transform: none; /* Remove o deslocamento no ativo */
+    background: var(--color-primary-dark);
+}
+
+/* --- ÍCONES DE NAVEGAÇÃO (PNG) --- 
+   Padronização e Segurança dos Ícones
+*/
+.topico-btn img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain; /* Garante que o ícone não distorça */
+    
+    /* CRÍTICO: pointer-events: none 
+       Faz com que o clique "atravesse" a imagem e acerte o botão.
+       Essencial para o funcionamento do JavaScript atual.
+    */
+    pointer-events: none; 
+    
+    /* Filtro para suavizar ícones em modo escuro (opcional, mantido normal por enquanto) */
+    transition: filter 0.2s ease;
+}
+
+/* Quando o botão está ativo, inverte/brilha o ícone se necessário 
+   (Opcional: ajusta o brilho para contrastar com o fundo verde)
+*/
+.topico-btn.active img {
+    filter: brightness(0) invert(1); /* Torna o ícone branco */
+}
+
+/* Separador Visual na Navegação */
+.nav-separator {
+    height: 1px;
+    background: #eee;
+    margin: 10px 0;
+    width: 100%;
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px) {
+    .mapa-navegacao {
+        padding: 1rem;
+    }
+    
+    .topico-btn {
+        padding: 0.8rem 1rem;
+        font-size: 0.95rem;
+    }
+    
+    .topico-btn img {
+        width: 20px; /* Ícones levemente menores no mobile */
+        height: 20px;
+    }
 }
