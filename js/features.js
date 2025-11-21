@@ -9,9 +9,6 @@ import * as utils from './utils.js';
 import * as db from './database.js';
 import { TableUI } from './table.ui.js'; 
 
-// === WIZARD STATE & LISTENERS (Variáveis de Escopo Único) ===
-let currentChecklistIndex = 0; 
-let checklistListenersAttached = false; 
 
 // Helper para pegar elementos do Wizard (DOM)
 const getChecklistElements = () => {
