@@ -1,8 +1,9 @@
-// js/main.js (v2.2 - Maestro do ArborIA 2.0 - Action Buttons Fully Restored)
+// js/main.js (v2.3 - Maestro do ArborIA 2.0 - Final Integration)
 
 import * as state from './state.js';
 import { UI } from './ui.js'; 
 import { TooltipUI } from './tooltip.ui.js';
+import { TableUI } from './table.ui.js'; // [CRITICAL IMPORT]
 
 import * as features from './features.js';
 import { initImageDB } from './database.js'; 
@@ -15,7 +16,6 @@ import * as dapEstimator from './dap.estimator.js';
 // Tenta importar o gerador de PDF dinamicamente
 let pdfGenerator = null;
 try {
-    // Opcional: Se o arquivo não existir, o bloco catch captura o erro silenciosamente
     // pdfGenerator = await import('./pdf.generator.js');
 } catch (e) {
     console.warn("Módulo de PDF não encontrado ou com erro.", e);
@@ -31,10 +31,9 @@ function handleMainNavigation(event) {
   if (!targetButton) return;
 
   const targetId = targetButton.dataset.target;
-  
   state.saveActiveTab(targetId);
 
-  // 1. CICLO DE VIDA DE SENSORES (Desliga ao sair)
+  // 1. CICLO DE VIDA DE SENSORES
   if (targetId !== 'clinometro-view') clinometer.stopClinometer();
   if (targetId !== 'dap-estimator-view') dapEstimator.stopDAPEstimator();
 
@@ -44,6 +43,8 @@ function handleMainNavigation(event) {
   // 3. LÓGICA ESPECÍFICA POR ABA
   if (targetId === 'calculadora-view') {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Se vier de outra aba, garante que a tabela esteja atualizada
+    TableUI.render();
 
   } else if (targetId === 'clinometro-view') {
     clinometer.startClinometer();
@@ -67,12 +68,8 @@ function loadManualContent(topicId) {
     if (!detailView) return;
     detailView.style.opacity = 0;
     setTimeout(() => {
-        // Suporte para v39 (Objeto) ou string simples
         const content = typeof manualContent[topicId] === 'object' ? manualContent[topicId].html : manualContent[topicId];
         const title = typeof manualContent[topicId] === 'object' ? `<h3>${manualContent[topicId].titulo}</h3>` : '';
-        
-        // Renderiza título + conteúdo (ou apenas conteúdo se já vier formatado)
-        // Verifica se o conteúdo já tem H3 para não duplicar
         const finalHTML = (content.includes('<h3>') || !title) ? content : title + content;
         
         detailView.innerHTML = finalHTML;
@@ -80,7 +77,7 @@ function loadManualContent(topicId) {
     }, 150);
 }
 
-// === 3. CONEXÃO DOS BOTÕES DE AÇÃO (RESTAURADO) ===
+// === 3. CONEXÃO DOS BOTÕES DE AÇÃO (FEATURES) ===
 function setupActionButtons() {
     console.log("🔌 Conectando botões de ação...");
 
@@ -88,8 +85,14 @@ function setupActionButtons() {
     const riskForm = document.getElementById('risk-calculator-form');
     if (riskForm) {
         riskForm.addEventListener('submit', (e) => {
-            // Chama handleAddTreeSubmit do features.js
-            if (features.handleAddTreeSubmit) features.handleAddTreeSubmit(e);
+            // Feature retorna sucesso? Atualiza tabela.
+            const result = features.handleAddTreeSubmit(e); 
+            if (result && result.success) {
+                TableUI.render(); // [CRÍTICO]
+                // Muda para aba de resumo automaticamente para ver o resultado
+                const summaryTab = document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]');
+                if (summaryTab) summaryTab.click();
+            }
         });
         
         const resetBtn = document.getElementById('reset-risk-form-btn');
@@ -108,8 +111,11 @@ function setupActionButtons() {
     const inputZip = document.getElementById('zip-importer');
     
     if (btnImport && inputZip) {
-        btnImport.addEventListener('click', () => inputZip.click()); // Botão visual aciona input oculto
-        inputZip.addEventListener('change', features.handleImportZip); // Input processa arquivo
+        btnImport.addEventListener('click', () => inputZip.click()); 
+        inputZip.addEventListener('change', async (e) => {
+            await features.handleImportZip(e);
+            TableUI.render(); // [CRÍTICO] Atualiza após importar
+        });
     }
 
     const btnExport = document.getElementById('export-data-btn');
@@ -124,7 +130,7 @@ function setupActionButtons() {
             if (pdfGenerator && typeof pdfGenerator.generatePDF === 'function') {
                 pdfGenerator.generatePDF(state.registeredTrees);
             } else {
-                features.sendEmailReport(); // Fallback
+                features.sendEmailReport(); 
             }
         });
     }
@@ -136,7 +142,10 @@ function setupActionButtons() {
             modalUI.showConfirmModal(
                 "Excluir Tudo?", 
                 "Esta ação apagará todas as árvores e fotos cadastradas. Não pode ser desfeito.", 
-                features.handleClearAll
+                () => {
+                    features.handleClearAll();
+                    TableUI.render(); // [CRÍTICO]
+                }
             );
         });
     }
@@ -159,14 +168,12 @@ function setupToolShortcuts() {
     
     if (btnHeight) {
         btnHeight.addEventListener('click', () => {
-            // Navega para a aba do clinômetro
             const navBtn = document.querySelector('.topico-btn[data-target="clinometro-view"]');
             if (navBtn) navBtn.click();
         });
     }
     if (btnDap) {
         btnDap.addEventListener('click', () => {
-            // Navega para a aba do DAP
             const navBtn = document.querySelector('.topico-btn[data-target="dap-estimator-view"]');
             if (navBtn) navBtn.click();
         });
@@ -209,18 +216,19 @@ async function initApp() {
     // 3. Configura Listeners
     if (topNavContainer) topNavContainer.addEventListener('click', handleMainNavigation);
     
-    // [IMPORTANTE] Ativa os botões de ação (GPS, Salvar, Exportar)
     setupActionButtons(); 
-    
     setupToolShortcuts();
     setupBackToTop();
     initFormDefaults();
     
-    // 4. Inicializa Sensores
+    // 4. Renderiza Tabela Inicial com Dados Carregados
+    TableUI.render();
+
+    // 5. Inicializa Sensores
     clinometer.initClinometerListeners();
     dapEstimator.initDAPEstimatorListeners();
 
-    // 5. Restaura Estado (Última aba)
+    // 6. Restaura Estado (Última aba)
     const lastTab = state.getActiveTab() || 'conceitos-basicos';
     let initialButton = null;
     if (topNavContainer) {
