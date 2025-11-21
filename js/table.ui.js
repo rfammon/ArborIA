@@ -1,6 +1,6 @@
 /**
- * ARBORIA 2.0 - TABLE UI (V27.0 - Toggle Logic Fixed)
- * Responsável pela renderização e interatividade da tabela de resumo.
+ * ARBORIA 2.0 - TABLE UI (V28.0 - Fixed Overflow & Toggle Logic)
+ * Renderiza a tabela de resumo e gerencia ações de linha.
  */
 
 import * as State from './state.js';
@@ -12,8 +12,9 @@ export const TableUI = {
     
     container: null,
     badgeElement: null,
-    // DEFAULT STATE: false = Compact (Mobile columns hidden). true = Expanded (Show all).
-    isExpanded: false, 
+    
+    // Estado inicial: Mobile começa compacto, Desktop começa expandido
+    isCompactMode: window.innerWidth <= 768, 
 
     render() {
         this.container = document.getElementById('summary-table-container');
@@ -24,7 +25,6 @@ export const TableUI = {
         const trees = State.registeredTrees || [];
         this.updateBadge(trees.length);
 
-        // Render controls BEFORE checking empty state (so import button is visible)
         this.renderControls();
 
         if (trees.length === 0) {
@@ -43,10 +43,11 @@ export const TableUI = {
 
         const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
 
-        // Apply 'show-columns' class if expanded is true
+        // Aplica classe de modo compacto se necessário
         let tableClass = 'summary-table';
-        if (this.isExpanded) tableClass += ' show-columns';
+        if (this.isCompactMode) tableClass += ' compact-mode';
 
+        // OBS: Classes 'col-secondary' são as que somem no modo compacto
         let html = `
             <div class="table-responsive">
             <table class="${tableClass}">
@@ -54,11 +55,11 @@ export const TableUI = {
                     <tr>
                         <th style="width: 40px;">ID</th>
                         <th>Espécie</th>
-                        <th class="col-hide-mobile">Data</th>
-                        <th class="col-hide-mobile">Coord. UTM</th>
-                        <th class="col-hide-mobile">DAP/Alt</th>
+                        <th class="col-secondary">Data</th>
+                        <th class="col-secondary">Coord. UTM</th>
+                        <th class="col-secondary">DAP/Alt</th>
                         <th>Local</th>
-                        <th class="col-hide-mobile">Avaliador</th>
+                        <th class="col-secondary">Avaliador</th>
                         <th>Risco</th>
                         <th style="text-align: center;">Ações</th>
                     </tr>
@@ -79,24 +80,24 @@ export const TableUI = {
                     <td class="col-id"><strong>${tree.id}</strong></td>
                     <td>
                         <div style="font-weight:700; color:#333;">${tree.especie}</div>
-                        <div class="col-show-mobile-only" style="font-size:0.7rem; color:#777;">${dateSimple}</div> 
+                        <div class="col-mobile-summary">${dateSimple} ${photoIcon}</div> 
                     </td>
                     
-                    <td class="col-hide-mobile">${dateSimple}</td>
+                    <td class="col-secondary">${dateSimple}</td>
                     
-                    <td class="col-hide-mobile">
+                    <td class="col-secondary">
                         <div style="font-size:0.75rem;">E:${tree.coordX}<br>N:${tree.coordY}</div>
                     </td>
                     
-                    <td class="col-hide-mobile">
+                    <td class="col-secondary">
                         <div style="font-size:0.75rem;">D:${tree.dap} cm<br>H:${tree.altura} m</div>
                     </td>
                     
                     <td style="font-size:0.85rem;">${tree.local}</td>
                     
-                    <td class="col-hide-mobile" style="font-size:0.8rem;">${tree.avaliador}</td>
+                    <td class="col-secondary" style="font-size:0.8rem;">${tree.avaliador}</td>
                     
-                    <td><span class="badge ${badgeClass}" style="font-size:0.7rem;">${tree.risco}</span> ${photoIcon}</td>
+                    <td><span class="badge ${badgeClass}" style="font-size:0.7rem;">${tree.risco}</span></td>
                     
                     <td style="text-align: center;">
                         <div style="display: flex; gap: 5px; justify-content: center;">
@@ -127,37 +128,34 @@ export const TableUI = {
         const wrapper = document.querySelector('.table-filter-container');
         if (!wrapper) return;
 
-        // If button exists, update text and return
-        if (document.getElementById('toggle-cols-btn')) {
-            const btn = document.getElementById('toggle-cols-btn');
-            btn.innerHTML = this.isExpanded ? '➖ Compactar' : '👁️ + Colunas';
+        // Atualiza texto se o botão já existe
+        const existingBtn = document.getElementById('toggle-cols-btn');
+        if (existingBtn) {
+            existingBtn.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
             return;
         }
 
         wrapper.className = 'table-controls-wrapper';
         const input = document.getElementById('table-filter-input');
         
-        // Create Toggle Button
         const btnToggle = document.createElement('button');
         btnToggle.id = 'toggle-cols-btn';
         btnToggle.type = 'button';
-        // Initial state text
-        btnToggle.innerHTML = this.isExpanded ? '➖ Compactar' : '👁️ + Colunas';
+        // Define texto inicial baseado no estado
+        btnToggle.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
         
         btnToggle.onclick = () => {
-            this.isExpanded = !this.isExpanded;
-            btnToggle.innerHTML = this.isExpanded ? '➖ Compactar' : '👁️ + Colunas';
+            this.isCompactMode = !this.isCompactMode;
+            btnToggle.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
             
-            // Toggle class on existing table
             const table = this.container.querySelector('table');
             if (table) {
-                if (this.isExpanded) table.classList.add('show-columns');
-                else table.classList.remove('show-columns');
+                if (this.isCompactMode) table.classList.add('compact-mode');
+                else table.classList.remove('compact-mode');
             }
         };
 
         wrapper.innerHTML = ''; 
-        
         const divInput = document.createElement('div');
         divInput.className = 'table-filter-container';
         divInput.appendChild(input); 
@@ -184,7 +182,7 @@ export const TableUI = {
     },
 
     bindEvents() {
-        // Map
+        // Ver Mapa
         this.container.querySelectorAll('.btn-map').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.dataset.id);
@@ -192,7 +190,7 @@ export const TableUI = {
             });
         });
 
-        // Edit
+        // Editar
         this.container.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.dataset.id);
@@ -200,7 +198,7 @@ export const TableUI = {
             });
         });
 
-        // Delete
+        // Excluir
         this.container.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.dataset.id);
@@ -212,7 +210,7 @@ export const TableUI = {
             });
         });
 
-        // Photo
+        // Ver Foto
         this.container.querySelectorAll('.btn-photo').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.dataset.id);
