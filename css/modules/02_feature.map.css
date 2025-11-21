@@ -168,3 +168,18 @@
   color: var(--color-tech);
   border-color: var(--color-tech);
 }
+
+/* --- Rótulo Limpo para Círculos --- */
+.map-label-clean {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: white !important;
+  font-weight: 800 !important;
+  font-size: 1rem !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  /* Remove a setinha do tooltip */
+}
+.map-label-clean::before {
+  display: none;
+}
