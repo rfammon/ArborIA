@@ -1,27 +1,29 @@
-/* css/modules/02_feature.calculator.css 
-   Estilos da Calculadora de Risco (Abas e Formulário)
+/* css/modules/02_feature.calculator.css (vFinal 5.0)
+   Estilos da Calculadora: Abas, Formulário e Mapa.
 */
 
-/* --- NAVEGAÇÃO INTERNA (ABAS) --- */
+/* --- NAVEGAÇÃO DAS ABAS --- */
 .sub-nav {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
     border-bottom: 1px solid #eceff1;
     padding-bottom: 10px;
-    overflow-x: auto; /* Permite scroll horizontal no mobile */
+    overflow-x: auto; /* Scroll no mobile */
+    -webkit-overflow-scrolling: touch;
 }
 
 .sub-nav-btn {
     background: #f5f5f5;
     border: 1px solid #cfd8dc;
-    padding: 10px 16px;
-    border-radius: 20px; /* Pílula */
+    padding: 12px 20px;
+    border-radius: 25px;
     color: #546E7A;
     font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .sub-nav-btn:hover {
@@ -29,9 +31,9 @@
     color: #0277BD;
 }
 
-/* Aba Ativa */
+/* Estado Ativo (Selecionado) */
 .sub-nav-btn.active {
-    background: #0277BD; /* Azul Tech */
+    background: #0277BD;
     color: white;
     border-color: #0277BD;
     box-shadow: 0 4px 10px rgba(2, 119, 189, 0.3);
@@ -39,74 +41,99 @@
 
 /* --- CONTEÚDO DAS ABAS --- */
 .sub-tab-content {
-    display: none; /* Escondido por padrão */
-    animation: fadeIn 0.3s ease-out;
+    /* Escondido por padrão */
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-/* Classe para mostrar a aba */
+/* Classe que mostra o conteúdo */
 .sub-tab-content.active {
-    display: block;
+    /* !important garante que sobrescreva qualquer display:none inline */
+    display: block !important;
+    opacity: 1;
+    animation: slideUp 0.3s ease-out;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- CHECKLIST MOBILE --- */
-.mobile-checklist-wrapper {
-    display: none; /* Desktop esconde */
+/* --- MAPA DENTRO DA ABA --- */
+#map-container {
+    width: 100%;
+    height: 400px; /* Altura fixa para evitar colapso */
+    background: #e0e0e0; /* Fundo cinza enquanto carrega */
+    border-radius: 12px;
+    margin-bottom: 15px;
+    z-index: 1; /* Garante que o mapa fique acima */
 }
 
+/* --- TABELA DE RESUMO --- */
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.summary-table th {
+    background: #f5f5f5;
+    padding: 12px;
+    text-align: left;
+    font-weight: 700;
+    color: #37474f;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.summary-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+    color: #455A64;
+}
+
+/* Badges de Risco */
+.risk-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.badge-high { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+.badge-medium { background: #fff3e0; color: #ef6c00; border: 1px solid #ffe0b2; }
+.badge-low { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+
+/* Mobile Checklist (Correção Visual) */
 @media (max-width: 768px) {
-    /* Esconde tabela normal no mobile */
-    .risk-table {
-        display: none; 
-    }
+    .risk-table { display: none; } /* Esconde tabela grande */
+    .mobile-checklist-wrapper { display: block; margin-top: 10px; }
     
-    .mobile-checklist-wrapper {
-        display: block;
+    .mobile-checklist-card {
         background: #fff;
+        border: 1px solid #ddd;
         border-radius: 12px;
         padding: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border: 1px solid #eee;
-    }
-    
-    .mobile-card-header {
-        font-weight: 700;
-        color: #00796b;
-        margin-bottom: 10px;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-    }
-    
-    .q-text {
-        font-size: 1rem;
-        color: #37474f;
-        margin-bottom: 15px;
-        line-height: 1.4;
-    }
-    
-    .mobile-card-action {
-        display: flex;
-        align-items: center;
-        background: #fafafa;
-        padding: 15px;
-        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
     
     .mobile-checklist-nav {
         display: flex;
         justify-content: space-between;
-        align-items: center;
         margin-top: 15px;
     }
     
     .mobile-checklist-nav button {
-        padding: 8px 16px;
+        padding: 10px 20px;
         border-radius: 20px;
         background: #eceff1;
-        color: #455A64;
+        font-weight: 600;
+        color: #546E7A;
     }
 }
