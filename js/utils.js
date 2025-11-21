@@ -1,65 +1,113 @@
-/* js/utils.js (v26.2 - Completo & Otimizado)
-   Utilitários: Performance, UI (Toast), Imagens e GPS.
-   Mantém a lógica original robusta solicitada.
+/* js/utils.js (vFinal - Refatorado)
+   Utilitários Compartilhados: UI, GPS, Imagens e Helpers.
+   Contém lógica robusta de Proj4 e Otimização de Imagens via Canvas.
 */
 
-// Variável local para controlar o Toast (substitui a dependência circular com State)
+// Variável local para controle de timer (evita dependência circular com State)
 let internalToastTimer = null;
 
-// === 1. UTILITÁRIO DE PERFORMANCE (DEBOUNCE) ===
+// === 1. UTILITÁRIOS GERAIS ===
 
 /**
- * Cria uma versão "debounced" de uma função.
- * Útil para inputs de pesquisa e eventos de scroll.
+ * Gera um ID único (Timestamp + Random)
  */
-export function debounce(func, delay = 300) {
-    let timer;
+export function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+/**
+ * Formata data ISO para PT-BR (DD/MM/AAAA)
+ */
+export function formatDate(dateString) {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        // Ajuste de fuso horário simples (evita mostrar dia anterior)
+        const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+        const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
+        return new Intl.DateTimeFormat('pt-BR').format(adjustedDate);
+    } catch (e) {
+        return dateString;
+    }
+}
+
+/**
+ * Sanitiza strings para evitar XSS básico na renderização HTML
+ */
+export function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+    }[tag]));
+}
+
+/**
+ * Debounce: Limita a frequência de execução de uma função
+ */
+export function debounce(func, wait = 300) {
+    let timeout;
     return function(...args) {
-        const context = this; 
-        clearTimeout(timer); 
-        timer = setTimeout(() => {
-            func.apply(context, args); 
-        }, delay);
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
     };
 }
 
-// === 2. UTILITÁRIO DE UI (TOAST) ===
+/**
+ * Converte Graus para Radianos (Matemática)
+ */
+export function deg2rad(deg) {
+    return deg * (Math.PI / 180);
+}
+
+// === 2. FEEDBACK DE UI (TOAST) ===
 
 /**
- * Exibe notificação flutuante.
+ * Exibe notificação flutuante no topo da tela.
+ * @param {string} message - Texto da mensagem
+ * @param {string} type - 'success', 'error' ou 'warning'
  */
 export function showToast(message, type = 'success') {
     const toast = document.getElementById('toast-notification');
     if (!toast) return;
 
-    // Limpa timer anterior
+    // Limpa timer anterior se houver (reset)
     if (internalToastTimer) {
         clearTimeout(internalToastTimer);
+        internalToastTimer = null;
     }
 
+    // Define conteúdo e estilo
     toast.textContent = message;
-    // Reseta classes mantendo a base se existir, ou define 'show'
-    toast.className = `show ${type}`; 
+    toast.className = `show ${type}`; // Reseta classes e aplica show + tipo
 
-    // Cria novo timer para esconder
+    // Timer para esconder
     internalToastTimer = setTimeout(() => {
         toast.className = toast.className.replace('show', '').trim();
-        toast.classList.remove(type); 
         internalToastTimer = null;
-    }, 3000);
+    }, 3500); // 3.5 segundos
 }
 
-// === 3. OTIMIZAÇÃO DE IMAGEM ===
+// === 3. OTIMIZAÇÃO DE IMAGEM (Canvas API) ===
 
 /**
- * Redimensiona e comprime uma imagem (Blob/File) no cliente.
- * @param {File} imageFile - O arquivo original.
- * @param {number} maxWidth - Largura máxima (padrão 800px).
- * @param {number} quality - Qualidade JPEG (0 a 1).
- * @returns {Promise<Blob>} - A imagem processada.
+ * Redimensiona e comprime imagem no client-side antes do upload.
+ * @param {File} imageFile - Arquivo de entrada
+ * @param {number} maxWidth - Largura máxima (ex: 800px)
+ * @param {number} quality - Qualidade JPEG (0.0 a 1.0)
+ * @returns {Promise<Blob>} - Blob da imagem processada
  */
 export async function optimizeImage(imageFile, maxWidth = 800, quality = 0.7) {
     return new Promise((resolve, reject) => {
+        if (!imageFile.type.startsWith('image/')) {
+            reject(new Error('Arquivo não é uma imagem.'));
+            return;
+        }
+
         const reader = new FileReader();
         reader.readAsDataURL(imageFile);
         
@@ -71,9 +119,9 @@ export async function optimizeImage(imageFile, maxWidth = 800, quality = 0.7) {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
+                // Cálculo de proporção
                 let { width, height } = img;
                 
-                // Lógica de redimensionamento proporcional
                 if (width > maxWidth) {
                     height = Math.round((height * maxWidth) / width);
                     width = maxWidth;
@@ -82,15 +130,15 @@ export async function optimizeImage(imageFile, maxWidth = 800, quality = 0.7) {
                 canvas.width = width;
                 canvas.height = height;
                 
-                // Desenha no canvas
+                // Desenha (Resample)
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Exporta como Blob JPEG
+                // Exporta
                 canvas.toBlob((blob) => {
                     if (blob) {
                         resolve(blob);
                     } else {
-                        reject(new Error("Falha ao gerar Blob da imagem."));
+                        reject(new Error("Falha na compressão da imagem via Canvas."));
                     }
                 }, 'image/jpeg', quality);
             };
@@ -102,45 +150,43 @@ export async function optimizeImage(imageFile, maxWidth = 800, quality = 0.7) {
     });
 }
 
-// === 4. GIS (CONVERSÃO DE COORDENADAS) ===
+// === 4. GIS (GPS & PROJ4) ===
 
 /**
- * Converte Lat/Lon (WGS84) para UTM usando Proj4.
- * Verifica window.proj4 para evitar erros se a CDN falhar.
+ * Converte Lat/Lon (WGS84) para UTM usando a biblioteca Proj4.
+ * Requer window.proj4 carregado via CDN ou script.
  */
 export function convertLatLonToUtm(lat, lon) {
-    
-    // Validação de números
     const latNum = parseFloat(lat);
     const lonNum = parseFloat(lon);
 
     if (isNaN(latNum) || isNaN(lonNum)) {
-        console.error("GPS: Coordenadas inválidas (NaN).");
+        console.warn("[Utils] Coordenadas inválidas para conversão.");
         return null;
     }
 
-    // Tenta encontrar a biblioteca proj4 (no window ou global)
-    const proj4Lib = (typeof window !== 'undefined' && window.proj4) || (typeof proj4 !== 'undefined' && proj4) || null;
+    // Verifica se a lib existe no escopo global
+    const proj4Lib = (typeof window !== 'undefined' && window.proj4) || (typeof proj4 !== 'undefined' && proj4);
 
     if (!proj4Lib) {
-        console.error("GPS: Biblioteca Proj4 não encontrada.");
-        showToast("Erro: Biblioteca GIS (Proj4) não carregou.", "error");
+        console.warn("[Utils] Biblioteca Proj4 não encontrada. Retornando nulo.");
+        showToast("Erro: Biblioteca GIS (Proj4) não carregou.", "warning");
         return null;
     }
 
     try {
-        // Cálculo da Zona UTM
+        // 1. Determina Zona UTM (Fórmula padrão)
         const zoneNum = Math.floor((lonNum + 180) / 6) + 1;
-        const hemisphereParam = latNum < 0 ? '+south' : ''; 
+        const hemisphere = latNum < 0 ? '+south' : ''; 
         
-        // Definições de projeção
+        // 2. Definições de Projeção
         const wgs84 = "EPSG:4326";
-        const utmDef = `+proj=utm +zone=${zoneNum} ${hemisphereParam} +datum=WGS84 +units=m +no_defs`;
+        const utmDef = `+proj=utm +zone=${zoneNum} ${hemisphere} +datum=WGS84 +units=m +no_defs`;
 
-        // Executa a conversão
+        // 3. Executa Conversão
         const [easting, northing] = proj4Lib(wgs84, utmDef, [lonNum, latNum]);
         
-        // Define a letra da zona (apenas para visualização)
+        // 4. Calcula Letra da Zona (Opcional, mas útil)
         const zoneLetters = "CDEFGHJKLMNPQRSTUVWXX";
         let zoneLetter = "Z"; 
         if (latNum >= -80 && latNum <= 84) {
@@ -148,65 +194,29 @@ export function convertLatLonToUtm(lat, lon) {
         }
 
         return { 
-            easting: parseFloat(easting.toFixed(0)), 
-            northing: parseFloat(northing.toFixed(0)), 
+            easting: parseFloat(easting.toFixed(2)), 
+            northing: parseFloat(northing.toFixed(2)), 
             zoneNum: zoneNum, 
             zoneLetter: zoneLetter 
         };
 
     } catch (e) {
-        console.error("GPS: Erro na conversão matemática Proj4:", e);
-        showToast("Erro ao calcular coordenadas UTM.", "error");
+        console.error("[Utils] Erro matemático no Proj4:", e);
         return null;
     }
 }
 
-// === 5. HELPERS GERAIS (Adicionados para compatibilidade com UI) ===
-
-export function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-}
-
-export function formatDate(dateString) {
-    if (!dateString) return '-';
-    try {
-        const date = new Date(dateString);
-        return new Intl.DateTimeFormat('pt-BR').format(date);
-    } catch (e) {
-        return dateString;
-    }
-}
-
-export function formatDateTime(dateString) {
-    if (!dateString) return '-';
-    try {
-        const date = new Date(dateString);
-        return new Intl.DateTimeFormat('pt-BR', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-        }).format(date);
-    } catch (e) {
-        return dateString;
-    }
-}
-
-export function escapeHTML(str) {
-    if (!str) return '';
-    return str.replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-    }[tag]));
-}
-
-// Objeto Default para compatibilidade com import Utils from ...
+// === EXPORTAÇÃO PADRÃO (COMPATIBILIDADE) ===
+// Permite: import Utils from './utils.js'
 const Utils = {
-    debounce,
-    showToast,
-    optimizeImage,
-    convertLatLonToUtm,
     generateId,
     formatDate,
-    formatDateTime,
-    escapeHTML
+    escapeHTML,
+    debounce,
+    deg2rad,
+    showToast,
+    optimizeImage,
+    convertLatLonToUtm
 };
 
 export default Utils;
