@@ -206,17 +206,17 @@ export function convertLatLonToUtm(lat, lon) {
     }
 }
 
-// === EXPORTAÇÃO PADRÃO (COMPATIBILIDADE) ===
-// Permite: import Utils from './utils.js'
+// === 5. EXPORTAÇÃO PADRÃO (A CORREÇÃO CRÍTICA) ===
+// Agrupa tudo num objeto para permitir 'import Utils from ...' e corrige o erro 'default'
 const Utils = {
+    debounce,
+    showToast,
+    optimizeImage,
+    convertLatLonToUtm,
     generateId,
     formatDate,
     escapeHTML,
-    debounce,
-    deg2rad,
-    showToast,
-    optimizeImage,
-    convertLatLonToUtm
+    deg2rad
 };
 
 export default Utils;
