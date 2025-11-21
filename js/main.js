@@ -1,7 +1,10 @@
-// js/main.js (v78.0 - Maestro do ArborIA)
+// js/main.js (v2.0 - Maestro do ArborIA 2.0)
 
 import * as state from './state.js';
-import * as ui from './ui.js';
+// AQUI: Mudamos para import desestruturado pois o novo ui.js exporta 'UI' const
+import { UI } from './ui.js'; 
+import { TooltipUI } from './tooltip.ui.js'; // NOVO: Glossário
+
 import * as features from './features.js';
 import { initImageDB } from './database.js'; 
 import * as modalUI from './modal.ui.js'; 
@@ -9,100 +12,91 @@ import { manualContent } from './content.js';
 import { showToast } from './utils.js';
 import * as clinometer from './clinometer.js'; 
 import * as dapEstimator from './dap.estimator.js';
+// Se existir lógica de formulário específica, garanta que features trate isso
 
 // === 1. SELETORES GLOBAIS ===
+// Mantidos para compatibilidade com lógica legado, embora UI.js gerencie a maioria
 const manualView = document.getElementById('manual-view');
-const calculatorView = document.getElementById('calculadora-view');
-const clinometroView = document.getElementById('clinometro-view'); 
-const dapEstimatorView = document.getElementById('dap-estimator-view'); 
 const detailView = document.getElementById('detalhe-view');
-const topNavContainer = document.querySelector('.topicos-container');
+const topNavContainer = document.querySelector('.topicos-container'); // Agora é Grid/Flex
 
-// === 2. LÓGICA DE NAVEGAÇÃO ===
+// === 2. LÓGICA DE NAVEGAÇÃO (CORE) ===
+/**
+ * Gerencia a troca de abas, ciclo de vida dos sensores e carregamento de conteúdo.
+ * A parte visual (esconder/mostrar) agora é delegada ao UI.navigateTo.
+ */
 function handleMainNavigation(event) {
+  // Detecta clique no botão ou dentro dele (ícone/texto)
   const targetButton = event.target.closest('.topico-btn');
   if (!targetButton) return;
 
-  // Atualiza classe ativa no menu
-  if (topNavContainer) {
-      topNavContainer.querySelectorAll('.topico-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-  }
-  targetButton.classList.add('active');
-  
   const targetId = targetButton.dataset.target;
+  
+  // Salva estado
   state.saveActiveTab(targetId);
 
-  // 1. Desliga recursos pesados (Câmeras/Sensores) ao sair das abas específicas
+  // 1. CICLO DE VIDA DE SENSORES (Crítico: Desliga câmeras ao sair)
   if (targetId !== 'clinometro-view') clinometer.stopClinometer();
   if (targetId !== 'dap-estimator-view') dapEstimator.stopDAPEstimator();
 
-  // 2. Esconde todas as views de aplicativo
-  if (manualView) manualView.style.display = 'none';
-  if (calculatorView) calculatorView.style.display = 'none';
-  if (clinometroView) clinometroView.style.display = 'none'; 
-  if (dapEstimatorView) dapEstimatorView.style.display = 'none'; 
+  // 2. DELEGAÇÃO VISUAL (O novo UI Controller faz a mágica do SPA)
+  UI.navigateTo(targetId);
 
-  // 3. Roteamento Lógico e Exibição
-  if (targetId === 'calculadora-risco') {
-    // --- ABA: CALCULADORA ---
-    if (calculatorView) calculatorView.style.display = 'block';
-    
-    // Restaura a sub-aba ativa (Registro, Resumo ou Mapa)
-    const activeSubTab = document.querySelector('.sub-nav-btn.active')?.dataset.target;
-    if (activeSubTab === 'tab-content-mapa') {
-      ui.showSubTab('tab-content-mapa');
-    }
-    scrollToElement('page-top');
+  // 3. LÓGICA ESPECÍFICA POR ABA
+  if (targetId === 'calculadora-view') { // Nota: ID ajustado para bater com o HTML novo
+    // Se tiver lógica de restaurar sub-aba, o UI.js já trata no initSubTabs
+    // Apenas garantimos scroll top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } else if (targetId === 'clinometro-view') {
-    // --- ABA: CLINÔMETRO (ALTURA) ---
-    if (clinometroView) {
-        clinometroView.style.display = 'block';
-        clinometer.startClinometer(); // Liga Câmera
-        // Rola suavemente para a ferramenta (UX Imersiva)
-        setTimeout(() => {
-            clinometroView.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-    }
+    // Inicia Hardware
+    clinometer.startClinometer();
+    // O CSS fullscreen-app já cuida do layout, não precisa de scrollIntoView complexo
 
   } else if (targetId === 'dap-estimator-view') {
-    // --- ABA: MEDIDOR DE DAP ---
-    if (dapEstimatorView) {
-        dapEstimatorView.style.display = 'block';
-        dapEstimator.startDAPEstimator(); // Liga Câmera
-        setTimeout(() => {
-            dapEstimatorView.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-    }
+    // Inicia Hardware
+    dapEstimator.startDAPEstimator();
 
   } else {
     // --- ABA: MANUAL TÉCNICO ---
-    if (manualView) manualView.style.display = 'block';
-    
-    // Carrega o conteúdo dinâmico do manual
+    // Carrega o conteúdo dinâmico do texto
     if (manualContent && manualContent[targetId]) {
-        ui.loadContent(detailView, manualContent[targetId]);
+        loadManualContent(targetId);
+    } else {
+        // Fallback se não achar conteúdo
+        if(detailView) detailView.innerHTML = `<h3>${targetButton.innerText}</h3><p>Conteúdo em desenvolvimento.</p>`;
     }
-    scrollToElement('page-top');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 
-// Helper para rolar a tela
-function scrollToElement(elementId) {
-    const el = document.getElementById(elementId);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+/**
+ * Carrega conteúdo HTML dentro da view de detalhes
+ * (Substitui o antigo ui.loadContent)
+ */
+function loadManualContent(topicId) {
+    if (!detailView) return;
+    
+    // Efeito simples de fade
+    detailView.style.opacity = 0;
+    setTimeout(() => {
+        detailView.innerHTML = manualContent[topicId];
+        detailView.style.opacity = 1;
+        // Reinicializa tooltips dentro do novo conteúdo carregado, se necessário
+    }, 150);
 }
 
-// === 3. HELPERS DE INICIALIZAÇÃO ===
+
+// === 3. HELPERS DE FORMULÁRIO E UI ===
+// (Trazido do antigo ui.js ou adaptado para manter funcionamento)
+
 function setupBackToTop() {
   const backToTopBtn = document.getElementById('back-to-top-btn');
   if (!backToTopBtn) return;
 
   window.addEventListener('scroll', () => {
-    if (window.scrollY > 300) backToTopBtn.classList.add('show');
-    else backToTopBtn.classList.remove('show');
+    if (window.scrollY > 300) backToTopBtn.style.display = 'block';
+    else backToTopBtn.style.display = 'none';
   }, { passive: true });
 }
 
@@ -110,8 +104,9 @@ function setupForms() {
   const chatSendBtn = document.getElementById('chat-send-btn');
   const chatInput = document.getElementById('chat-input');
   const contactForm = document.getElementById('contact-form');
+  const riskForm = document.getElementById('risk-calculator-form');
 
-  // Chat IA (Stub)
+  // Chat IA
   if (chatSendBtn) {
     chatSendBtn.addEventListener('click', features.handleChatSend);
     if (chatInput) {
@@ -128,6 +123,17 @@ function setupForms() {
   if (contactForm) {
       contactForm.addEventListener('submit', features.handleContactForm);
   }
+
+  // Formulário de Risco (Conexão com Features)
+  if (riskForm) {
+      riskForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (features.handleAddTree) features.handleAddTree(e);
+      });
+      
+      const resetBtn = document.getElementById('reset-risk-form-btn');
+      if(resetBtn) resetBtn.addEventListener('click', () => riskForm.reset());
+  }
 }
 
 function initFormDefaults() {
@@ -143,33 +149,36 @@ function initFormDefaults() {
 // === 4. INICIALIZAÇÃO PRINCIPAL ===
 function initApp() {
   try {
-    console.log("Inicializando ArborIA v78.0...");
+    console.log("🚀 Inicializando ArborIA 2.0...");
 
-    // 1. Carrega Dados e Banco de Imagens
+    // 1. Inicializa UI Controllers (Novo Sistema)
+    UI.init();        // Navegação e Layout
+    TooltipUI.init(); // Glossário Inteligente
+
+    // 2. Carrega Dados
     state.loadDataFromStorage();
     if (typeof initImageDB === 'function') initImageDB();
 
-    // 2. Configura Navegação Principal
+    // 3. Configura Navegação Principal (Listener no Container)
     if (topNavContainer) topNavContainer.addEventListener('click', handleMainNavigation);
 
-    // 3. Inicializa UI e Módulos
-    ui.setupRiskCalculator();
-    
+    // 4. Inicializa Componentes Visuais Legado
     if (modalUI && typeof modalUI.initPhotoViewer === 'function') {
         modalUI.initPhotoViewer();
     }
     
-    // 4. Inicializa Listeners das Ferramentas de Campo
+    // 5. Inicializa Listeners das Ferramentas de Campo (Sensores)
     clinometer.initClinometerListeners();
     dapEstimator.initDAPEstimatorListeners();
     
-    // 5. Conecta os botões de atalho do formulário (ícones de régua) às ferramentas
+    // 6. Atalhos do Formulário (Botões de Régua -> Abrem Ferramenta)
     const btnHeight = document.getElementById('btn-measure-height-form');
     const btnDap = document.getElementById('btn-measure-dap-form');
     
     if (btnHeight) {
         btnHeight.addEventListener('click', () => {
-            // Simula clique na navegação principal para ativar a lógica correta
+            // Usa UI.navigateTo diretamente para consistência
+            // Mas precisamos simular o comportamento de menu para ativar abas
             const navBtn = document.querySelector('.topico-btn[data-target="clinometro-view"]');
             if (navBtn) navBtn.click();
         });
@@ -181,29 +190,32 @@ function initApp() {
         });
     }
 
+    // 7. Configurações Finais
     initFormDefaults();
     setupForms();
     setupBackToTop();
 
-    // 6. Recupera a última aba acessada ou vai para o início
-    const lastTab = state.getActiveTab() || 'conceitos-basicos';
-    let initialButton = null;
+    // 8. Restaura Estado (Última aba visitada)
+    const lastTab = state.getActiveTab() || 'conceitos-basicos'; // Padrão
     
+    // Simula clique para navegar corretamente com animações
+    let initialButton = null;
     if (topNavContainer) {
-        initialButton = topNavContainer.querySelector(`[data-target="${lastTab}"]`) || topNavContainer.querySelector('.topico-btn');
+        initialButton = topNavContainer.querySelector(`.topico-btn[data-target="${lastTab}"]`);
     }
     
     if (initialButton) {
       initialButton.click();
-    } else if (detailView && manualContent['conceitos-basicos']) {
-        ui.loadContent(detailView, manualContent['conceitos-basicos']);
+    } else {
+      // Fallback
+      UI.navigateTo('calculadora-view'); // Ou outra view padrão
     }
     
-    console.log("ArborIA inicializado com sucesso.");
+    console.log("✅ ArborIA 2.0 Pronto.");
 
   } catch (error) {
-    console.error("Falha crítica ao inicializar:", error);
-    try { showToast("Erro ao carregar aplicação.", "error"); } catch(e){}
+    console.error("❌ Falha crítica ao inicializar:", error);
+    try { UI.showToast("Erro ao carregar aplicação.", "error"); } catch(e){}
   }
 }
 
@@ -211,10 +223,10 @@ function initApp() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js')
-      .then((reg) => console.log('Service Worker registrado:', reg.scope))
-      .catch((err) => console.log('Falha no Service Worker:', err));
+      .then((reg) => console.log('SW registrado:', reg.scope))
+      .catch((err) => console.log('Falha no SW:', err));
   });
 }
 
 // Executa a aplicação
-initApp();
+document.addEventListener('DOMContentLoaded', initApp);
