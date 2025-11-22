@@ -545,6 +545,28 @@ function getCSVData() {
   return csv;
 }
 
+export function sendEmailReport() {
+    const csvData = getCSVData();
+    if (!csvData) {
+        utils.showToast("Nenhum dado para enviar.", "error");
+        return;
+    }
+
+    const subject = "Laudo de Avaliação Arbórea - ArborIA";
+    const body = `Olá,\n\nSegue o laudo gerado pelo aplicativo ArborIA.\n\n---\n${csvData}\n---\n\nAtenciosamente,\nEquipe ArborIA`;
+
+    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    // Create a temporary link to trigger the mail client
+    const link = document.createElement('a');
+    link.href = mailtoLink;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    utils.showToast("Cliente de e-mail aberto.", "success");
+}
+
 export function exportActionZip() {
   if (typeof JSZip === 'undefined') { utils.showToast("Erro: JSZip.", 'error'); return; }
   if (state.registeredTrees.length === 0) { utils.showToast("Sem dados.", 'error'); return; }

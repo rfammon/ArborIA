@@ -79,30 +79,44 @@ button:active {
 }
 
 /* Botão de Alerta/Perigo (ex: Limpar Tudo) */
-.btn-danger,
-#clear-all-btn {
+.btn-danger {
   border-color: var(--risk-high);
   color: var(--risk-high);
 }
 
-.btn-danger:hover,
-#clear-all-btn:hover {
+.btn-danger:hover {
   background-color: rgba(211, 47, 47, 0.08);
 }
 
 .btn-danger-filled {
-  background-color: var(--risk-high);
+  background: linear-gradient(135deg, #ef5350, var(--risk-high));
   color: white;
-  border: 2px solid var(--risk-high);
+  border: none;
   border-radius: var(--radius-pill);
   padding: 10px 20px;
   font-weight: 600;
   font-size: 0.9rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-danger-filled:hover {
-  background-color: #b71c1c; /* Darker red */
-  border-color: #b71c1c;
+  background: linear-gradient(135deg, var(--risk-high), #b71c1c);
+}
+
+.btn-clear {
+  background: linear-gradient(135deg, #ef5350, #d32f2f);
+  color: white;
+  border-radius: var(--radius-pill);
+  padding: 12px 24px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-sm);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  border: none;
+}
+.btn-clear:hover {
+  background: linear-gradient(135deg, #d32f2f, #b71c1c);
 }
 
 /* --- BOTÕES DE CÂMERA (HUD) --- */

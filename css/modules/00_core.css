@@ -165,3 +165,16 @@ img { max-width: 100%; display: block; }
     padding: 0 2rem;
   }
 }
+
+/* --- Ícones --- */
+.section-title-icon {
+    width: 1.5em;
+    height: 1.5em;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.button-icon {
+    height: 1.2em;
+    filter: invert(1);
+}

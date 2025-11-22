@@ -75,6 +75,19 @@
 }
 
 /* Conteúdo Interno */
+#tooltip-image-container {
+  margin-bottom: 15px;
+}
+#tooltip-image-container:empty {
+  display: none;
+}
+#tooltip-image-container img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+
 .tooltip-card h4 {
   margin-top: 0;
   color: var(--color-forest);

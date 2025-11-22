@@ -100,7 +100,7 @@ export const checklistData = {
 // === 5. CONTEÚDO HTML DO MANUAL (Renderização) ===
 export const manualContent = {
     'conceitos-basicos': `
-            <h3>💡 Definições, Termos e Técnicas</h3>
+            <h3><img src="img/icons/definicoes.png" alt="Icon" class="section-title-icon"> Definições, Termos e Técnicas</h3>
             
             <h4>Termos Estruturais e Anatômicos</h4>
             <p>A correta identificação das partes da árvore é vital. O corte deve respeitar a anatomia para permitir a cicatrização.</p>
@@ -141,7 +141,7 @@ export const manualContent = {
     `,
 
     'planejamento-inspecao': `
-            <h3>📋 Planejamento e Inspeção de Risco</h3>
+            <h3><img src="img/icons/planejamento.png" alt="Icon" class="section-title-icon"> Planejamento e Inspeção de Risco</h3>
             
             <h4>Planejamento da Operação</h4>
             <p>Etapa fundamental para garantir a execução <strong>segura e eficiente</strong>. Antes de ligar a motosserra, avalie o cenário.</p>
@@ -177,7 +177,7 @@ export const manualContent = {
     `,
 
     'autorizacao-legal': `
-            <h3>📜 Termos Legais e Autorização (ASV)</h3>
+            <h3><img src="img/icons/legal.png" alt="Icon" class="section-title-icon"> Termos Legais e Autorização (ASV)</h3>
             
             <h4>Licenciamento Ambiental</h4>
             <p>Toda intervenção em vegetação (especialmente nativa ou em área pública) requer anuência do órgão ambiental.</p>
@@ -200,7 +200,7 @@ export const manualContent = {
     `,
 
     'preparacao-e-isolamento': `
-            <h3>🚧 Preparação do Local e Isolamento</h3>
+            <h3><img src="img/icons/preparacao.png" alt="Icon" class="section-title-icon"> Preparação do Local e Isolamento</h3>
             
             <h4>Isolamento da Área (Sinalização)</h4>
             <p>O isolamento não é opcional. É a principal barreira entre a operação e o público.</p>
@@ -221,7 +221,7 @@ export const manualContent = {
     `,
 
     'operacoes-e-tecnicas': `
-            <h3>✂️ Operações de Poda e Corte</h3>
+            <h3><img src="img/icons/poda.png" alt="Icon" class="section-title-icon"> Operações de Poda e Corte</h3>
             
             <h4>Técnicas de Poda Correta</h4>
             <p>O objetivo é remover o galho sem ferir o tronco.</p>
@@ -256,7 +256,7 @@ export const manualContent = {
     `,
 
     'riscos-e-epis': `
-            <h3>🛡️ Análise de Risco e EPIs</h3>
+            <h3><img src="img/icons/epi.png" alt="Icon" class="section-title-icon"> Análise de Risco e EPIs</h3>
             
             <h4>Riscos Críticos na Atividade</h4>
             <p>Motosserra e Altura são uma combinação letal se ignorada.</p>
@@ -287,7 +287,7 @@ export const manualContent = {
     `,
 
     'gestao-e-desmobilizacao': `
-            <h3>♻️ Gestão de Resíduos e Desmobilização</h3>
+            <h3><img src="img/icons/residuos.png" alt="Icon" class="section-title-icon"> Gestão de Resíduos e Desmobilização</h3>
             
             <h4>Gestão de Resíduos (PNRS)</h4>
             <p>O material lenhoso gerado deve ter destinação correta.</p>
@@ -308,7 +308,7 @@ export const manualContent = {
     `,
 
     'glossario-geral': `
-            <h3>📘 Glossário Geral de Termos</h3>
+            <h3><img src="img/icons/glossario.png" alt="Icon" class="section-title-icon"> Glossário Geral de Termos</h3>
             <p>Navegue por todos os termos técnicos, legais e de equipamentos usados neste manual, organizados por categoria.</p>
             <table class="glossary-table" style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
                 <thead>
@@ -335,7 +335,7 @@ export const manualContent = {
     `,
 
     'sobre-autor': `
-            <h3>👨‍💻 Sobre o Autor</h3>
+            <h3><img src="img/icons/autor.png" alt="Icon" class="section-title-icon"> Sobre o Autor</h3>
             <div id="sobre-o-autor" style="text-align: center; padding: 20px;">    
                 <img src="img/autor.jpg" alt="Foto de Rafael de Andrade Ammon" class="manual-img" style="width: 150px; height: 150px; border-radius: 50%; margin: 0 auto 1.5rem auto; display: block; object-fit: cover; border: 4px solid #00796b;">
                 <div class="autor-container">

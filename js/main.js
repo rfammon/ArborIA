@@ -17,11 +17,6 @@ import * as dapEstimator from './dap.estimator.js';
 
 // Tenta importar o gerador de PDF dinamicamente
 let pdfGenerator = null;
-try {
-    // pdfGenerator = await import('./pdf.generator.js');
-} catch (e) {
-    console.warn("Módulo de PDF não encontrado.", e);
-}
 
 // === 1. SELETORES GLOBAIS ===
 const detailView = document.getElementById('detalhe-view');
@@ -166,6 +161,11 @@ function setupActionButtons() {
         });
     }
 
+    const btnEmail = document.getElementById('send-email-btn');
+    if (btnEmail) {
+        btnEmail.addEventListener('click', features.sendEmailReport);
+    }
+
     // --- LIMPAR BANCO ---
     const btnClear = document.getElementById('clear-all-btn');
     if (btnClear) {
@@ -289,6 +289,11 @@ function initFormDefaults() {
 async function initApp() {
   try {
     console.log("🚀 Inicializando ArborIA 2.0...");
+    try {
+        pdfGenerator = await import('./pdf.generator.js');
+    } catch (e) {
+        console.warn("Módulo de PDF não encontrado.", e);
+    }
 
     // 1. Inicializa UI Base
     UI.init();

@@ -34,7 +34,7 @@
             
             <div id="back-btn-container">
                 <button type="button" id="btn-back-dashboard" class="btn-back">
-                    ⬅ Voltar ao Menu
+                    Voltar ao Menu
                 </button>
             </div>
 
@@ -140,7 +140,7 @@
                                 <h1 id="tree-height-result">0.0 m</h1>
                                 <div class="result-actions">
                                     <button id="btn-reset-measure" class="export-btn">Nova Medição</button>
-                                    <button id="btn-save-height" class="hud-action-btn save">✅ Usar</button>
+                                    <button id="btn-save-height" class="hud-action-btn save">Usar</button>
                                 </div>
                             </div>
                         </div>
@@ -180,7 +180,7 @@
                                 <h1 id="dap-estimated-result">0.0 cm</h1>
                                 <div class="result-actions">
                                     <button id="btn-dap-reset" class="export-btn">Refazer</button>
-                                    <button id="btn-dap-save" class="hud-action-btn save">✅ Usar</button>
+                                    <button id="btn-dap-save" class="hud-action-btn save">Usar</button>
                                 </div>
                             </div>
                         </div>
@@ -220,7 +220,7 @@
 
             <section class="app-view content-section" id="calculadora-view">
                 
-                <h3>📊 Calculadora de Risco</h3>
+                <h3><img src="img/icons/calc.png" alt="Calculadora" class="section-title-icon"> Calculadora de Risco</h3>
                 <p>Avaliação geoespacial e análise visual de risco arbóreo (VTA).</p>
                 
                 <nav class="sub-nav">
@@ -242,7 +242,7 @@
                                     <label for="risk-altura">Altura Total (m):</label>
                                     <div style="display: flex; gap: 8px;">
                                         <input type="number" id="risk-altura" name="risk-altura" min="0" step="0.1" placeholder="0.0">
-                                        <button type="button" id="btn-measure-height-form" class="action-btn" style="width: auto; padding: 0 12px;" title="Abrir Clinômetro">📐</button>
+                                        <button type="button" id="btn-measure-height-form" class="action-btn" style="width: auto; padding: 0 12px;" title="Abrir Clinômetro"><img src="img/icons/clinometro.png" alt="Clinômetro" class="button-icon"></button>
                                     </div>
                                 </div>
 
@@ -250,7 +250,7 @@
                                     <label for="risk-dap">DAP (cm):</label>
                                     <div style="display: flex; gap: 8px;">
                                         <input type="number" id="risk-dap" name="risk-dap" min="0" step="any" placeholder="0.0">
-                                        <button type="button" id="btn-measure-dap-form" class="action-btn" style="width: auto; padding: 0 12px;" title="Abrir Medidor DAP">📏</button>
+                                        <button type="button" id="btn-measure-dap-form" class="action-btn" style="width: auto; padding: 0 12px;" title="Abrir Medidor DAP"><img src="img/icons/dap.png" alt="DAP" class="button-icon"></button>
                                     </div>
                                 </div>
 
@@ -258,7 +258,7 @@
                                 <div><label for="risk-coord-y">Latitude / Y:</label><input type="text" id="risk-coord-y" name="risk-coord-y"></div>
                                 
                                 <div class="gps-button-container">
-                                    <button type="button" id="get-gps-btn">🛰️ Capturar GPS Preciso</button>
+                                    <button type="button" id="get-gps-btn">Capturar GPS Preciso</button>
                                     <span id="gps-status" class="instruction-text text-center" style="display:block; margin-top:5px;"></span>
                                 </div>
                                 
@@ -271,7 +271,7 @@
                             </div>
                             
                             <div class="photo-upload-container">
-                                <label for="tree-photo-input" class="photo-btn">📷 Anexar Foto</label>
+                                <label for="tree-photo-input" class="photo-btn">Anexar Foto</label>
                                 <input type="file" id="tree-photo-input" accept="image/*" capture="environment" style="display: none;">
                                 <div id="photo-preview-container"><button type="button" id="remove-photo-btn" style="display:none;">&times;</button></div>
                             </div>
@@ -279,7 +279,7 @@
                         
                         <div class="risk-buttons-area" style="justify-content: center; margin-bottom: 20px;">
                             <button type="button" id="open-flashcard-btn" class="action-btn" style="width: 100%; padding: 15px; font-size: 1rem;">
-                                📋 Avaliar Fatores de Risco (16 Itens)
+                                Avaliar Fatores de Risco (16 Itens)
                             </button>
                         </div>
 
@@ -310,8 +310,8 @@
                         </fieldset>
                         
                         <div class="risk-buttons-area">
-                            <button type="submit" id="add-tree-btn" class="action-btn">➕ Registrar Árvore</button>
-                            <button type="button" id="reset-risk-form-btn" class="action-btn" style="background: var(--color-text-muted);">Limpar</button>
+                            <button type="submit" id="add-tree-btn" class="action-btn">Registrar Árvore</button>
+                            <button type="button" id="reset-risk-form-btn" class="btn-clear">Limpar</button>
                         </div>
                     </form>
                 </div>
@@ -319,7 +319,7 @@
                 <div id="tab-content-summary" class="sub-tab-content" style="display: none;">
                     <fieldset class="risk-fieldset">
                         <legend>Inventário</legend>
-                        <div class="table-filter-container"><input type="text" id="table-filter-input" placeholder="🔎 Buscar por espécie ou local..." autocomplete="off"></div>
+                        <div class="table-filter-container"><input type="text" id="table-filter-input" placeholder="Buscar por espécie ou local..." autocomplete="off"></div>
                         
                         <div id="summary-table-container">
                             <p id="summary-placeholder" class="text-center text-muted" style="padding: 20px;">Nenhuma árvore cadastrada.</p>
@@ -327,10 +327,11 @@
                         
                         <div id="import-export-controls" class="risk-buttons-area">
                             <input type="file" id="zip-importer" style="display: none;"><input type="file" id="csv-importer" style="display: none;">
-                            <button type="button" id="import-data-btn" class="export-btn">📤 Importar</button>
-                            <button type="button" id="export-data-btn" class="export-btn">📥 CSV/JSON</button>
-                            <button type="button" id="generate-pdf-btn" class="export-btn" style="color: var(--risk-high); border-color: var(--risk-high);">📄 Laudo PDF</button>
-                            <button type="button" id="clear-all-btn" class="btn-danger-filled">🗑️ Excluir Tudo</button>
+                            <button type="button" id="import-data-btn" class="export-btn">Importar</button>
+                            <button type="button" id="export-data-btn" class="export-btn">Exportar</button>
+                            <button type="button" id="generate-pdf-btn" class="action-btn">Gerar Laudo PDF</button>
+                            <button type="button" id="send-email-btn" class="export-btn">Enviar Laudo</button>
+                            <button type="button" id="clear-all-btn" class="btn-danger-filled">Excluir Tudo</button>
                         </div>
                         <div id="zip-status" style="display: none;"><span class="spinner"></span><span id="zip-status-text">Processando...</span></div>
                     </fieldset>
@@ -357,8 +358,8 @@
                                 <input type="text" id="default-utm-zone" placeholder="Ex: 23K">
                             </div>
                             <div style="display: flex; gap: 10px; align-items: flex-end;">
-                                <button type="button" id="zoom-to-extent-btn" class="export-btn">📍 Focar Tudo</button>
-                                <button type="button" id="show-my-location-btn" class="export-btn map-geolocation-btn">🛰️ Onde estou?</button>
+                                <button type="button" id="zoom-to-extent-btn" class="export-btn">Focar Tudo</button>
+                                <button type="button" id="show-my-location-btn" class="export-btn map-geolocation-btn">Onde estou?</button>
                             </div>
                         </div>
                     </fieldset>
@@ -367,7 +368,7 @@
         </div>
 
         <section id="gemini-chat" class="content-section" style="margin-top: 2rem; display:none;">
-            <h2>🤖 Assistente IA</h2>
+            <h2>Assistente IA</h2>
             <div class="risk-fieldset">
                 <div id="chat-response-box" style="min-height: 100px; margin-bottom: 10px;"><p class="text-muted">Faça uma pergunta...</p></div>
                 <div class="form-grid">
@@ -419,6 +420,7 @@
 
     <div id="tooltip-backdrop" class="tooltip-backdrop"></div>
     <div id="tooltip-card" class="tooltip-card">
+        <div id="tooltip-image-container"></div>
         <h4 id="tooltip-title"></h4>
         <p id="tooltip-text"></p>
     </div>
