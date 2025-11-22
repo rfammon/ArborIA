@@ -1,4 +1,4 @@
-// js/main.js (v2.4 - Maestro do ArborIA 2.0 - Final + Map Fix)
+// js/main.js (v2.5 - Maestro do ArborIA 2.0 - Flash Card Integration)
 
 import * as state from './state.js';
 import { UI } from './ui.js'; 
@@ -8,7 +8,6 @@ import { TableUI } from './table.ui.js';
 import * as features from './features.js';
 import { initImageDB } from './database.js'; 
 import * as modalUI from './modal.ui.js'; 
-// [NEW] Import Map Module
 import * as mapUI from './map.ui.js'; 
 
 import { manualContent } from './content.js'; 
@@ -21,7 +20,7 @@ let pdfGenerator = null;
 try {
     // pdfGenerator = await import('./pdf.generator.js');
 } catch (e) {
-    console.warn("Módulo de PDF não encontrado ou com erro.", e);
+    console.warn("Módulo de PDF não encontrado.", e);
 }
 
 // === 1. SELETORES GLOBAIS ===
@@ -46,7 +45,6 @@ function handleMainNavigation(event) {
   // 3. LÓGICA ESPECÍFICA POR ABA
   if (targetId === 'calculadora-view') {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Se vier de outra aba, garante que a tabela esteja atualizada
     TableUI.render();
     
     // [MAP FIX] Se a última sub-aba ativa era o mapa, força resize
@@ -66,7 +64,6 @@ function handleMainNavigation(event) {
     if (manualContent && manualContent[targetId]) {
         loadManualContent(targetId);
     } else {
-        // Fallback para conteúdo ainda não criado
         if(detailView) detailView.innerHTML = `<h3>Conteúdo em Breve</h3><p>O tópico <strong>${targetId}</strong> está em desenvolvimento.</p>`;
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -86,7 +83,7 @@ function loadManualContent(topicId) {
     }, 150);
 }
 
-// === 3. CONEXÃO DOS BOTÕES DE AÇÃO (FEATURES) ===
+// === 3. CONEXÃO DOS BOTÕES DE AÇÃO ===
 function setupActionButtons() {
     console.log("🔌 Conectando botões de ação...");
 
@@ -94,11 +91,10 @@ function setupActionButtons() {
     const riskForm = document.getElementById('risk-calculator-form');
     if (riskForm) {
         riskForm.addEventListener('submit', (e) => {
-            // Feature retorna sucesso? Atualiza tabela e mapa.
             const result = features.handleAddTreeSubmit(e); 
             if (result && result.success) {
                 TableUI.render(); 
-                mapUI.initializeMap(); // [MAP] Add new marker
+                mapUI.initializeMap(); 
                 
                 const summaryTab = document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]');
                 if (summaryTab) summaryTab.click();
@@ -109,6 +105,19 @@ function setupActionButtons() {
         if(resetBtn) resetBtn.addEventListener('click', () => {
             riskForm.reset();
             features.clearPhotoPreview();
+        });
+    }
+
+    // --- [NOVO] CHECKLIST FLASH CARD ---
+    const openChecklistBtn = document.getElementById('open-checklist-btn');
+    if (openChecklistBtn) {
+        openChecklistBtn.addEventListener('click', () => {
+            // Chama a nova função do features.js (v80.0)
+            if (typeof features.initChecklistFlashCard === 'function') {
+                features.initChecklistFlashCard();
+            } else {
+                console.error("Função initChecklistFlashCard não encontrada no features.js");
+            }
         });
     }
 
@@ -125,7 +134,7 @@ function setupActionButtons() {
         inputZip.addEventListener('change', async (e) => {
             await features.handleImportZip(e);
             TableUI.render(); 
-            mapUI.initializeMap(); // [MAP] Refresh markers
+            mapUI.initializeMap(); 
         });
     }
 
@@ -152,11 +161,11 @@ function setupActionButtons() {
         btnClear.addEventListener('click', () => {
             modalUI.showConfirmModal(
                 "Excluir Tudo?", 
-                "Esta ação apagará todas as árvores e fotos cadastradas. Não pode ser desfeito.", 
+                "Esta ação apagará todas as árvores e fotos. Confirma?", 
                 () => {
                     features.handleClearAll();
                     TableUI.render();
-                    mapUI.initializeMap(); // [MAP] Clear
+                    mapUI.initializeMap(); 
                 }
             );
         });
@@ -173,7 +182,7 @@ function setupActionButtons() {
     if (chatInput) chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') features.handleChatSend(); });
 }
 
-// === 4. ATALHOS DE FERRAMENTAS (RÉGUAS) ===
+// === 4. ATALHOS DE FERRAMENTAS ===
 function setupToolShortcuts() {
     const btnHeight = document.getElementById('btn-measure-height-form');
     const btnDap = document.getElementById('btn-measure-dap-form');
@@ -216,7 +225,7 @@ async function initApp() {
   try {
     console.log("🚀 Inicializando ArborIA 2.0...");
 
-    // 1. Inicializa UI e Componentes
+    // 1. Inicializa UI Base
     UI.init();
     TooltipUI.init();
     if (modalUI && typeof modalUI.initPhotoViewer === 'function') modalUI.initPhotoViewer();
@@ -227,25 +236,25 @@ async function initApp() {
 
     // 3. Configura Listeners
     if (topNavContainer) topNavContainer.addEventListener('click', handleMainNavigation);
-    
     setupActionButtons(); 
     setupToolShortcuts();
     setupBackToTop();
     initFormDefaults();
     
-    // 4. Renderiza Tabela Inicial
-    TableUI.render();
-
-    // 5. Inicializa Mapa e Listeners
-    // [MAP FIX] Ensures map is ready and listening to filters
+    // 4. Inicializa Componentes Complexos
     mapUI.initializeMap();
     mapUI.setupMapListeners();
-
-    // 6. Inicializa Sensores
+    
     clinometer.initClinometerListeners();
     dapEstimator.initDAPEstimatorListeners();
 
-    // 7. Global Resize Listener (Fixes Gray Map on Tab Change)
+    // [NOTA] Não iniciamos mais o checklist automaticamente aqui.
+    // Ele é iniciado apenas pelo clique do botão #open-checklist-btn
+
+    // 5. Renderiza Tabela Inicial
+    TableUI.render();
+
+    // 6. Listener Global de Resize (Mapa)
     window.addEventListener('resize', () => {
         const mapContainer = document.getElementById('map-container');
         if (mapContainer && mapContainer.offsetParent !== null) {
@@ -254,7 +263,7 @@ async function initApp() {
         }
     });
 
-    // 8. Restaura Estado (Última aba)
+    // 7. Restaura Estado
     const lastTab = state.getActiveTab() || 'conceitos-basicos';
     let initialButton = null;
     if (topNavContainer) {
