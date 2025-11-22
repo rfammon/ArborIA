@@ -216,14 +216,14 @@ export const TableUI = {
         `;
 
         const actions = [
-            { text: '✏️ Editar', className: 'export-btn', onClick: () => features.handleEditTree(tree.id) },
-            { text: '🗑️ Excluir', className: 'btn-danger', onClick: () => {
+            { text: '✏️ Editar', className: 'action-btn', onClick: () => features.handleEditTree(tree.id) },
+            { text: '🗑️ Excluir', className: 'btn-danger-filled', closesModal: false, onClick: () => {
                 showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${tree.id}?`, () => features.handleDeleteTree(tree.id));
             }}
         ];
 
         if (tree.hasPhoto) {
-            actions.unshift({ text: '📷 Ver Foto', className: 'hud-action-btn', onClick: () => getImageFromDB(tree.id, blob => blob && openPhotoViewer(URL.createObjectURL(blob))) });
+            actions.unshift({ text: '📷 Ver Foto', className: 'action-btn', onClick: () => getImageFromDB(tree.id, blob => blob && openPhotoViewer(URL.createObjectURL(blob))) });
         }
 
         // [MELHORIA] Passa a classe de risco para o modal

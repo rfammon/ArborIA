@@ -3,6 +3,21 @@
  * Gerencia visualizadores de fotos e diálogos de confirmação
  */
 
+// Função helper não exportada para fechar o visualizador de fotos.
+function closePhotoViewer() {
+    const dialog = document.getElementById('photo-viewer-dialog');
+    if (!dialog) return;
+
+    dialog.classList.remove('active'); // Inicia animação de saída
+    
+    // Aguarda a transição CSS (300ms) antes de esconder e limpar.
+    setTimeout(() => {
+        dialog.style.display = 'none';
+        const content = document.getElementById('photo-viewer-content');
+        if (content) content.innerHTML = ''; // Limpa a imagem para economizar memória
+    }, 300);
+}
+
 /**
  * Inicializa os listeners do visualizador de fotos (botão fechar e clique no fundo).
  * Chamado uma única vez no initApp do main.js.
@@ -11,30 +26,16 @@ export function initPhotoViewer() {
     const dialog = document.getElementById('photo-viewer-dialog');
     const closeBtn = document.getElementById('photo-viewer-close');
     
-    // Se os elementos não existirem no HTML, aborta silenciosamente
     if (!dialog || !closeBtn) return;
 
-    // Função interna para fechar
-    const closeViewer = () => {
-        dialog.classList.remove('active'); // Inicia animação de saída
-        
-        // Aguarda a transição CSS (0.3s) antes de esconder
-        setTimeout(() => {
-            dialog.style.display = 'none';
-            // Limpa a imagem para economizar memória
-            const content = document.getElementById('photo-viewer-content');
-            if (content) content.innerHTML = '';
-        }, 300);
-    };
-
     // Evento: Botão X
-    closeBtn.addEventListener('click', closeViewer);
+    closeBtn.addEventListener('click', closePhotoViewer);
 
     // Evento: Clique no fundo escuro (Backdrop)
     dialog.addEventListener('click', (e) => {
-        // Garante que clicou no fundo, não na imagem
+        // Garante que clicou no fundo, não na imagem ou no botão X
         if (e.target === dialog) {
-            closeViewer();
+            closePhotoViewer();
         }
     });
 }
@@ -52,8 +53,14 @@ export function openPhotoViewer(imageSrc) {
         return;
     }
 
-    // Injeta a imagem
-    content.innerHTML = `<img src="${imageSrc}" alt="Foto da Árvore" style="max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">`;
+    // Injeta a imagem sem estilos inline, para usar a classe do CSS
+    content.innerHTML = `<img src="${imageSrc}" alt="Foto da Árvore">`;
+    
+    // Adiciona listener para fechar ao clicar na própria imagem
+    const img = content.querySelector('img');
+    if (img) {
+        img.addEventListener('click', closePhotoViewer);
+    }
     
     // Mostra o container (display: flex)
     dialog.style.display = 'flex';
@@ -165,7 +172,11 @@ export function showDetailsModal(title, contentHTML, actions = [], dialogClass =
             btn.className = action.className || 'hud-action-btn';
             btn.onclick = () => {
                 action.onClick();
-                btnCancel.click(); // Fecha o modal após a ação
+                // A ação só fecha o modal se não for explicitamente instruída a não fazê-lo.
+                // Útil para ações que abrem outros modais.
+                if (action.closesModal !== false) {
+                    btnCancel.click(); // Fecha o modal após a ação
+                }
             };
             actionsContainer.appendChild(btn);
         });

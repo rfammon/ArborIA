@@ -90,6 +90,21 @@ button:active {
   background-color: rgba(211, 47, 47, 0.08);
 }
 
+.btn-danger-filled {
+  background-color: var(--risk-high);
+  color: white;
+  border: 2px solid var(--risk-high);
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.btn-danger-filled:hover {
+  background-color: #b71c1c; /* Darker red */
+  border-color: #b71c1c;
+}
+
 /* --- BOTÕES DE CÂMERA (HUD) --- */
 /* Botão de Disparo/Captura */
 .hud-capture-btn {
