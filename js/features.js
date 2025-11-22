@@ -1,5 +1,5 @@
 /**
- * ARBORIA 2.0 - FEATURES (v80.0 - Flash Card Checklist)
+ * ARBORIA 2.0 - FEATURES (v81.0 - Flash Card Checklist)
  * Contém: Lógica de GPS, CRUD, Importação e NOVO CHECKLIST (Flash Card Fullscreen).
  */
 
@@ -23,18 +23,18 @@ const getFlashCardElements = () => {
     return {
         container: container,
         closeBtn: document.getElementById('close-checklist-btn'),
-        card: document.querySelector('.mobile-checklist-card'), // Para estilização
+        card: document.querySelector('.mobile-checklist-card'),
         
         // Elementos de Conteúdo
         counter: document.getElementById('flashcard-counter'),
-        questionBox: document.getElementById('flashcard-question-text'), // ID ajustado conforme HTML novo
+        questionBox: document.getElementById('flashcard-question-text'), 
         
-        // Controle (Toggle) - Nota: IDs específicos do novo HTML
-        toggleInput: document.getElementById('flashcard-toggle-input'), 
+        // Controle (Toggle)
+        toggleInput: document.getElementById('mobile-toggle-input'), 
         
         // Navegação
-        btnPrev: document.getElementById('flashcard-prev'),
-        btnNext: document.getElementById('flashcard-next'),
+        btnPrev: document.getElementById('checklist-prev'),
+        btnNext: document.getElementById('checklist-next'),
         
         // Fonte de Dados (Tabela Oculta)
         dataRows: document.querySelectorAll('#checklist-data-table tbody tr')
@@ -49,26 +49,30 @@ function updateFlashCard(index) {
     if (!els || !els.dataRows || index < 0 || index >= els.dataRows.length) return;
 
     const row = els.dataRows[index];
-    
-    // 1. Ler Dados da Tabela Oculta
-    // Célula 1 contém a pergunta (HTML), Célula 3 contém o checkbox real
-    const questionHTML = row.cells[1].innerHTML; 
+    // [IMPORTANTE] Obtém o checkbox da tabela que é a fonte de dados real
     const sourceCheckbox = row.querySelector('input[type="checkbox"]');
 
-    // 2. Atualizar UI do Flash Card
-    els.counter.textContent = `Fator de Risco ${index + 1} / ${els.dataRows.length}`;
-    els.questionBox.innerHTML = questionHTML; // Mantém os tooltips funcionais
+    // Extração de Conteúdo (Célula 1) - Clona para não perder eventos de tooltip
+    const questionCell = row.cells[1].cloneNode(true); 
+    const tooltipSpan = questionCell.querySelector('.checklist-term');
+    if (tooltipSpan) {
+        tooltipSpan.classList.add('tooltip-trigger'); 
+    }
 
-    // 3. Sincronizar Toggle Visual com Checkbox de Dados
+    // 1. Atualiza UI
+    els.counter.textContent = `Fator de Risco ${index + 1} / ${els.dataRows.length}`;
+    els.questionBox.innerHTML = questionCell.innerHTML; 
+    
+    // 2. Sincroniza Toggle Visual com o Checkbox Real
     els.toggleInput.checked = sourceCheckbox.checked;
     updateCardVisuals(els.card, els.toggleInput.checked);
 
-    // 4. Atualizar Botões de Navegação
+    // 3. Atualiza Botões
     els.btnPrev.disabled = (index === 0);
-    els.btnNext.innerHTML = (index === els.dataRows.length - 1) ? 'Concluir e Fechar' : 'Próxima ❯';
+    // Muda texto do botão no último item
+    els.btnNext.textContent = (index === els.dataRows.length - 1) ? 'Concluir' : 'Próxima ❯';
 
-    // 5. Lógica do Toggle (Evento de Mudança)
-    // Remove listener anterior para evitar duplicidade no closure
+    // 4. Lógica do Toggle (Remove listener antigo antes de adicionar novo)
     if (els.toggleInput._handler) {
         els.toggleInput.removeEventListener('change', els.toggleInput._handler);
     }
@@ -76,10 +80,10 @@ function updateFlashCard(index) {
     const onToggleChange = () => {
         const isChecked = els.toggleInput.checked;
         
-        // A. Atualiza o "Banco de Dados" (Tabela Oculta)
+        // A. Atualiza o "Banco de Dados" (Checkbox da Tabela Oculta)
         sourceCheckbox.checked = isChecked;
         
-        // B. Feedback Visual Imediato
+        // B. Feedback Visual Imediato (Troca Cor)
         updateCardVisuals(els.card, isChecked);
 
         // C. Auto-Avanço (apenas se marcou SIM e não é o último)
@@ -92,11 +96,11 @@ function updateFlashCard(index) {
     };
 
     els.toggleInput.addEventListener('change', onToggleChange);
-    els.toggleInput._handler = onToggleChange; // Salva referência
+    els.toggleInput._handler = onToggleChange; // Salva referência para remoção
 }
 
 /**
- * Helper para mudar a cor do cartão
+ * Helper para mudar a cor do cartão (CSS class)
  */
 function updateCardVisuals(cardElement, isChecked) {
     if (isChecked) cardElement.classList.add('answered-yes');
@@ -110,9 +114,9 @@ function setupFlashCardListeners() {
     if (flashCardListenersAttached) return;
     
     const els = getFlashCardElements();
-    if (!els) return;
+    if (!els || !els.btnPrev || !els.btnNext) return;
 
-    // Botão Fechar
+    // Botão Fechar (X)
     els.closeBtn.addEventListener('click', closeChecklistFlashCard);
 
     // Botão Anterior
@@ -131,42 +135,46 @@ function setupFlashCardListeners() {
             currentCardIndex++;
             updateFlashCard(currentCardIndex);
         } else {
-            // Fim do fluxo
+            // Fim do fluxo: Fecha o modal e notifica
             closeChecklistFlashCard();
-            // Rola até o botão de salvar no formulário principal
-            const saveArea = document.querySelector('.risk-buttons-area');
-            if (saveArea) saveArea.scrollIntoView({ behavior: 'smooth' });
+            utils.showToast("Checklist preenchido!", "success");
         }
     });
-
+    
     flashCardListenersAttached = true;
 }
 
 /**
  * [PÚBLICO] Inicia o Checklist em Tela Cheia.
- * Chamado pelo botão "Avaliar Fatores de Risco".
+ * Chamado pelo botão "#open-checklist-btn" no formulário.
  */
-export function initChecklistFlashCard() {
+export function initChecklistFlashCard(retry = 0) {
     const els = getFlashCardElements();
     
-    // Verificação de Segurança: Se a tabela de dados não existe, aborta.
+    // 1. Verificação Crítica: Garante que as linhas da tabela oculta existem
     if (!els || els.dataRows.length === 0) {
-        utils.showToast("Erro: Tabela de dados não encontrada.", "error");
+        if (retry < 5) {
+            // Tenta novamente a cada 150ms para esperar o DOM renderizar a tabela
+            setTimeout(() => initChecklistFlashCard(retry + 1), 150);
+        } else {
+            utils.showToast("Erro: Tabela de critérios não carregou. Recarregue a página.", "error");
+        }
         return;
     }
 
+    // 2. Anexa Listeners (se ainda não anexou)
     setupFlashCardListeners();
     
-    // Mostra o container Fullscreen
-    els.container.style.display = 'flex'; // Flex para centralizar
+    // 3. Exibe o container Fullscreen
+    els.container.style.display = 'flex'; 
     
-    // Reseta para o primeiro ou mantém onde parou? Vamos resetar.
+    // 4. Reset e Inicia no primeiro card
     currentCardIndex = 0;
     updateFlashCard(currentCardIndex);
 }
 
 /**
- * [PRIVADO] Fecha o Checklist.
+ * [PRIVADO] Fecha a UI do Checklist.
  */
 function closeChecklistFlashCard() {
     const els = getFlashCardElements();
@@ -267,7 +275,7 @@ export async function handleGetGPS() {
 }
 
 // ============================================================
-// 3. CRUD & AÇÕES DE TABELA
+// 3. CRUD & AÇÕES DIVERSAS (Integradas)
 // ============================================================
 
 export function clearPhotoPreview() {
@@ -289,9 +297,10 @@ export function clearPhotoPreview() {
   }
   state.setEditingTreeId(null);
   
-  // Limpa também os checkboxes da tabela oculta
-  const checkboxes = document.querySelectorAll('.risk-checkbox');
-  checkboxes.forEach(cb => cb.checked = false);
+  // Limpa Checkboxes da Tabela Oculta
+  document.querySelectorAll('.risk-checkbox').forEach(cb => cb.checked = false);
+  
+  TableUI.render();
 }
 
 export function handleAddTreeSubmit(event) {
@@ -337,14 +346,12 @@ export function handleAddTreeSubmit(event) {
   let resultTree;
 
   if (state.editingTreeId === null) {
-    // ADD
     const newTreeId = state.registeredTrees.length > 0 ? Math.max(...state.registeredTrees.map(t => t.id)) + 1 : 1;
     resultTree = { ...treeData, id: newTreeId };
     if (resultTree.hasPhoto) db.saveImageToDB(resultTree.id, state.currentTreePhoto);
     state.registeredTrees.push(resultTree);
     utils.showToast(`Árvore ID ${resultTree.id} salva!`, 'success');
   } else {
-    // UPDATE
     const idx = state.registeredTrees.findIndex(t => t.id === state.editingTreeId);
     if (idx === -1) return { success: false };
     
@@ -365,16 +372,12 @@ export function handleAddTreeSubmit(event) {
 
   state.saveDataToStorage();
   
-  // Limpa tudo
   state.setEditingTreeId(null);
   form.reset();
   clearPhotoPreview();
-  
   if(document.activeElement) document.activeElement.blur();
 
-  // Atualiza Tabela
   TableUI.render();
-  
   return { success: true, tree: resultTree };
 }
 
@@ -385,8 +388,8 @@ export function handleDeleteTree(id) {
   const n = state.registeredTrees.filter(tree => tree.id !== id);
   state.setRegisteredTrees(n); 
   state.saveDataToStorage();
-  
   TableUI.render();
+  
   utils.showToast(`Árvore removida.`, 'info'); 
   return true;
 }
@@ -414,7 +417,7 @@ export function handleEditTree(id) {
   setVal('risk-avaliador', t.avaliador);
   setVal('risk-obs', t.observacoes);
   
-  // Marca Checkboxes
+  // Marca Checkboxes na Tabela Oculta
   const checkboxes = document.querySelectorAll('.risk-checkbox');
   checkboxes.forEach(cb => cb.checked = false); 
   
@@ -434,6 +437,7 @@ export function handleEditTree(id) {
   
   utils.showToast(`Editando ID ${id}...`, "info");
   
+  // [FIX] Não abre automaticamente o checklist, o usuário clica se quiser editar
   return t;
 }
 
