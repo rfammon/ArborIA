@@ -18,9 +18,10 @@ import * as dapEstimator from './dap.estimator.js';
 // Tenta importar o gerador de PDF dinamicamente
 let pdfGenerator = null;
 try {
+    // Opcional: Se o arquivo não existir, o bloco catch captura o erro silenciosamente
     // pdfGenerator = await import('./pdf.generator.js');
 } catch (e) {
-    console.warn("Módulo de PDF não encontrado.", e);
+    console.warn("Módulo de PDF não encontrado ou com erro.", e);
 }
 
 // === 1. SELETORES GLOBAIS ===
@@ -35,7 +36,7 @@ function handleMainNavigation(event) {
   const targetId = targetButton.dataset.target;
   state.saveActiveTab(targetId);
 
-  // 1. CICLO DE VIDA DE SENSORES
+  // 1. CICLO DE VIDA DE SENSORES (Desliga ao sair)
   if (targetId !== 'clinometro-view') clinometer.stopClinometer();
   if (targetId !== 'dap-estimator-view') dapEstimator.stopDAPEstimator();
 
@@ -64,6 +65,7 @@ function handleMainNavigation(event) {
     if (manualContent && manualContent[targetId]) {
         loadManualContent(targetId);
     } else {
+        // Fallback para conteúdo ainda não criado
         if(detailView) detailView.innerHTML = `<h3>Conteúdo em Breve</h3><p>O tópico <strong>${targetId}</strong> está em desenvolvimento.</p>`;
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -74,8 +76,11 @@ function loadManualContent(topicId) {
     if (!detailView) return;
     detailView.style.opacity = 0;
     setTimeout(() => {
+        // Suporte para v39 (Objeto) ou string simples
         const content = typeof manualContent[topicId] === 'object' ? manualContent[topicId].html : manualContent[topicId];
         const title = typeof manualContent[topicId] === 'object' ? `<h3>${manualContent[topicId].titulo}</h3>` : '';
+        
+        // Renderiza título + conteúdo
         const finalHTML = (content.includes('<h3>') || !title) ? content : title + content;
         
         detailView.innerHTML = finalHTML;
@@ -108,15 +113,15 @@ function setupActionButtons() {
         });
     }
 
-    // --- [NOVO] CHECKLIST FLASH CARD ---
+    // --- [NOVO] BOTÃO DE CHECKLIST FLASH CARD ---
     const openChecklistBtn = document.getElementById('open-checklist-btn');
     if (openChecklistBtn) {
         openChecklistBtn.addEventListener('click', () => {
-            // Chama a nova função do features.js (v80.0)
+            // Chama a função de inicialização no features.js
             if (typeof features.initChecklistFlashCard === 'function') {
                 features.initChecklistFlashCard();
             } else {
-                console.error("Função initChecklistFlashCard não encontrada no features.js");
+                console.error("Erro: initChecklistFlashCard não encontrado.");
             }
         });
     }
@@ -236,7 +241,9 @@ async function initApp() {
 
     // 3. Configura Listeners
     if (topNavContainer) topNavContainer.addEventListener('click', handleMainNavigation);
-    setupActionButtons(); 
+    
+    setupActionButtons(); // Conecta o botão do checklist aqui!
+    
     setupToolShortcuts();
     setupBackToTop();
     initFormDefaults();
@@ -248,13 +255,10 @@ async function initApp() {
     clinometer.initClinometerListeners();
     dapEstimator.initDAPEstimatorListeners();
 
-    // [NOTA] Não iniciamos mais o checklist automaticamente aqui.
-    // Ele é iniciado apenas pelo clique do botão #open-checklist-btn
-
     // 5. Renderiza Tabela Inicial
     TableUI.render();
 
-    // 6. Listener Global de Resize (Mapa)
+    // 6. Correção do Mapa (Resize Global)
     window.addEventListener('resize', () => {
         const mapContainer = document.getElementById('map-container');
         if (mapContainer && mapContainer.offsetParent !== null) {
