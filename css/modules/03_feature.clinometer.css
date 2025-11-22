@@ -242,12 +242,7 @@
 }
 
 /* --- MOBILE FULLSCREEN AND HUD ANGLE TEXT FIXES --- */
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
+
 
 @media (max-width: 768px) {
   #clinometro-view, #dap-estimator-view {
