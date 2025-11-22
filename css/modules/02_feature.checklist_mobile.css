@@ -1,18 +1,35 @@
 /**
- * ARBORIA 2.0 - MOBILE CHECKLIST (v80.0 - Flash Card UI)
+ * ARBORIA 2.0 - MOBILE CHECKLIST (v81.0 - Flash Card UI)
  * Estilo para o Checklist em Modo "Flash Card" (Tela Cheia).
  */
 
 /* --- 1. CONTAINER TELA CHEIA --- */
-/* Herda .fullscreen-app do global, mas ajustamos para centralizar o card */
 #checklist-flashcard-view {
+  position: fixed; /* Chave para o overlay */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background-color: rgba(15, 23, 42, 0.95); /* Fundo escuro profundo */
   backdrop-filter: blur(8px);
   z-index: 3000; /* Acima de tudo */
   padding: 20px;
+  
+  /* Layout Flex para centralizar */
+  display: none; /* JS controla o display: flex */
+  pointer-events: none; /* Não intercepta cliques quando oculto */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Wrapper interno para alinhar itens */
+/* Quando ativo, volta a ser clicável */
+#checklist-flashcard-view:not([style*="display:none"]):not([style*="display: none"]) {
+    display: flex !important;
+    pointer-events: auto;
+}
+
+/* Wrapper interno */
 .mobile-checklist-wrapper-fullscreen {
   width: 100%;
   height: 100%;
@@ -28,7 +45,8 @@
 /* --- 2. O FLASH CARD (Cartão de Pergunta) --- */
 .mobile-checklist-card {
   width: 100%;
-  background: linear-gradient(135deg, var(--color-forest), var(--color-tech)); /* Verde -> Azul */
+  /* Gradiente Inicial: Verde Floresta -> Azul Tech (Neutro/Seguro) */
+  background: linear-gradient(135deg, var(--color-forest), var(--color-tech)); 
   border-radius: 24px;
   padding: 2.5rem 1.5rem;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
@@ -36,10 +54,14 @@
   color: white;
   
   /* Efeito de "Pop" ao aparecer */
-  animation: cardPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: swipeInFromRight 0.4s ease-out;
   position: relative;
   overflow: hidden;
   transition: background 0.5s ease, box-shadow 0.3s ease;
+  /* Garante espaço para o conteúdo */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 @keyframes cardPopIn {
@@ -57,8 +79,8 @@
 .mobile-checklist-card.answered-yes::before {
   content: '⚠️';
   position: absolute;
-  top: -20px;
-  right: -20px;
+  top: -10px;
+  right: -10px;
   font-size: 8rem;
   opacity: 0.1;
   pointer-events: none;
@@ -71,16 +93,16 @@
   text-transform: uppercase;
   letter-spacing: 1.5px;
   color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 1rem;
+  margin: 0;
   font-weight: 700;
 }
 
 #flashcard-question-text {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   line-height: 1.4;
   font-weight: 700;
-  margin-bottom: 2.5rem;
-  min-height: 3em; /* Evita pulos de layout */
+  color: #ffffff;
+  min-height: 3em; /* Altura mínima para evitar pulos */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -96,20 +118,20 @@
 
 /* --- 3. TOGGLE SWITCH (INTERRUPTOR) --- */
 .flashcard-toggle-area {
-  margin-top: auto;
   width: 100%;
   display: flex;
   justify-content: center;
+  margin-top: 1rem;
 }
 
 .mobile-checklist-toggle {
   display: flex;
   align-items: center;
   gap: 15px;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 10px 25px;
   border-radius: 50px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* O Input Checkbox invisível */
@@ -123,6 +145,7 @@
   display: inline-block;
   width: 60px;
   height: 34px;
+  margin: 0;
 }
 
 .toggle-slider {
@@ -133,7 +156,7 @@
   right: 0;
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.3);
-  transition: .4s;
+  transition: background-color .4s; /* [MELHORIA] Anima a cor do trilho */
   border-radius: 34px;
   border: 2px solid rgba(255, 255, 255, 0.6);
 }
@@ -147,18 +170,19 @@
   left: 2px;
   bottom: 2px;
   background-color: white;
-  transition: .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform .4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* [MELHORIA] Anima o movimento da bolinha */
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 /* Estado LIGADO (Sim) */
-input:checked + .toggle-slider {
+.mobile-checklist-toggle input:checked + .toggle-slider {
   background-color: #00E676; /* Verde Neon */
   border-color: #00E676;
 }
 
-input:checked + .toggle-slider:before {
+/* [MELHORIA] Move a bolinha para a direita quando ligado */
+.mobile-checklist-toggle input:checked + .toggle-slider:before {
   transform: translateX(26px);
 }
 
@@ -174,7 +198,7 @@ input:checked + .toggle-slider:before {
 
 .mobile-checklist-nav button {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
   font-weight: 600;
   padding: 12px 24px;
@@ -182,28 +206,28 @@ input:checked + .toggle-slider:before {
   font-size: 0.9rem;
   backdrop-filter: blur(5px);
   transition: all 0.2s;
-}
-
-.mobile-checklist-nav button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
 }
 
 .mobile-checklist-nav button:active {
   transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .mobile-checklist-nav button:disabled {
   opacity: 0.3;
   cursor: not-allowed;
   pointer-events: none;
+  border-color: transparent;
 }
 
 /* Botão Fechar no Topo */
-#close-checklist-btn {
+.mobile-checklist-wrapper-fullscreen .hud-close-btn {
   background: rgba(255, 255, 255, 0.15);
-  border: none;
+  border: 1px solid rgba(255,255,255,0.2);
   color: white;
-  font-size: 0.8rem;
-  padding: 8px 16px;
+  font-size: 1.2rem;
+  padding: 10px 15px;
   border-radius: 20px;
+  cursor: pointer;
 }

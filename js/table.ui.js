@@ -4,8 +4,8 @@
  */
 
 import * as State from './state.js';
-import * as Features from './features.js';
-import { showConfirmModal, openPhotoViewer } from './modal.ui.js';
+import * as features from './features.js'; // Importação correta
+import { showConfirmModal, openPhotoViewer, showDetailsModal } from './modal.ui.js'; // Adiciona showDetailsModal
 import { getImageFromDB } from './database.js';
 
 export const TableUI = {
@@ -13,19 +13,22 @@ export const TableUI = {
     container: null,
     badgeElement: null,
     
-    // Estado inicial: Mobile começa compacto, Desktop começa expandido
-    isCompactMode: window.innerWidth <= 768, 
+    // [MUDANÇA] isCompactMode agora é apenas para desktop. Mobile terá sua própria renderização.
+    isCompactMode: window.innerWidth <= 768,
 
     render() {
         this.container = document.getElementById('summary-table-container');
         this.badgeElement = document.getElementById('summary-badge');
 
-        if (!this.container) return;
+        if (!this.container || !this.badgeElement) return;
 
         const trees = State.registeredTrees || [];
         this.updateBadge(trees.length);
 
-        this.renderControls();
+        // [MUDANÇA] Controles de expandir/compactar só aparecem no desktop.
+        if (window.innerWidth > 768) {
+            this.renderControls();
+        }
 
         if (trees.length === 0) {
             this.container.innerHTML = `
@@ -41,13 +44,25 @@ export const TableUI = {
 
         this.toggleExportButtons(true);
 
+        // [MUDANÇA] Lógica de renderização condicional
+        if (window.innerWidth <= 768) {
+            this.renderMobileList(trees);
+        } else {
+            this.renderDesktopTable(trees);
+        }
+    },
+
+    /**
+     * [NOVO] Renderiza a tabela completa para desktop.
+     */
+    renderDesktopTable(trees) {
         const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
 
-        // Aplica classe de modo compacto se necessário
+        // Aplica classe de modo compacto
         let tableClass = 'summary-table';
         if (this.isCompactMode) tableClass += ' compact-mode';
 
-        // OBS: Classes 'col-secondary' são as que somem no modo compacto
+        // Colunas com 'col-secondary' são ocultadas no modo compacto
         let html = `
             <div class="table-responsive">
             <table class="${tableClass}">
@@ -79,8 +94,8 @@ export const TableUI = {
                 <tr id="row-${tree.id}">
                     <td class="col-id"><strong>${tree.id}</strong></td>
                     <td>
-                        <div style="font-weight:700; color:#333;">${tree.especie}</div>
-                        <div class="col-mobile-summary">${dateSimple} ${photoIcon}</div> 
+                        <div style="font-weight: 700; color: #333;">${tree.especie}</div>
+                        <div class="col-mobile-summary">${dateSimple} &nbsp; | &nbsp; ${tree.local} ${photoIcon}</div>
                     </td>
                     
                     <td class="col-secondary">${dateSimple}</td>
@@ -124,30 +139,112 @@ export const TableUI = {
         this.bindEvents();
     },
 
+    /**
+     * [NOVO] Renderiza a lista de cards para mobile.
+     */
+    renderMobileList(trees) {
+        const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
+        let html = `<div class="summary-list-mobile">`;
+
+        sortedTrees.forEach(tree => {
+            let badgeClass = 'badge-low';
+            if (tree.risco === 'Alto Risco') badgeClass = 'badge-high';
+            else if (tree.risco === 'Médio Risco') badgeClass = 'badge-medium';
+
+            const photoIcon = tree.hasPhoto ? '📷' : '';
+
+            html += `
+                <div class="summary-list-item" data-tree-id="${tree.id}">
+                    <div class="item-main-info">
+                        <span class="item-id">ID: ${tree.id}</span>
+                        <strong class="item-species">${tree.especie}</strong>
+                        <p class="item-location">${tree.local || 'N/A'} ${photoIcon}</p>
+                    </div>
+                    <div class="item-risk-info">
+                        <span class="badge ${badgeClass}">${tree.risco}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        this.container.innerHTML = html;
+        this.bindMobileListEvents();
+    },
+
+    /**
+     * [NOVO] Anexa eventos de clique para a lista mobile.
+     */
+    bindMobileListEvents() {
+        this.container.querySelectorAll('.summary-list-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const treeId = parseInt(item.dataset.treeId, 10);
+                this.showTreeDetailsModal(treeId);
+            });
+        });
+    },
+
+    /**
+     * [NOVO] Exibe o modal com os detalhes da árvore.
+     */
+    showTreeDetailsModal(treeId) {
+        const tree = State.registeredTrees.find(t => t.id === treeId);
+        if (!tree) return;
+
+        const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
+        const riskFactors = (tree.riskFactors || []).map((val, idx) => val === 1 ? `<li>Fator #${idx + 1}</li>` : null).filter(v => v).join('');
+
+        const content = `
+            <div class="details-modal-grid">
+                <p><strong>Data:</strong> ${dateSimple}</p>
+                <p><strong>Local:</strong> ${tree.local}</p>
+                <p><strong>Avaliador:</strong> ${tree.avaliador}</p>
+                <p><strong>DAP:</strong> ${tree.dap} cm</p>
+                <p><strong>Altura:</strong> ${tree.altura} m</p>
+                <p><strong>Coordenadas:</strong> ${tree.coordX} / ${tree.coordY} (Zona ${tree.utmZoneNum}${tree.utmZoneLetter})</p>
+                <p><strong>Observações:</strong> ${tree.observacoes || 'Nenhuma.'}</p>
+            </div>
+            ${riskFactors ? `<h4>Fatores de Risco Ativos:</h4><ul class="details-risk-list">${riskFactors}</ul>` : ''}
+        `;
+
+        const actions = [
+            { text: '✏️ Editar', className: 'export-btn', onClick: () => features.handleEditTree(tree.id) },
+            { text: '🗑️ Excluir', className: 'btn-danger', onClick: () => {
+                showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${tree.id}?`, () => features.handleDeleteTree(tree.id));
+            }}
+        ];
+
+        if (tree.hasPhoto) {
+            actions.unshift({ text: '📷 Ver Foto', className: 'hud-action-btn', onClick: () => getImageFromDB(tree.id, blob => blob && openPhotoViewer(URL.createObjectURL(blob))) });
+        }
+        showDetailsModal(`Detalhes: ${tree.especie} (ID: ${tree.id})`, content, actions);
+    },
+
     renderControls() {
         const wrapper = document.querySelector('.table-filter-container');
-        if (!wrapper) return;
+        if (!wrapper) return; // Sai se o container não existir
 
-        // Atualiza texto se o botão já existe
+        // Se o botão já existe, apenas atualiza o texto
         const existingBtn = document.getElementById('toggle-cols-btn');
         if (existingBtn) {
             existingBtn.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
             return;
         }
 
+        // Cria o layout de controles pela primeira vez
         wrapper.className = 'table-controls-wrapper';
         const input = document.getElementById('table-filter-input');
         
         const btnToggle = document.createElement('button');
         btnToggle.id = 'toggle-cols-btn';
         btnToggle.type = 'button';
-        // Define texto inicial baseado no estado
         btnToggle.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
         
         btnToggle.onclick = () => {
             this.isCompactMode = !this.isCompactMode;
             btnToggle.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
             
+            // Alterna a classe na tabela para o CSS reagir
             const table = this.container.querySelector('table');
             if (table) {
                 if (this.isCompactMode) table.classList.add('compact-mode');
@@ -155,7 +252,7 @@ export const TableUI = {
             }
         };
 
-        wrapper.innerHTML = ''; 
+        wrapper.innerHTML = ''; // Limpa o container
         const divInput = document.createElement('div');
         divInput.className = 'table-filter-container';
         divInput.appendChild(input); 
@@ -186,7 +283,7 @@ export const TableUI = {
         this.container.querySelectorAll('.btn-map').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.dataset.id);
-                Features.handleZoomToPoint(id);
+                features.handleZoomToPoint(id);
             });
         });
 
@@ -194,7 +291,7 @@ export const TableUI = {
         this.container.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.dataset.id);
-                Features.handleEditTree(id);
+                features.handleEditTree(id);
             });
         });
 
@@ -205,7 +302,7 @@ export const TableUI = {
                 showConfirmModal(
                     "Excluir Registro?", 
                     `Deseja apagar a árvore ID ${id}?`, 
-                    () => Features.handleDeleteTree(id)
+                    () => features.handleDeleteTree(id)
                 );
             });
         });

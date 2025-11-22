@@ -123,3 +123,50 @@ export function showConfirmModal(title, message, onConfirm) {
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('active'), 10);
 }
+
+/**
+ * [NOVO] Exibe um Modal com conteúdo HTML e botões de ação customizáveis.
+ * @param {string} title - Título do modal.
+ * @param {string} contentHTML - O HTML a ser injetado no corpo do modal.
+ * @param {Array<object>} actions - Array de objetos de ação, ex: [{text, className, onClick}, ...].
+ */
+export function showDetailsModal(title, contentHTML, actions = []) {
+    const modal = document.getElementById('action-modal');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('modal-title');
+    const descEl = document.getElementById('modal-description');
+    const actionsContainer = modal.querySelector('.modal-actions');
+
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.innerHTML = contentHTML; // Usa innerHTML para renderizar o conteúdo
+
+    if (actionsContainer) {
+        actionsContainer.innerHTML = '';
+
+        // Botão Cancelar/Fechar padrão
+        const btnCancel = document.createElement('button');
+        btnCancel.className = 'export-btn';
+        btnCancel.textContent = 'Fechar';
+        btnCancel.onclick = () => {
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        };
+        actionsContainer.appendChild(btnCancel);
+
+        // Adiciona botões de ação customizados
+        actions.forEach(action => {
+            const btn = document.createElement('button');
+            btn.textContent = action.text;
+            btn.className = action.className || 'hud-action-btn';
+            btn.onclick = () => {
+                action.onClick();
+                btnCancel.click(); // Fecha o modal após a ação
+            };
+            actionsContainer.appendChild(btn);
+        });
+    }
+
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('active'), 10);
+}

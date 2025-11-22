@@ -117,18 +117,17 @@ input[type="radio"] {
 }
 
 .photo-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #e0f2f1; /* Verde bem claro */
-  color: var(--color-forest);
-  border: 2px dashed var(--color-forest);
-  padding: 12px 20px;
-  border-radius: var(--radius-md);
+  /* Reutiliza o estilo do action-btn */
+  background: var(--gradient-main);
+  color: white;
+  border-radius: var(--radius-pill);
+  padding: 12px 24px;
   font-weight: 600;
-  cursor: pointer;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-floating);
+  text-transform: uppercase;
+  font-size: 0.9rem;
   width: 100%;
-  transition: background 0.2s;
 }
 
 .photo-btn:hover {
@@ -136,11 +135,35 @@ input[type="radio"] {
 }
 
 /* Container da Preview da Imagem */
+#photo-preview-container {
+  position: relative;
+  width: 100%;
+  max-width: 300px; /* Limita a largura da preview */
+  margin-top: 1rem;
+}
+
 #photo-preview-container img {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   max-height: 200px;
   object-fit: cover;
+  width: 100%;
+}
+
+/* Botão de Remover Foto (X) */
+#remove-photo-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--risk-high);
+  color: white;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border: 2px solid white;
+  box-shadow: var(--shadow-md);
 }
 
 /* --- DESKTOP --- */

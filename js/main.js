@@ -11,17 +11,16 @@ import * as modalUI from './modal.ui.js';
 import * as mapUI from './map.ui.js'; 
 
 import { manualContent } from './content.js'; 
-import { showToast } from './utils.js';
+import * as utils from './utils.js';
 import * as clinometer from './clinometer.js'; 
 import * as dapEstimator from './dap.estimator.js';
 
 // Tenta importar o gerador de PDF dinamicamente
 let pdfGenerator = null;
 try {
-    // Opcional: Se o arquivo não existir, o bloco catch captura o erro silenciosamente
     // pdfGenerator = await import('./pdf.generator.js');
 } catch (e) {
-    console.warn("Módulo de PDF não encontrado ou com erro.", e);
+    console.warn("Módulo de PDF não encontrado.", e);
 }
 
 // === 1. SELETORES GLOBAIS ===
@@ -36,7 +35,7 @@ function handleMainNavigation(event) {
   const targetId = targetButton.dataset.target;
   state.saveActiveTab(targetId);
 
-  // 1. CICLO DE VIDA DE SENSORES (Desliga ao sair)
+  // 1. CICLO DE VIDA DE SENSORES
   if (targetId !== 'clinometro-view') clinometer.stopClinometer();
   if (targetId !== 'dap-estimator-view') dapEstimator.stopDAPEstimator();
 
@@ -65,7 +64,6 @@ function handleMainNavigation(event) {
     if (manualContent && manualContent[targetId]) {
         loadManualContent(targetId);
     } else {
-        // Fallback para conteúdo ainda não criado
         if(detailView) detailView.innerHTML = `<h3>Conteúdo em Breve</h3><p>O tópico <strong>${targetId}</strong> está em desenvolvimento.</p>`;
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -76,11 +74,8 @@ function loadManualContent(topicId) {
     if (!detailView) return;
     detailView.style.opacity = 0;
     setTimeout(() => {
-        // Suporte para v39 (Objeto) ou string simples
         const content = typeof manualContent[topicId] === 'object' ? manualContent[topicId].html : manualContent[topicId];
         const title = typeof manualContent[topicId] === 'object' ? `<h3>${manualContent[topicId].titulo}</h3>` : '';
-        
-        // Renderiza título + conteúdo
         const finalHTML = (content.includes('<h3>') || !title) ? content : title + content;
         
         detailView.innerHTML = finalHTML;
@@ -113,17 +108,28 @@ function setupActionButtons() {
         });
     }
 
-    // --- [NOVO] BOTÃO DE CHECKLIST FLASH CARD ---
-    const openChecklistBtn = document.getElementById('open-checklist-btn');
-    if (openChecklistBtn) {
-        openChecklistBtn.addEventListener('click', () => {
-            // Chama a função de inicialização no features.js
-            if (typeof features.initChecklistFlashCard === 'function') {
-                features.initChecklistFlashCard();
-            } else {
-                console.error("Erro: initChecklistFlashCard não encontrado.");
-            }
-        });
+    // --- [NOVO] CHECKLIST FLASH CARD ---
+    const openFlashcardBtn = document.getElementById('open-flashcard-btn');
+    if (openFlashcardBtn) {
+      openFlashcardBtn.addEventListener('click', () => {
+        const checklistView = document.getElementById('checklist-flashcard-view');
+        if (checklistView) {
+          checklistView.style.display = 'flex';
+          // Inicia a lógica interna do card
+          if (typeof features.initChecklistFlashCard === 'function') {
+            features.initChecklistFlashCard();
+          }
+        }
+      });
+    }
+
+    // Adiciona o listener para o botão de fechar o checklist
+    const closeChecklistBtn = document.getElementById('close-checklist-btn');
+    if (closeChecklistBtn) {
+      closeChecklistBtn.addEventListener('click', () => {
+        const checklistView = document.getElementById('checklist-flashcard-view');
+        if (checklistView) checklistView.style.display = 'none';
+      });
     }
 
     // --- GPS ---
@@ -185,6 +191,39 @@ function setupActionButtons() {
     const chatInput = document.getElementById('chat-input');
     if (chatSendBtn) chatSendBtn.addEventListener('click', features.handleChatSend);
     if (chatInput) chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') features.handleChatSend(); });
+
+    // --- LÓGICA DE UPLOAD E PREVIEW DE FOTO ---
+    const photoInput = document.getElementById('tree-photo-input');
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+
+    if (photoInput) {
+        photoInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            features.clearPhotoPreview(); // Limpa qualquer preview anterior
+            try {
+                utils.showToast('Otimizando foto...', 'success');
+                const optimizedBlob = await utils.optimizeImage(file, 800, 0.7);
+                state.setCurrentTreePhoto(optimizedBlob);
+
+                const previewContainer = document.getElementById('photo-preview-container');
+                const preview = document.createElement('img');
+                preview.id = 'photo-preview';
+                preview.src = URL.createObjectURL(optimizedBlob);
+                previewContainer.prepend(preview); // Adiciona a imagem antes do botão
+                if(removePhotoBtn) removePhotoBtn.style.display = 'block';
+
+            } catch (error) {
+                console.error('Erro ao otimizar imagem:', error);
+                utils.showToast('Erro ao processar a foto.', 'error');
+            }
+        });
+    }
+
+    if (removePhotoBtn) {
+        removePhotoBtn.addEventListener('click', features.clearPhotoPreview);
+    }
 }
 
 // === 4. ATALHOS DE FERRAMENTAS ===
@@ -215,6 +254,27 @@ function setupBackToTop() {
   }, { passive: true });
 }
 
+function setupWelcomeScreen() {
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const closeBtn = document.getElementById('close-welcome-btn');
+
+    if (!welcomeScreen || !closeBtn) return;
+
+    const closeWelcome = () => {
+        welcomeScreen.classList.remove('active');
+        setTimeout(() => {
+            welcomeScreen.style.display = 'none';
+            localStorage.setItem('arboriaWelcomeShown', 'true');
+        }, 300);
+    };
+
+    closeBtn.addEventListener('click', closeWelcome);
+
+    if (!localStorage.getItem('arboriaWelcomeShown')) {
+        setTimeout(() => welcomeScreen.classList.add('active'), 500);
+    }
+}
+
 function initFormDefaults() {
     try {
       const dateInput = document.getElementById('risk-data');
@@ -241,11 +301,10 @@ async function initApp() {
 
     // 3. Configura Listeners
     if (topNavContainer) topNavContainer.addEventListener('click', handleMainNavigation);
-    
-    setupActionButtons(); // Conecta o botão do checklist aqui!
-    
+    setupActionButtons(); 
     setupToolShortcuts();
     setupBackToTop();
+    setupWelcomeScreen();
     initFormDefaults();
     
     // 4. Inicializa Componentes Complexos
@@ -255,10 +314,13 @@ async function initApp() {
     clinometer.initClinometerListeners();
     dapEstimator.initDAPEstimatorListeners();
 
+    // [NOTA] Não iniciamos mais o checklist automaticamente aqui.
+    // Ele é iniciado apenas pelo clique do botão #open-checklist-btn
+
     // 5. Renderiza Tabela Inicial
     TableUI.render();
 
-    // 6. Correção do Mapa (Resize Global)
+    // 6. Listener Global de Resize (Mapa)
     window.addEventListener('resize', () => {
         const mapContainer = document.getElementById('map-container');
         if (mapContainer && mapContainer.offsetParent !== null) {
@@ -268,15 +330,10 @@ async function initApp() {
     });
 
     // 7. Restaura Estado
-    const lastTab = state.getActiveTab() || 'conceitos-basicos';
-    let initialButton = null;
-    if (topNavContainer) {
-        initialButton = topNavContainer.querySelector(`.topico-btn[data-target="${lastTab}"]`);
-    }
-    
-    if (initialButton) {
-      initialButton.click();
-    } else {
+    // [MUDANÇA] Força o início na calculadora/painel, em vez de restaurar a última aba.
+    // A UI já exibe o painel por padrão, então não precisamos clicar em nada.
+    const calcViewButton = document.querySelector('.topico-btn[data-target="calculadora-view"]');
+    if (window.innerWidth > 768 && calcViewButton) {
       UI.navigateTo('calculadora-view');
     }
     

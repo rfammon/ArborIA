@@ -192,7 +192,7 @@
                 <div class="mobile-checklist-wrapper-fullscreen">
                     
                     <div class="hud-top" style="position: absolute; top: 0; left: 0; width: 100%; padding: 15px;">
-                        <button type="button" id="close-checklist-btn" class="hud-close-btn">✖ Cancelar</button>
+                        <button type="button" id="close-checklist-btn" class="hud-close-btn">✖ Sair</button>
                     </div>
 
                     <div class="mobile-checklist-card" id="flashcard-container">
@@ -262,7 +262,6 @@
                                     <span id="gps-status" class="instruction-text text-center" style="display:block; margin-top:5px;"></span>
                                 </div>
                                 
-                                <div><label for="risk-distancia-obs">Distância Alvo (m):</label><input type="number" id="risk-distancia-obs" name="risk-distancia-obs" placeholder="Ex: Casa a 10m"></div>
                                 <div><label for="risk-avaliador">Avaliador:</label><input type="text" id="risk-avaliador" name="risk-avaliador"></div>
                             </div>
                             
@@ -282,13 +281,10 @@
                             <button type="button" id="open-flashcard-btn" class="action-btn" style="width: 100%; padding: 15px; font-size: 1rem;">
                                 📋 Avaliar Fatores de Risco (16 Itens)
                             </button>
-                            <div id="risk-summary-feedback" style="width: 100%; text-align: center; color: #666; font-size: 0.9rem; margin-top: 5px;">
-                                (Pendente)
-                            </div>
                         </div>
 
-                        <fieldset class="risk-fieldset" style="display: none;">
-                            <legend>Dados do Checklist (Oculto)</legend>
+                        <fieldset class="risk-fieldset" id="checklist-data-table-fieldset">
+                            <legend>2. Fatores de Risco</legend>
                             
                             <table class="risk-table" id="checklist-data-table">
                                 <thead><tr><th>Nº</th><th>Critério de Avaliação</th><th>Peso</th><th>Sim</th></tr></thead>
@@ -314,8 +310,8 @@
                         </fieldset>
                         
                         <div class="risk-buttons-area">
-                            <button type="submit" id="add-tree-btn">➕ Registrar Árvore</button>
-                            <button type="button" id="reset-risk-form-btn" class="btn-danger-filled">Limpar</button>
+                            <button type="submit" id="add-tree-btn" class="action-btn">➕ Registrar Árvore</button>
+                            <button type="button" id="reset-risk-form-btn" class="action-btn" style="background: var(--color-text-muted);">Limpar</button>
                         </div>
                     </form>
                 </div>
@@ -385,6 +381,22 @@
             <p>&copy; 2025 ArborIA. Soluções em Tecnologia Florestal.</p>
         </footer>
     </main>
+
+    <div id="welcome-screen" class="modal-overlay">
+        <div class="welcome-card">
+            <div class="logo-container" style="justify-content: center; margin-bottom: 1rem;">
+                <span class="arboria-text"><span class="blue">Arbor</span><span class="green">IA</span></span>
+                <img src="img/icons/favicon.png" alt="Logo ArborIA" class="header-logo">
+            </div>
+            <h3>Bem-vindo ao Sistema de Manejo Integrado</h3>
+            <p>
+                Esta ferramenta foi projetada para auxiliar engenheiros e técnicos na <strong>avaliação de risco de queda de árvores</strong>,
+                seguindo as melhores práticas de segurança e normativas ambientais.
+            </p>
+            <button id="close-welcome-btn" class="action-btn">Começar a Usar</button>
+        </div>
+    </div>
+
 
     <a href="#page-top" id="back-to-top-btn" title="Voltar ao Topo" style="display: none;">&#9650;</a>
 

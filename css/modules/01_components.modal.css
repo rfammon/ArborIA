@@ -10,8 +10,8 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6); /* Escurecimento */
-  backdrop-filter: blur(5px); /* Efeito de vidro fosco moderno */
+  background-color: rgba(15, 23, 42, 0.85); /* Fundo escuro profundo */
+  backdrop-filter: blur(8px); /* Desfoque mais intenso */
   z-index: 2000; /* Acima de tudo, exceto Tooltips */
   
   /* Centralização Flexbox */

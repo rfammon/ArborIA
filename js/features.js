@@ -30,11 +30,11 @@ const getFlashCardElements = () => {
         questionBox: document.getElementById('flashcard-question-text'), 
         
         // Controle (Toggle)
-        toggleInput: document.getElementById('mobile-toggle-input'), 
+        toggleInput: document.getElementById('flashcard-toggle-input'), 
         
         // Navegação
-        btnPrev: document.getElementById('checklist-prev'),
-        btnNext: document.getElementById('checklist-next'),
+        btnPrev: document.getElementById('flashcard-prev'),
+        btnNext: document.getElementById('flashcard-next'),
         
         // Fonte de Dados (Tabela Oculta)
         dataRows: document.querySelectorAll('#checklist-data-table tbody tr')
@@ -88,10 +88,11 @@ function updateFlashCard(index) {
 
         // C. Auto-Avanço (apenas se marcou SIM e não é o último)
         if (isChecked && index < els.dataRows.length - 1) {
+            // [MELHORIA] Aumenta o tempo de espera para 600ms
             setTimeout(() => {
-                currentCardIndex++;
-                updateFlashCard(currentCardIndex);
-            }, 400);
+                // Dispara a navegação para o próximo, que agora tem animação
+                els.btnNext.click();
+            }, 600);
         }
     };
 
@@ -122,18 +123,32 @@ function setupFlashCardListeners() {
     // Botão Anterior
     els.btnPrev.addEventListener('click', (e) => {
         e.preventDefault();
-        if (currentCardIndex > 0) {
+        if (currentCardIndex <= 0 || els.card.classList.contains('is-animating')) return;
+
+        els.card.classList.add('is-animating', 'swipe-out-to-right');
+        setTimeout(() => {
             currentCardIndex--;
             updateFlashCard(currentCardIndex);
-        }
+            els.card.classList.remove('swipe-out-to-right');
+            els.card.classList.add('swipe-in-from-left');
+            setTimeout(() => els.card.classList.remove('is-animating', 'swipe-in-from-left'), 400);
+        }, 300);
     });
 
     // Botão Próximo / Concluir
     els.btnNext.addEventListener('click', (e) => {
         e.preventDefault();
+        if (els.card.classList.contains('is-animating')) return;
+
         if (currentCardIndex < els.dataRows.length - 1) {
-            currentCardIndex++;
-            updateFlashCard(currentCardIndex);
+            els.card.classList.add('is-animating', 'swipe-out-to-left');
+            setTimeout(() => {
+                currentCardIndex++;
+                updateFlashCard(currentCardIndex);
+                els.card.classList.remove('swipe-out-to-left');
+                els.card.classList.add('swipe-in-from-right');
+                setTimeout(() => els.card.classList.remove('is-animating', 'swipe-in-from-right'), 400);
+            }, 300);
         } else {
             // Fim do fluxo: Fecha o modal e notifica
             closeChecklistFlashCard();
@@ -165,10 +180,7 @@ export function initChecklistFlashCard(retry = 0) {
     // 2. Anexa Listeners (se ainda não anexou)
     setupFlashCardListeners();
     
-    // 3. Exibe o container Fullscreen
-    els.container.style.display = 'flex'; 
-    
-    // 4. Reset e Inicia no primeiro card
+    // 3. Reset e Inicia no primeiro card (a UI já está visível)
     currentCardIndex = 0;
     updateFlashCard(currentCardIndex);
 }
@@ -178,7 +190,8 @@ export function initChecklistFlashCard(retry = 0) {
  */
 function closeChecklistFlashCard() {
     const els = getFlashCardElements();
-    if (els) els.container.style.display = 'none';
+    // A lógica de fechar foi movida para main.js para centralizar o controle do DOM.
+    if (els && els.container) els.container.style.display = 'none';
 }
 
 
@@ -298,6 +311,9 @@ export function clearPhotoPreview() {
   state.setEditingTreeId(null);
   
   // Limpa Checkboxes da Tabela Oculta
+  const form = document.getElementById('risk-calculator-form');
+  if(form) form.reset();
+  
   document.querySelectorAll('.risk-checkbox').forEach(cb => cb.checked = false);
   
   TableUI.render();
@@ -319,7 +335,6 @@ export function handleAddTreeSubmit(event) {
   if (!especie) { utils.showToast("Nome da espécie é obrigatório.", 'error'); return { success: false }; }
 
   const alturaVal = document.getElementById('risk-altura').value || '0.0';
-  const distVal = document.getElementById('risk-distancia-obs').value || '0.0';
 
   const treeData = {
     data: document.getElementById('risk-data').value || new Date().toISOString().split('T')[0],
@@ -331,7 +346,6 @@ export function handleAddTreeSubmit(event) {
     utmZoneLetter: (state.lastUtmZone && state.lastUtmZone.letter) ? state.lastUtmZone.letter : 'Z',
     dap: document.getElementById('risk-dap').value || 'N/A',
     altura: alturaVal, 
-    distancia: distVal,
     avaliador: document.getElementById('risk-avaliador').value || 'N/A',
     observacoes: document.getElementById('risk-obs').value || 'N/A',
     pontuacao: totalScore,
@@ -413,7 +427,6 @@ export function handleEditTree(id) {
   setVal('risk-coord-y', t.coordY);
   setVal('risk-dap', t.dap);
   setVal('risk-altura', t.altura);
-  setVal('risk-distancia-obs', t.distancia);
   setVal('risk-avaliador', t.avaliador);
   setVal('risk-obs', t.observacoes);
   
