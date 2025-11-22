@@ -240,3 +240,37 @@
   box-shadow: 0 0 22px #00e676cc;
   outline: none;
 }
+
+/* --- MOBILE FULLSCREEN AND HUD ANGLE TEXT FIXES --- */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  #clinometro-view, #dap-estimator-view {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100vh !important;
+    max-width: 100vw !important;
+    z-index: 3000 !important;
+    overflow: hidden !important;
+  }
+
+  .hud-top {
+    padding: 15px 20px;
+    font-size: 1.1rem;
+  }
+
+  #clinometer-angle, #dap-current-angle {
+    font-size: 1.8rem;
+    white-space: nowrap;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
