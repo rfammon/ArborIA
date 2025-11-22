@@ -1,6 +1,6 @@
 /**
- * ARBORIA 2.0 - DAP ESTIMATOR (v5.2 Sensor Fix)
- * Correção: Prioriza sensores de orientação horizontal (Gamma)
+ * ARBORIA 2.1 - DAP ESTIMATOR UI ENHANCEMENTS
+ * Improved usability and inline validation messages
  */
 
 import { showToast } from './utils.js';
@@ -25,22 +25,17 @@ const getElements = () => ({
     }
 });
 
-/**
- * Inicia o Estimador de DAP.
- */
 export async function startDAPEstimator() {
     const els = getElements();
     resetMeasurement();
     showStep('distance'); 
 
-    // 1. Sincroniza Distância
     const mainDistInput = document.getElementById('risk-distancia-obs');
     if (mainDistInput && mainDistInput.value && parseFloat(mainDistInput.value) > 0) {
         distance = parseFloat(mainDistInput.value);
     }
     if (els.distInput) els.distInput.value = distance;
 
-    // 2. ATIVAR SENSORES (Prioridade)
     if (typeof DeviceOrientationEvent !== 'undefined') {
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
             try {
@@ -59,7 +54,6 @@ export async function startDAPEstimator() {
         }
     }
 
-    // 3. ATIVAR CÂMERA
     try {
         stream = await navigator.mediaDevices.getUserMedia({ 
             video: { facingMode: "environment" } 
@@ -69,7 +63,7 @@ export async function startDAPEstimator() {
         
         if (els.videoEl) {
             els.videoEl.srcObject = stream;
-            els.videoEl.setAttribute("playsinline", true); 
+            els.videoEl.setAttribute("playsinline", true);
             els.videoEl.play().catch(e => console.warn(e));
         }
     } catch (err) {
@@ -90,25 +84,21 @@ export function stopDAPEstimator() {
 
 function handleOrientation(event) {
     const els = getElements();
-    const rawGamma = event.gamma; // Eixo Z (Esquerda/Direita)
-    const rawBeta = event.beta;   // Eixo X (Nível)
+    const rawGamma = event.gamma;
+    const rawBeta = event.beta;
 
-    // Feedback visual de Nível
     if (rawBeta !== null && els.angleDisplay) {
-        // Celular deve ficar em pé (90 graus)
-        const level = 90 - Math.abs(rawBeta); 
-        els.angleDisplay.textContent = `Nível: ${level.toFixed(1)}°`;
+        const level = 90 - Math.abs(rawBeta);
+        els.angleDisplay.textContent = 'Nível: ' + level.toFixed(1) + '°';
         
         if (Math.abs(level) > 15) els.angleDisplay.style.color = '#ff5252';
         else els.angleDisplay.style.color = '#00e676';
     }
 
     if (rawGamma !== null) {
-        currentGamma = (currentGamma * 0.8) + (rawGamma * 0.2); 
+        currentGamma = (currentGamma * 0.8) + (rawGamma * 0.2);
     }
 }
-
-// === UI FLOW ===
 
 function showStep(stepName) {
     const els = getElements();
@@ -131,10 +121,12 @@ export function initDAPEstimatorListeners() {
         nextBtn.addEventListener('click', () => {
             const distInput = document.getElementById('dap-distance-input');
             const val = parseFloat(distInput.value);
-            if (!val || val <= 0) { showToast("Distância inválida.", "error"); return; }
+            if (!val || val <= 0) {
+                showToast("Distância inválida.", "error");
+                return;
+            }
             distance = val;
             
-            // Sync reverso
             const formDist = document.getElementById('risk-distancia-obs');
             if(formDist) formDist.value = distance;
 
@@ -193,7 +185,7 @@ function calculateDAP() {
     const widthMetros = distance * Math.tan(radDelta);
     const dapCentimetros = widthMetros * 100;
 
-    document.getElementById('dap-estimated-result').textContent = `${dapCentimetros.toFixed(1)} cm`;
+    document.getElementById('dap-estimated-result').textContent = dapCentimetros.toFixed(1) + " cm";
     showStep('result');
 }
 

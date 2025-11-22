@@ -110,13 +110,15 @@ button:active {
   padding: 12px 24px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-floating);
   text-transform: uppercase;
   font-size: 0.9rem;
   border: none;
 }
 .btn-clear:hover {
   background: linear-gradient(135deg, #d32f2f, #b71c1c);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4);
 }
 
 /* --- BOTÕES DE CÂMERA (HUD) --- */
@@ -171,3 +173,5 @@ button:active {
 .btn-back:hover {
   text-decoration: underline;
 }
+
+

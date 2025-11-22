@@ -1,9 +1,11 @@
-// js/pdf.generator.js (v82.0 - Professional Redesign)
+// js/pdf.generator.js (v80.0 - Rebranding ArborIA Final)
 
 import * as state from './state.js';
 import { getImageFromDB } from './database.js';
 import { showToast } from './utils.js';
+import { prepareMapForScreenshot, initializeMap, currentLayerType, toggleMapLayer } from './map.ui.js'; 
 
+// Lista de Riscos
 const RISK_LABELS = [
     "1. Galhos Mortos > 5cm", "2. Rachaduras/Fendas", "3. Sinais de Apodrecimento",
     "4. Casca Inclusa (União em V)", "5. Galhos Cruzados", "6. Copa Assimétrica",
@@ -21,25 +23,6 @@ const blobToDataURL = (blob) => {
     });
 };
 
-const getLogoBase64 = () => {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.src = 'img/icons/icon-512x512.png'; // Caminho para o logo profissional
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => {
-            console.error("Erro ao carregar o logo.");
-            resolve(null); 
-        };
-    });
-};
-
 export async function generatePDF() {
     if (state.registeredTrees.length === 0) {
         showToast("Sem dados para gerar relatório.", "error");
@@ -52,201 +35,295 @@ export async function generatePDF() {
         return;
     }
 
-    showToast("Iniciando geração do laudo...", "success");
+    showToast("Preparando mapa e gerando PDF...", "success");
 
-    const logoBase64 = await getLogoBase64();
-    
-    const COLORS = {
-        primary: [0, 100, 80],       // Verde escuro para títulos e destaques
-        secondary: [39, 174, 96],    // Verde mais claro para sub-elementos
-        text: [52, 73, 94],          // Cinza escuro para corpo de texto
-        textLight: [149, 165, 166],  // Cinza claro para detalhes
-        border: [236, 240, 241],     // Cinza muito claro para bordas
-        riskHigh: [192, 57, 43],     // Vermelho para risco alto
-        riskMedium: [243, 156, 18],  // Laranja para risco médio
-        riskLow: [39, 174, 96],      // Verde para risco baixo
-    };
+    // === CONFIG DA LOGO ===
+    // Cole sua string Base64 aqui entre as aspas
+    const logoBase64 = ""; 
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 15;
-    let cursorY = 0;
+    const margin = 14;
+    let cursorY = 20;
 
+    // === 1. CAPTURA DO MAPA ===
     let mapImageParams = null;
+    const mapTabContent = document.getElementById('tab-content-mapa');
+    const summaryTabContent = document.getElementById('tab-content-summary');
     const mapContainer = document.getElementById('map-container');
-    if (mapContainer) {
-        try {
-            const canvas = await html2canvas(mapContainer, { useCORS: true, scale: 2.5, logging: false, backgroundColor: '#ffffff' });
-            mapImageParams = { data: canvas.toDataURL('image/jpeg', 0.8), w: pageWidth - margin * 2, h: 110 };
-        } catch (e) {
-            console.error("Erro ao renderizar mapa para PDF:", e);
-        }
-    }
+    
+    const originalWidth = mapContainer.style.width;
+    const originalHeight = mapContainer.style.height;
+    let wasSummaryActive = false;
+    let originalLayerType = currentLayerType;
 
-    const printHeaderFooter = (pageNumber) => {
-        // Cabeçalho
-        if (logoBase64) {
-            try {
-                doc.addImage(logoBase64, 'PNG', margin, 8, 18, 18);
-            } catch (e) {
-                 console.error("Erro ao adicionar o logo:", e);
+    try {
+        if (mapTabContent && summaryTabContent) {
+            wasSummaryActive = summaryTabContent.classList.contains('active');
+            summaryTabContent.classList.remove('active');
+            summaryTabContent.style.display = 'none';
+            mapTabContent.classList.add('active');
+            mapTabContent.style.display = 'block'; 
+        }
+        
+        mapContainer.style.width = "800px";
+        mapContainer.style.height = "600px";
+
+        initializeMap();
+        await prepareMapForScreenshot();
+        
+        const canvas = await html2canvas(mapContainer, {
+            useCORS: true, scale: 1.5, logging: false, backgroundColor: '#ffffff'
+        });
+        
+        mapImageParams = { data: canvas.toDataURL('image/jpeg', 0.8), w: 180, h: 120 }; 
+        
+    } catch (e) {
+        console.error("Erro mapa:", e);
+    } finally {
+        mapContainer.style.width = originalWidth;
+        mapContainer.style.height = originalHeight;
+
+        if (originalLayerType !== 'satellite' && typeof toggleMapLayer === 'function') {
+             // Opcional: restaurar camada se necessário
+        }
+
+        if (mapTabContent && summaryTabContent) {
+            mapTabContent.style.display = ''; 
+            summaryTabContent.style.display = '';
+            if (wasSummaryActive) {
+                mapTabContent.classList.remove('active');
+                summaryTabContent.classList.add('active');
+            } else {
+                mapTabContent.classList.add('active');
+                summaryTabContent.classList.remove('active');
             }
         }
-        doc.setFontSize(14);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(...COLORS.primary);
-        doc.text("Laudo de Vistoria de Risco Arbóreo", margin + 25, 19);
+        if (state.mapInstance) state.mapInstance.invalidateSize();
+    }
 
-        doc.setDrawColor(...COLORS.primary);
-        doc.setLineWidth(0.6);
-        doc.line(margin, 28, pageWidth - margin, 28);
+    // === FUNÇÃO DE CABEÇALHO & RODAPÉ ARBORIA ===
+    const printHeaderFooter = (isCover) => {
+        const pageNum = doc.internal.getCurrentPageInfo().pageNumber;
 
-        // Rodapé
-        doc.setDrawColor(...COLORS.border);
-        doc.setLineWidth(0.3);
-        doc.line(margin, pageHeight - 18, pageWidth - margin, pageHeight - 18);
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(...COLORS.textLight);
-        doc.text(`Página ${pageNumber} de ${doc.internal.getNumberOfPages()}`, pageWidth / 2, pageHeight - 12, { align: 'center' });
-        doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, margin, pageHeight - 12);
-        doc.text("ArborIA Tech", pageWidth - margin, pageHeight - 12, { align: 'right' });
+        // --- CABEÇALHO ---
+        // Logo
+        if (logoBase64) { 
+            try { doc.addImage(logoBase64, 'PNG', 14, 10, 25, 25); } catch(e){} 
+        }
+        
+        const textX = logoBase64 ? 45 : margin; 
+
+        if (isCover) {
+            // Capa: Título Grande
+            doc.setFontSize(22); doc.setFont(undefined, 'bold');
+            
+            // Texto colorido "ArborIA"
+            doc.setTextColor(10, 50, 137); // Azul Arbor (#0A3289)
+            doc.text("Arbor", textX, 22);
+            const widthArbor = doc.getTextWidth("Arbor");
+            doc.setTextColor(46, 125, 50); // Verde IA (#2E7D32)
+            doc.text("IA", textX + widthArbor, 22);
+
+            // Subtítulo
+            doc.setFontSize(12); doc.setTextColor(100); doc.setFont(undefined, 'normal');
+            doc.text("Sistema de Manejo Integrado Arbóreo", textX, 30);
+            
+            // Título do Relatório
+            doc.setFontSize(16); doc.setTextColor(0, 77, 64); doc.setFont(undefined, 'bold');
+            doc.text("Relatório Técnico de Vistoria", textX, 42);
+
+            doc.setLineWidth(0.5); doc.setDrawColor(0, 77, 64);
+            doc.line(margin, 48, pageWidth - margin, 48);
+            return 60; // Y inicial do conteúdo
+        } else {
+            // Páginas Seguintes: Cabeçalho Compacto
+            doc.setFontSize(12); doc.setFont(undefined, 'bold');
+            doc.setTextColor(10, 50, 137); doc.text("Arbor", textX, 20);
+            const wArbor = doc.getTextWidth("Arbor");
+            doc.setTextColor(46, 125, 50); doc.text("IA", textX + wArbor, 20);
+
+            doc.setFontSize(10); doc.setTextColor(80); doc.setFont(undefined, 'normal');
+            doc.text("Relatório de Vistoria", textX, 26);
+
+            doc.setFontSize(9); doc.setTextColor(100);
+            doc.text(`Pág. ${pageNum}`, pageWidth - margin, 20, { align: 'right' });
+            doc.text(`${new Date().toLocaleDateString('pt-BR')}`, pageWidth - margin, 26, { align: 'right' });
+
+            doc.setLineWidth(0.2); doc.setDrawColor(200);
+            doc.line(margin, 32, pageWidth - margin, 32);
+            return 40; 
+        }
+    };
+    
+    // Função Rodapé (chamada ao final de cada página)
+    const printFooter = () => {
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8); doc.setTextColor(150);
+            doc.text("ArborIA - Soluções em Tecnologia Florestal", pageWidth / 2, pageHeight - 10, { align: 'center' });
+        }
     };
 
-    // --- PÁGINA 1: CAPA ---
-    cursorY = 45;
-    doc.setFontSize(26); doc.setFont(undefined, 'bold'); doc.setTextColor(...COLORS.text);
-    doc.text("LAUDO TÉCNICO DE AVALIAÇÃO", pageWidth / 2, cursorY, { align: 'center' });
-    cursorY += 10;
-    doc.text("DE RISCO EM ÁRVORES", pageWidth / 2, cursorY, { align: 'center' });
-    cursorY += 15;
-    doc.setFontSize(11); doc.setFont(undefined, 'italic'); doc.setTextColor(...COLORS.textLight);
-    doc.text("Em conformidade com as boas práticas de manejo e a legislação vigente.", pageWidth / 2, cursorY, { align: 'center' });
-    cursorY += 25;
+    // === 2. INÍCIO DO CONTEÚDO ===
+    cursorY = printHeaderFooter(true);
+
+    // Metadados da Capa
+    doc.setFontSize(11); doc.setTextColor(50);
+    doc.text(`Emissão: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, margin, 55);
+    doc.text(`Total de Indivíduos: ${state.registeredTrees.length}`, pageWidth-margin, 55, {align:'right'});
+
+    // === 3. TABELA RESUMO ===
+    const tableHeaders = [['ID', 'Data', 'Espécie', 'DAP', 'Local', 'Risco', 'Obs']];
+    const tableData = state.registeredTrees.map(t => [
+        t.id, t.data.split('-').reverse().join('/'), t.especie, 
+        t.dap, t.local, t.risco, t.observacoes || '-'
+    ]);
 
     doc.autoTable({
-        startY: cursorY,
-        body: [
-            ['Responsável Técnico:', '_________________________', 'Nº de Árvores:', state.registeredTrees.length],
-            ['Local da Vistoria:', '_________________________', 'Cliente:', '_________________________'],
-        ],
-        theme: 'striped',
-        styles: { fontSize: 10, cellPadding: 4, textColor: COLORS.text },
-        headStyles: { fillColor: COLORS.primary },
-        columnStyles: { 0: { fontStyle: 'bold' }, 2: { fontStyle: 'bold' } }
-    });
-    cursorY = doc.lastAutoTable.finalY + 12;
-
-    doc.setFontSize(14); doc.setFont(undefined, 'bold'); doc.setTextColor(...COLORS.primary);
-    doc.text("Resumo do Inventário Arbóreo", margin, cursorY);
-    cursorY += 8;
-    
-    const tableHeaders = [['ID', 'Espécie', 'DAP (cm)', 'Geolocalização', 'Risco']];
-    const tableData = state.registeredTrees.map(t => [t.id, t.especie, t.dap, `${t.latitude.toFixed(5)}, ${t.longitude.toFixed(5)}`, t.risco]);
-    doc.autoTable({
-        startY: cursorY, head: tableHeaders, body: tableData,
-        theme: 'grid',
-        headStyles: { fillColor: COLORS.primary, textColor: 255, fontStyle: 'bold' },
-        styles: { fontSize: 9, cellPadding: 2.5, lineWidth: 0.1, lineColor: COLORS.border },
-        columnStyles: { 0: { cellWidth: 10 }, 3: { cellWidth: 40 } },
-        didParseCell: (data) => {
-            if (data.section === 'body' && data.column.index === 4) {
-                if (data.cell.text[0].includes('Alto')) data.cell.styles.textColor = COLORS.riskHigh;
-                else if (data.cell.text[0].includes('Médio')) data.cell.styles.textColor = COLORS.riskMedium;
-                else data.cell.styles.textColor = COLORS.riskLow;
-                data.cell.styles.fontStyle = 'bold';
+        startY: cursorY, head: tableHeaders, body: tableData, 
+        theme: 'striped', 
+        headStyles: { fillColor: [0, 121, 107] }, // Verde principal
+        styles: { fontSize: 8, cellPadding: 2 }, 
+        margin: { left: margin, right: margin },
+        columnStyles: { 0: {cellWidth: 10}, 1: {cellWidth: 20}, 2: {cellWidth: 30}, 3: {cellWidth: 12}, 4: {cellWidth: 30}, 5: {cellWidth: 20}, 6: {cellWidth: 'auto'} },
+        didParseCell: function(data) {
+            if (data.section === 'body' && data.column.index === 5) {
+                if (data.cell.text[0].includes('Alto')) data.cell.styles.textColor = [198, 40, 40];
+                else if (data.cell.text[0].includes('Médio')) data.cell.styles.textColor = [230, 81, 0];
+                else data.cell.styles.textColor = [46, 125, 50];
             }
+        },
+        didDrawPage: function (data) { 
+            if (doc.internal.getCurrentPageInfo().pageNumber > 1) printHeaderFooter(false); 
         }
     });
+    cursorY = doc.lastAutoTable.finalY + 15;
 
-    // --- PÁGINA 2: MAPA ---
+    // === 4. MAPA ===
     if (mapImageParams) {
-        doc.addPage();
-        cursorY = 40;
-        doc.setFontSize(16); doc.setFont(undefined, 'bold'); doc.setTextColor(...COLORS.primary);
-        doc.text("Mapa de Localização das Árvores", margin, cursorY);
-        cursorY += 10;
-        doc.setDrawColor(...COLORS.border); doc.setLineWidth(0.4);
-        doc.rect(margin, cursorY, mapImageParams.w, mapImageParams.h, 'S');
-        doc.addImage(mapImageParams.data, 'JPEG', margin, cursorY, mapImageParams.w, mapImageParams.h);
+        if (cursorY + mapImageParams.h + 25 > pageHeight - 20) { 
+            doc.addPage(); cursorY = printHeaderFooter(false); 
+        }
+        
+        doc.setFontSize(12); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+        doc.text("Mapa de Localização (Satélite)", margin, cursorY);
+        cursorY += 5;
+        
+        const mapX = (pageWidth - mapImageParams.w) / 2;
+        doc.addImage(mapImageParams.data, 'PNG', mapX, cursorY, mapImageParams.w, mapImageParams.h);
+        cursorY += mapImageParams.h + 5;
+        
+        // Legenda
+        doc.setFontSize(9); doc.setFont(undefined, 'normal');
+        let lx = mapX; const dSz = 2; const spc = 25;
+        doc.setFillColor(198, 40, 40); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.setTextColor(0); doc.text("Alto Risco", lx+6, cursorY+dSz+1); lx += spc + 10;
+        doc.setFillColor(230, 81, 0); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.text("Médio Risco", lx+6, cursorY+dSz+1); lx += spc + 15;
+        doc.setFillColor(46, 125, 50); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.text("Baixo Risco", lx+6, cursorY+dSz+1);
+        cursorY += 15;
     }
 
-    // --- FICHAS INDIVIDUAIS ---
-    for (const tree of state.registeredTrees) {
-        doc.addPage();
-        cursorY = 40;
+    // === 5. FICHAS INDIVIDUAIS ===
+    doc.addPage();
+    cursorY = printHeaderFooter(false);
+    doc.setFontSize(14); doc.setTextColor(0, 77, 64); doc.setFont(undefined, 'bold');
+    doc.text("Detalhamento Técnico Individual", margin, cursorY);
+    cursorY += 10;
 
-        // Título da Ficha
-        doc.setFontSize(16); doc.setFont(undefined, 'bold'); doc.setTextColor(...COLORS.primary);
-        doc.text(`Ficha de Avaliação Individual: Árvore ID ${tree.id}`, margin, cursorY);
-        cursorY += 8;
+    for (let i = 0; i < state.registeredTrees.length; i++) {
+        const tree = state.registeredTrees[i];
         
-        // Espécie e Risco
-        let riskColor = tree.risco === 'Alto Risco' ? COLORS.riskHigh : tree.risco === 'Médio Risco' ? COLORS.riskMedium : COLORS.riskLow;
-        doc.setFontSize(14); doc.setFont(undefined, 'bold'); doc.setTextColor(...riskColor);
-        doc.text(tree.especie, margin, cursorY);
-        cursorY += 12;
+        // Métricas
+        const alturaNum = parseFloat(tree.altura) || 0;
+        const dapNum = parseFloat(tree.dap) || 0;
+        const dapM = dapNum / 100;
+        const rcq = (alturaNum * 1.5).toFixed(1); 
+        const rcr = (dapM * 1.5).toFixed(1);       
+        
+        let bgColor, riskColor;
+        if (tree.risco === 'Alto Risco') { bgColor = [255, 235, 238]; riskColor = [198, 40, 40]; }
+        else if (tree.risco === 'Médio Risco') { bgColor = [255, 243, 224]; riskColor = [230, 81, 0]; }
+        else { bgColor = [232, 245, 233]; riskColor = [46, 125, 50]; }
 
-        const col1X = margin;
-        const col2X = margin + 100;
-        let lineY = cursorY;
+        const risksList = (tree.riskFactors || []).map((val, idx) => val === 1 ? RISK_LABELS[idx] : null).filter(v => v !== null);
+        
+        // Cálculo de Altura da Caixa (CORRIGIDO COM VARIÁVEL FINAL)
+        const rightColX = margin + 85; 
+        const obsWidth = pageWidth - rightColX - margin - 2; 
+        const obsLines = doc.splitTextToSize(tree.observacoes || '—', obsWidth);
+        
+        const risksHeight = risksList.length * 5;
+        const dataLines = 4 * 5; 
+        const leftHeight = dataLines + risksHeight + 20; 
+        
+        let rightHeight = 20 + 10 + (obsLines.length * 4) + 10;
+        if (tree.hasPhoto) rightHeight += 50; 
 
-        // Foto da árvore
+        const boxHeight = Math.max(leftHeight, rightHeight, 60) + 5;
+
+        // Quebra de página
+        if (cursorY + boxHeight + 10 > pageHeight - 10) {
+            doc.addPage();
+            cursorY = printHeaderFooter(false);
+        }
+
+        const finalBoxHeight = boxHeight; // Variável segura
+
+        // Desenho Caixa
+        doc.setDrawColor(200); doc.setFillColor(...bgColor);
+        doc.rect(margin, cursorY, pageWidth - (margin*2), finalBoxHeight, 'FD');
+        doc.setFillColor(...riskColor); doc.rect(margin, cursorY, 2, finalBoxHeight, 'F');
+
+        // Cabeçalho Card
+        doc.setFontSize(11); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+        doc.text(`ID: ${tree.id} - ${tree.especie}`, margin + 6, cursorY + 8);
+        doc.setTextColor(...riskColor);
+        doc.text(tree.risco.toUpperCase(), pageWidth - margin - 5, cursorY + 8, { align: 'right' });
+
+        // Coluna Esquerda
+        doc.setTextColor(50); doc.setFont(undefined, 'normal'); doc.setFontSize(9);
+        const col1X = margin + 6; let lineY = cursorY + 16;
+        
+        doc.setFont(undefined, 'bold'); doc.text(`Altura: ${alturaNum.toFixed(1)} m`, col1X, lineY);
+        doc.text(`DAP: ${tree.dap} cm`, col1X + 40, lineY); lineY += 5;
+        doc.text(`Raio Queda (RCQ): ${rcq} m`, col1X, lineY);
+        doc.text(`Raio Radicular (RCR): ${rcr} m`, col1X + 40, lineY); lineY += 7;
+
+        doc.setFont(undefined, 'normal'); doc.text(`Local: ${tree.local}`, col1X, lineY); lineY += 5;
+        doc.text(`Coord: ${tree.coordX} / ${tree.coordY}`, col1X, lineY);
+        doc.text(`Zona: ${tree.utmZoneNum}${tree.utmZoneLetter}`, col1X + 60, lineY); lineY += 8;
+
+        doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+        doc.text("Fatores de Risco:", col1X, lineY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); lineY += 5;
+        if (risksList.length > 0) { risksList.forEach(risk => { doc.text(`• ${risk}`, col1X, lineY); lineY += 5; }); } 
+        else { doc.text("• Nenhum fator crítico.", col1X, lineY); }
+
+        // Coluna Direita
+        let contentY = cursorY + 16;
         if (tree.hasPhoto) {
             try {
                 const imageBlob = await new Promise(resolve => getImageFromDB(tree.id, resolve));
                 if (imageBlob) {
                     const imgData = await blobToDataURL(imageBlob);
-                    doc.setDrawColor(...COLORS.border); doc.setLineWidth(0.2);
-                    doc.rect(col2X - 5, lineY, 90, 90, 'S');
-                    doc.addImage(imgData, 'JPEG', col2X - 5, lineY, 90, 90);
+                    const imgFormat = imageBlob.type === 'image/png' ? 'PNG' : 'JPEG';
+                    doc.addImage(imgData, imgFormat, pageWidth - margin - 48, contentY - 4, 45, 45);
+                    contentY += 50;
                 }
-            } catch (e) { console.warn("Não foi possível carregar a foto da árvore.", e); }
+            } catch (e) { console.warn(e); }
         }
+        doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+        doc.text("Observações:", rightColX, contentY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); contentY += 5;
+        doc.text(obsLines, rightColX, contentY);
 
-        // Dados técnicos
-        doc.setFontSize(11); doc.setFont(undefined, 'bold'); doc.setTextColor(...COLORS.text);
-        doc.text("DADOS TÉCNICOS", col1X, lineY); lineY += 7;
-        doc.setFont(undefined, 'normal'); doc.setTextColor(...COLORS.textLight);
-        const techData = [
-            `Data da Vistoria: ${tree.data.split('-').reverse().join('/')}`,
-            `Local: ${tree.local}`,
-            `Avaliador: ${tree.avaliador}`,
-            `DAP (Diâmetro): ${tree.dap} cm`,
-            `Altura Estimada: ${tree.altura} m`
-        ];
-        techData.forEach(item => { doc.text(item, col1X, lineY); lineY += 6; });
-        lineY += 5;
-        
-        // Fatores de Risco
-        doc.setFontSize(11); doc.setFont(undefined, 'bold'); doc.setTextColor(...COLORS.text);
-        doc.text("FATORES DE RISCO IDENTIFICADOS", col1X, lineY); lineY += 7;
-        doc.setFont(undefined, 'normal'); doc.setTextColor(...COLORS.textLight);
-        const risksList = (tree.riskFactors || []).map((val, idx) => val === 1 ? RISK_LABELS[idx] : null).filter(Boolean);
-        if (risksList.length > 0) {
-            risksList.forEach(risk => { doc.text(`• ${risk}`, col1X + 2, lineY); lineY += 5; });
-        } else {
-            doc.text("Nenhum fator de risco crítico identificado.", col1X, lineY); lineY += 5;
-        }
+        cursorY += finalBoxHeight + 8; 
+    }
 
-        let obsY = Math.max(lineY, (tree.hasPhoto ? cursorY + 95 : cursorY)); // Garante que observações comecem abaixo da foto
-        doc.setFontSize(11); doc.setFont(undefined, 'bold'); doc.setTextColor(...COLORS.text);
-        doc.text("OBSERVAÇÕES E RECOMENDAÇÕES", margin, obsY); obsY += 7;
-        doc.setFont(undefined, 'normal'); doc.setTextColor(...COLORS.textLight);
-        const obsWidth = pageWidth - margin * 2;
-        const obsLines = doc.splitTextToSize(tree.observacoes || 'Nenhuma observação ou recomendação adicional registrada.', obsWidth);
-        doc.text(obsLines, margin, obsY);
-    }
-    
-    // Adicionar numeração de página total no final
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        printHeaderFooter(i, totalPages);
-    }
-    
-    const filename = `Laudo_ArborIA_${new Date().toISOString().slice(0,10)}.pdf`;
+    // Imprime rodapés em todas as páginas no final
+    printFooter();
+
+    const filename = `Relatorio_ArborIA_${new Date().toISOString().slice(0,10)}.pdf`;
     doc.save(filename);
-    showToast("Laudo gerado com sucesso!", "success");
+    showToast("PDF Gerado com Sucesso!", "success");
 }
