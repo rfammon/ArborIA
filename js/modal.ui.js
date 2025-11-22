@@ -129,14 +129,18 @@ export function showConfirmModal(title, message, onConfirm) {
  * @param {string} title - Título do modal.
  * @param {string} contentHTML - O HTML a ser injetado no corpo do modal.
  * @param {Array<object>} actions - Array de objetos de ação, ex: [{text, className, onClick}, ...].
+ * @param {string} dialogClass - Classe CSS adicional para o .modal-dialog.
  */
-export function showDetailsModal(title, contentHTML, actions = []) {
+export function showDetailsModal(title, contentHTML, actions = [], dialogClass = '') {
     const modal = document.getElementById('action-modal');
     if (!modal) return;
 
     const titleEl = document.getElementById('modal-title');
     const descEl = document.getElementById('modal-description');
     const actionsContainer = modal.querySelector('.modal-actions');
+    const dialogEl = modal.querySelector('.modal-dialog');
+
+    if (dialogEl) dialogEl.className = `modal-dialog ${dialogClass}`;
 
     if (titleEl) titleEl.textContent = title;
     if (descEl) descEl.innerHTML = contentHTML; // Usa innerHTML para renderizar o conteúdo

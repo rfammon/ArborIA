@@ -1,7 +1,7 @@
 /**
  * ARBORIA 2.0 - TABLE UI (V28.0 - Fixed Overflow & Toggle Logic)
  * Renderiza a tabela de resumo e gerencia ações de linha.
- */
+ */ 
 
 import * as State from './state.js';
 import * as features from './features.js'; // Importação correta
@@ -192,7 +192,15 @@ export const TableUI = {
         if (!tree) return;
 
         const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
-        const riskFactors = (tree.riskFactors || []).map((val, idx) => val === 1 ? `<li>Fator #${idx + 1}</li>` : null).filter(v => v).join('');
+        
+        // [MELHORIA] Usa as descrições dos fatores de risco
+        const riskLabels = [
+            "Galhos Mortos > 5cm", "Rachaduras/Fendas", "Sinais de Apodrecimento", "Casca Inclusa", 
+            "Galhos Cruzados", "Copa Assimétrica", "Inclinação Anormal", "Próxima a Vias Públicas", 
+            "Risco sobre Alvos", "Interferência em Redes", "Espécie com Falhas", "Brotação Epicórmica", 
+            "Calçadas Rachadas", "Perda de Raízes", "Compactação do Solo", "Apodrecimento em Raízes"
+        ];
+        const riskFactors = (tree.riskFactors || []).map((val, idx) => val === 1 ? `<li>${riskLabels[idx]}</li>` : null).filter(v => v).join('');
 
         const content = `
             <div class="details-modal-grid">
@@ -217,7 +225,11 @@ export const TableUI = {
         if (tree.hasPhoto) {
             actions.unshift({ text: '📷 Ver Foto', className: 'hud-action-btn', onClick: () => getImageFromDB(tree.id, blob => blob && openPhotoViewer(URL.createObjectURL(blob))) });
         }
-        showDetailsModal(`Detalhes: ${tree.especie} (ID: ${tree.id})`, content, actions);
+
+        // [MELHORIA] Passa a classe de risco para o modal
+        const riskClass = tree.risco === 'Alto Risco' ? 'risk-high' : tree.risco === 'Médio Risco' ? 'risk-medium' : 'risk-low';
+
+        showDetailsModal(`Detalhes: ${tree.especie} (ID: ${tree.id})`, content, actions, riskClass);
     },
 
     renderControls() {

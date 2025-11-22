@@ -63,6 +63,36 @@
   line-height: 1.5;
 }
 
+/* [NOVO] Estilos para o modal de detalhes de risco */
+.modal-dialog.risk-high { background: linear-gradient(135deg, #ffebee, #ffcdd2); }
+.modal-dialog.risk-high h3 { color: var(--risk-high); }
+
+.modal-dialog.risk-medium { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
+.modal-dialog.risk-medium h3 { color: var(--risk-medium); }
+
+.modal-dialog.risk-low { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
+.modal-dialog.risk-low h3 { color: var(--risk-low); }
+
+.details-modal-grid {
+  font-size: 0.9rem;
+}
+
+.details-modal-grid p {
+  margin-bottom: 8px;
+}
+
+.details-risk-list {
+  font-size: 0.85rem;
+}
+
+/* [NOVO] Grid para métricas dendrométricas */
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+  margin: 8px 0;
+}
+
 /* --- AÇÕES (Botões do Modal) --- */
 .modal-actions {
   display: flex;
