@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Laudo Técnico - Exportação PDF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* Configuração A4 rigorosa */
+        @page { 
+            size: A4; 
+            margin: 0; 
+        }
+        body {
+            background-color: #525659;
+            font-family: Helvetica, Arial, sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .page {
+            background: white;
+            width: 210mm;
+            min-height: 297mm; /* Garante altura mínima A4 */
+            margin: 20px auto;
+            padding: 15mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            position: relative;
+            box-sizing: border-box; /* Importante para padding não estourar largura */
+            overflow: hidden; /* Segurança para conteúdo não vazar da folha visualmente */
+        }
+        
+        /* Evita quebra de cards entre páginas */
+        .break-inside-avoid { 
+            page-break-inside: avoid; 
+            break-inside: avoid; 
+        }
+
+        @media print {
+            body { background: none; margin: 0; }
+            .page { 
+                width: 100%; 
+                margin: 0; 
+                box-shadow: none; 
+                page-break-after: always; 
+                overflow: visible; /* Na impressão, deixa fluir */
+            }
+            .page:last-child { page-break-after: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page">
+        <!-- Cabeçalho -->
+        <header class="border-b-2 border-green-600 pb-4 mb-8 flex justify-between items-end">
+            <div class="max-w-[70%]">
+                <h1 class="text-2xl font-bold text-gray-800 uppercase tracking-tight leading-tight">Laudo de Risco Arbóreo</h1>
+                <p class="text-sm text-gray-500 mt-1">Projeto: Condomínio Reserva das Flores</p>
+            </div>
+            <div class="text-right">
+                <div class="text-green-700 font-bold text-lg whitespace-nowrap"><i class="fa-solid fa-leaf"></i> EcoTech</div>
+                <p class="text-xs text-gray-400">Ref: 2025/Nov-042</p>
+            </div>
+        </header>
+
+        <!-- Resumo Executivo -->
+        <section class="mb-8 bg-gray-50 p-4 rounded border border-gray-200">
+            <h2 class="text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide border-b border-gray-200 pb-1">Resumo</h2>
+            <div class="flex justify-between items-center text-sm flex-wrap gap-2">
+                <div><strong>Total:</strong> 128 Árvores</div>
+                <div><strong>Crítico:</strong> <span class="text-red-600 font-bold">3 indiv.</span></div>
+                <div><strong>Data:</strong> 22/11/2025</div>
+            </div>
+        </section>
+
+        <h2 class="text-lg font-bold text-gray-700 mb-4 border-l-4 border-gray-800 pl-3">Inventário Fotográfico</h2>
+        
+        <!-- Lista de Cards -->
+        <div class="flex flex-col gap-4">
+            
+            <!-- CARD 1: CRÍTICO (Altura Dinâmica) -->
+            <!-- Removido h-44, adicionado min-h-[11rem] e flex-row -->
+            <div class="border border-gray-300 rounded-lg bg-white break-inside-avoid flex flex-row shadow-sm min-h-[11rem] overflow-hidden relative">
+                
+                <!-- COLUNA FOTO (30%) - Usa flex-shrink-0 para não ser esmagada -->
+                <div class="w-[30%] bg-gray-200 relative flex-shrink-0">
+                    <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-200">
+                        <i class="fa-solid fa-camera text-3xl"></i>
+                        <span class="text-xs absolute bottom-2 text-center w-full px-1">Foto ID: 042</span>
+                    </div>
+                    <!-- Badge de Risco -->
+                    <div class="absolute top-0 left-0 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-br z-10">
+                        CRÍTICO
+                    </div>
+                </div>
+
+                <!-- COLUNA DADOS (70%) - Flex grow para ocupar resto -->
+                <div class="w-[70%] p-3 flex flex-col justify-between relative border-l border-gray-200">
+                     <!-- Faixa lateral direita -->
+                    <div class="absolute right-0 top-0 bottom-0 w-1.5 bg-red-600"></div>
+
+                    <!-- Topo do Card -->
+                    <div>
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex-1 min-w-0"> <!-- min-w-0 permite truncar texto flex -->
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">ID: 042</span>
+                                </div>
+                                <h3 class="font-bold text-gray-800 text-lg leading-tight truncate">Paineira Rosa</h3>
+                                <p class="italic text-gray-500 text-xs truncate">Ceiba speciosa</p>
+                            </div>
+                        </div>
+
+                        <!-- Grid Dados Técnicos -->
+                        <div class="grid grid-cols-3 gap-2 mt-3 text-center">
+                            <div class="bg-gray-50 rounded p-1 border border-gray-100">
+                                <span class="block text-[9px] text-gray-400 uppercase tracking-wider">DAP</span>
+                                <span class="text-xs font-bold text-gray-700">85 cm</span>
+                            </div>
+                            <div class="bg-gray-50 rounded p-1 border border-gray-100">
+                                <span class="block text-[9px] text-gray-400 uppercase tracking-wider">Altura</span>
+                                <span class="text-xs font-bold text-gray-700">12 m</span>
+                            </div>
+                            <div class="bg-gray-50 rounded p-1 border border-gray-100">
+                                <span class="block text-[9px] text-gray-400 uppercase tracking-wider">Inclinação</span>
+                                <span class="text-xs font-bold text-red-600">Sim</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rodapé do Card (Diagnóstico + Ação) -->
+                    <div class="mt-3">
+                         <!-- break-words garante que texto longo não vaze -->
+                         <p class="text-xs text-gray-600 mb-2 break-words leading-relaxed">
+                            <strong>Obs:</strong> Cavidade basal extensa (>40%) com sinais de corpo de frutificação (Ganoderma). Risco de tombamento sobre via pública.
+                         </p>
+                         <div class="bg-red-50 text-red-800 text-xs font-bold px-2 py-1.5 rounded border border-red-100 flex items-center gap-2 w-fit max-w-full">
+                            <i class="fa-solid fa-triangle-exclamation flex-shrink-0"></i> 
+                            <span class="truncate">SUPRESSÃO IMEDIATA</span>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD 2: ALTO (Teste com Texto Longo) -->
+            <div class="border border-gray-300 rounded-lg bg-white break-inside-avoid flex flex-row shadow-sm min-h-[11rem] overflow-hidden relative">
+                
+                <div class="w-[30%] bg-gray-200 relative flex-shrink-0">
+                    <div class="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-200">
+                        <i class="fa-solid fa-camera text-3xl"></i>
+                    </div>
+                    <div class="absolute top-0 left-0 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-br z-10">
+                        ALTO
+                    </div>
+                </div>
+
+                <div class="w-[70%] p-3 flex flex-col justify-between relative border-l border-gray-200">
+                    <div class="absolute right-0 top-0 bottom-0 w-1.5 bg-orange-500"></div>
+                    
+                    <div>
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">ID: 045</span>
+                                </div>
+                                <h3 class="font-bold text-gray-800 text-lg leading-tight truncate">Sibipiruna</h3>
+                                <p class="italic text-gray-500 text-xs truncate">Cenostigma pluviosum</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 mt-3 text-center">
+                            <div class="bg-gray-50 rounded p-1 border border-gray-100">
+                                <span class="block text-[9px] text-gray-400 uppercase tracking-wider">DAP</span>
+                                <span class="text-xs font-bold text-gray-700">60 cm</span>
+                            </div>
+                            <div class="bg-gray-50 rounded p-1 border border-gray-100">
+                                <span class="block text-[9px] text-gray-400 uppercase tracking-wider">Altura</span>
+                                <span class="text-xs font-bold text-gray-700">14 m</span>
+                            </div>
+                            <div class="bg-gray-50 rounded p-1 border border-gray-100">
+                                <span class="block text-[9px] text-gray-400 uppercase tracking-wider">Copa</span>
+                                <span class="text-xs font-bold text-gray-700">Irregular</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                         <!-- Exemplo de texto longo para testar overflow -->
+                         <p class="text-xs text-gray-600 mb-2 break-words leading-relaxed">
+                            <strong>Obs:</strong> Ramos secos de grande porte (>10cm) projetados sobre área de estacionamento. Presença de fitopatógenos na bifurcação principal a 3m de altura.
+                         </p>
+                         <div class="bg-orange-50 text-orange-800 text-xs font-bold px-2 py-1.5 rounded border border-orange-100 flex items-center gap-2 w-fit">
+                            <i class="fa-solid fa-scissors flex-shrink-0"></i> 
+                            <span>PODA DE LIMPEZA</span>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD 3: BAIXO (Com imagem real) -->
+            <div class="border border-gray-300 rounded-lg bg-white break-inside-avoid flex flex-row shadow-sm min-h-[11rem] overflow-hidden relative">
+                
+                <div class="w-[30%] bg-gray-200 relative flex-shrink-0 h-auto min-h-full">
+                    <!-- Imagem com object-cover e h-full absoluto para cobrir toda a altura do pai -->
+                    <img src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&q=80&w=300&h=500" class="absolute inset-0 w-full h-full object-cover opacity-90 grayscale-[20%]">
+                    
+                    <div class="absolute top-0 left-0 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-br z-10">
+                        BAIXO
+                    </div>
+                </div>
+
+                <div class="w-[70%] p-3 flex flex-col justify-between relative border-l border-gray-200 bg-white">
+                    <div class="absolute right-0 top-0 bottom-0 w-1.5 bg-green-500"></div>
+                    
+                    <div>
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">ID: 050</span>
+                                </div>
+                                <h3 class="font-bold text-gray-800 text-lg leading-tight truncate">Quaresmeira</h3>
+                                <p class="italic text-gray-500 text-xs truncate">Tibouchina granulosa</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 mt-3 text-center">
+                            <div class="bg-gray-50 rounded p-1 border border-gray-100">
+                                <span class="block text-[9px] text-gray-400 uppercase tracking-wider">DAP</span>
+                                <span class="text-xs font-bold text-gray-700">25 cm</span>
+                            </div>
+                            <div class="bg-gray-50 rounded p-1 border border-gray-100">
+                                <span class="block text-[9px] text-gray-400 uppercase tracking-wider">Altura</span>
+                                <span class="text-xs font-bold text-gray-700">6 m</span>
+                            </div>
+                            <div class="bg-gray-50 rounded p-1 border border-gray-100">
+                                <span class="block text-[9px] text-gray-400 uppercase tracking-wider">Vital.</span>
+                                <span class="text-xs font-bold text-green-600">Boa</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                         <p class="text-xs text-gray-600 mb-2 break-words leading-relaxed">
+                            <strong>Obs:</strong> Indivíduo jovem, bem estabelecido. Sem defeitos visíveis.
+                         </p>
+                         <div class="bg-green-50 text-green-800 text-xs font-bold px-2 py-1.5 rounded border border-green-100 flex items-center gap-2 w-fit">
+                            <i class="fa-solid fa-check flex-shrink-0"></i> 
+                            <span>SEM AÇÃO</span>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+        <div class="absolute bottom-10 left-15 right-15 text-center border-t border-gray-200 pt-2 w-[calc(100%-30mm)]">
+            <p class="text-[10px] text-gray-400">Página 1 de 1 - Gerado em 22/11/2025</p>
+        </div>
+    </div>
+
+</body>
+</html>

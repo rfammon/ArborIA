@@ -1,15 +1,12 @@
-// js/pdf.generator.js (v54.0 - Com Verificação de Biblioteca)
+// js/pdf.generator.js (v80.0 - Rebranding ArborIA Final)
 
 import * as state from './state.js';
 import { getImageFromDB } from './database.js';
 import { showToast } from './utils.js';
 import { prepareMapForScreenshot, initializeMap, currentLayerType, toggleMapLayer } from './map.ui.js'; 
-import { checklistData } from './content.js'; 
 
-const RISK_LABELS = checklistData.map(item => item.term); // Tenta mapear se for array, ou usa lista fixa abaixo
-
-// Fallback caso checklistData não seja um array iterável direto
-const SAFE_RISK_LABELS = [
+// Lista de Riscos
+const RISK_LABELS = [
     "1. Galhos Mortos > 5cm", "2. Rachaduras/Fendas", "3. Sinais de Apodrecimento",
     "4. Casca Inclusa (União em V)", "5. Galhos Cruzados", "6. Copa Assimétrica",
     "7. Inclinação Anormal", "8. Próxima a Vias Públicas", "9. Risco de Queda sobre Alvos",
@@ -32,23 +29,16 @@ export async function generatePDF() {
         return;
     }
 
-    // [CORREÇÃO CRÍTICA] Verificação segura da biblioteca
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-        console.error("Biblioteca jsPDF não encontrada em window.jspdf");
-        showToast("Erro: Bibliotecas PDF não carregadas. Recarregue a página com internet.", "error");
+    const { jsPDF } = window.jspdf;
+    if (!jsPDF || !window.html2canvas) {
+        showToast("Bibliotecas PDF não carregadas.", "error");
         return;
     }
-    
-    if (!window.html2canvas) {
-        showToast("Erro: Biblioteca html2canvas não carregada.", "error");
-        return;
-    }
-
-    const { jsPDF } = window.jspdf; // Agora é seguro extrair
 
     showToast("Preparando mapa e gerando PDF...", "success");
 
-    // COLE SUA LOGO BASE64 AQUI
+    // === CONFIG DA LOGO ===
+    // Cole sua string Base64 aqui entre as aspas
     const logoBase64 = ""; 
 
     const doc = new jsPDF();
@@ -66,7 +56,7 @@ export async function generatePDF() {
     const originalWidth = mapContainer.style.width;
     const originalHeight = mapContainer.style.height;
     let wasSummaryActive = false;
-    let originalLayerType = window.currentLayerType || 'satellite';
+    let originalLayerType = currentLayerType;
 
     try {
         if (mapTabContent && summaryTabContent) {
@@ -90,20 +80,18 @@ export async function generatePDF() {
         mapImageParams = { data: canvas.toDataURL('image/jpeg', 0.8), w: 180, h: 120 }; 
         
     } catch (e) {
-        console.error("Erro ao capturar mapa:", e);
-        showToast("Aviso: O mapa não pôde ser gerado.", "warning");
+        console.error("Erro mapa:", e);
     } finally {
         mapContainer.style.width = originalWidth;
         mapContainer.style.height = originalHeight;
 
-        if (originalLayerType !== 'satellite' && window.toggleMapLayer) { 
-             window.toggleMapLayer(); 
+        if (originalLayerType !== 'satellite' && typeof toggleMapLayer === 'function') {
+             // Opcional: restaurar camada se necessário
         }
 
         if (mapTabContent && summaryTabContent) {
             mapTabContent.style.display = ''; 
             summaryTabContent.style.display = '';
-            
             if (wasSummaryActive) {
                 mapTabContent.classList.remove('active');
                 summaryTabContent.classList.add('active');
@@ -115,49 +103,91 @@ export async function generatePDF() {
         if (state.mapInstance) state.mapInstance.invalidateSize();
     }
 
-    // === CABEÇALHO ===
-    const printHeader = (isCover) => {
-        if (logoBase64) { try { doc.addImage(logoBase64, 'PNG', 14, 10, 25, 25); } catch(e){} }
-        const textX = logoBase64 ? 45 : pageWidth/2;
-        const align = logoBase64 ? "left" : "center";
+    // === FUNÇÃO DE CABEÇALHO & RODAPÉ ARBORIA ===
+    const printHeaderFooter = (isCover) => {
+        const pageNum = doc.internal.getCurrentPageInfo().pageNumber;
+
+        // --- CABEÇALHO ---
+        // Logo
+        if (logoBase64) { 
+            try { doc.addImage(logoBase64, 'PNG', 14, 10, 25, 25); } catch(e){} 
+        }
+        
+        const textX = logoBase64 ? 45 : margin; 
 
         if (isCover) {
-            doc.setFontSize(16); doc.setTextColor(0, 77, 64);
-            doc.text("RAFAEL AMMON", textX, 18, { align: align });
-            doc.setFontSize(10); doc.setTextColor(100);
-            doc.text("ENGENHEIRO FLORESTAL", textX, 24, { align: align });
-            doc.setFontSize(14); doc.setTextColor(0);
-            doc.text("Relatório Técnico de Avaliação Arbórea", textX, 32, { align: align });
+            // Capa: Título Grande
+            doc.setFontSize(22); doc.setFont(undefined, 'bold');
+            
+            // Texto colorido "ArborIA"
+            doc.setTextColor(10, 50, 137); // Azul Arbor (#0A3289)
+            doc.text("Arbor", textX, 22);
+            const widthArbor = doc.getTextWidth("Arbor");
+            doc.setTextColor(46, 125, 50); // Verde IA (#2E7D32)
+            doc.text("IA", textX + widthArbor, 22);
+
+            // Subtítulo
+            doc.setFontSize(12); doc.setTextColor(100); doc.setFont(undefined, 'normal');
+            doc.text("Sistema de Manejo Integrado Arbóreo", textX, 30);
+            
+            // Título do Relatório
+            doc.setFontSize(16); doc.setTextColor(0, 77, 64); doc.setFont(undefined, 'bold');
+            doc.text("Relatório Técnico de Vistoria", textX, 42);
+
             doc.setLineWidth(0.5); doc.setDrawColor(0, 77, 64);
-            doc.line(margin, 38, pageWidth - margin, 38);
-            return 55;
+            doc.line(margin, 48, pageWidth - margin, 48);
+            return 60; // Y inicial do conteúdo
         } else {
-            doc.setFontSize(12); doc.setTextColor(0, 77, 64);
-            doc.text("Relatório Técnico de Avaliação Arbórea", textX, 25, { align: align });
+            // Páginas Seguintes: Cabeçalho Compacto
+            doc.setFontSize(12); doc.setFont(undefined, 'bold');
+            doc.setTextColor(10, 50, 137); doc.text("Arbor", textX, 20);
+            const wArbor = doc.getTextWidth("Arbor");
+            doc.setTextColor(46, 125, 50); doc.text("IA", textX + wArbor, 20);
+
+            doc.setFontSize(10); doc.setTextColor(80); doc.setFont(undefined, 'normal');
+            doc.text("Relatório de Vistoria", textX, 26);
+
             doc.setFontSize(9); doc.setTextColor(100);
-            doc.text(`Pág. ${doc.internal.getCurrentPageInfo().pageNumber}`, pageWidth - margin, 25, { align: 'right' });
-            doc.setLineWidth(0.2); doc.setDrawColor(0, 77, 64);
-            doc.line(margin, 40, pageWidth - margin, 40);
-            return 50; 
+            doc.text(`Pág. ${pageNum}`, pageWidth - margin, 20, { align: 'right' });
+            doc.text(`${new Date().toLocaleDateString('pt-BR')}`, pageWidth - margin, 26, { align: 'right' });
+
+            doc.setLineWidth(0.2); doc.setDrawColor(200);
+            doc.line(margin, 32, pageWidth - margin, 32);
+            return 40; 
+        }
+    };
+    
+    // Função Rodapé (chamada ao final de cada página)
+    const printFooter = () => {
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8); doc.setTextColor(150);
+            doc.text("ArborIA - Soluções em Tecnologia Florestal", pageWidth / 2, pageHeight - 10, { align: 'center' });
         }
     };
 
-    cursorY = printHeader(true);
+    // === 2. INÍCIO DO CONTEÚDO ===
+    cursorY = printHeaderFooter(true);
 
+    // Metadados da Capa
     doc.setFontSize(11); doc.setTextColor(50);
-    doc.text(`Emissão: ${new Date().toLocaleDateString('pt-BR')}`, margin, 45);
-    doc.text(`Total Avaliado: ${state.registeredTrees.length} árvores`, pageWidth-margin, 45, {align:'right'});
+    doc.text(`Emissão: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, margin, 55);
+    doc.text(`Total de Indivíduos: ${state.registeredTrees.length}`, pageWidth-margin, 55, {align:'right'});
 
-    // === TABELA ===
-    const tableHeaders = [['ID', 'Data', 'Espécie', 'DAP', 'Local', 'Risco', 'Observações']];
+    // === 3. TABELA RESUMO ===
+    const tableHeaders = [['ID', 'Data', 'Espécie', 'DAP', 'Local', 'Risco', 'Obs']];
     const tableData = state.registeredTrees.map(t => [
         t.id, t.data.split('-').reverse().join('/'), t.especie, 
         t.dap, t.local, t.risco, t.observacoes || '-'
     ]);
 
     doc.autoTable({
-        startY: cursorY, head: tableHeaders, body: tableData, theme: 'striped', headStyles: { fillColor: [0, 121, 107] },
-        styles: { fontSize: 8, cellPadding: 2 }, margin: { left: margin, right: margin },
+        startY: cursorY, head: tableHeaders, body: tableData, 
+        theme: 'striped', 
+        headStyles: { fillColor: [0, 121, 107] }, // Verde principal
+        styles: { fontSize: 8, cellPadding: 2 }, 
+        margin: { left: margin, right: margin },
         columnStyles: { 0: {cellWidth: 10}, 1: {cellWidth: 20}, 2: {cellWidth: 30}, 3: {cellWidth: 12}, 4: {cellWidth: 30}, 5: {cellWidth: 20}, 6: {cellWidth: 'auto'} },
         didParseCell: function(data) {
             if (data.section === 'body' && data.column.index === 5) {
@@ -166,19 +196,27 @@ export async function generatePDF() {
                 else data.cell.styles.textColor = [46, 125, 50];
             }
         },
-        didDrawPage: function (data) { if (doc.internal.getCurrentPageInfo().pageNumber > 1) printHeader(false); }
+        didDrawPage: function (data) { 
+            if (doc.internal.getCurrentPageInfo().pageNumber > 1) printHeaderFooter(false); 
+        }
     });
     cursorY = doc.lastAutoTable.finalY + 15;
 
-    // === MAPA ===
+    // === 4. MAPA ===
     if (mapImageParams) {
-        if (cursorY + mapImageParams.h + 25 > pageHeight - 20) { doc.addPage(); cursorY = printHeader(false); }
+        if (cursorY + mapImageParams.h + 25 > pageHeight - 20) { 
+            doc.addPage(); cursorY = printHeaderFooter(false); 
+        }
+        
         doc.setFontSize(12); doc.setTextColor(0); doc.setFont(undefined, 'bold');
         doc.text("Mapa de Localização (Satélite)", margin, cursorY);
         cursorY += 5;
+        
         const mapX = (pageWidth - mapImageParams.w) / 2;
         doc.addImage(mapImageParams.data, 'PNG', mapX, cursorY, mapImageParams.w, mapImageParams.h);
         cursorY += mapImageParams.h + 5;
+        
+        // Legenda
         doc.setFontSize(9); doc.setFont(undefined, 'normal');
         let lx = mapX; const dSz = 2; const spc = 25;
         doc.setFillColor(198, 40, 40); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.setTextColor(0); doc.text("Alto Risco", lx+6, cursorY+dSz+1); lx += spc + 10;
@@ -187,8 +225,9 @@ export async function generatePDF() {
         cursorY += 15;
     }
 
-    // === FICHAS ===
-    doc.addPage(); cursorY = printHeader(false);
+    // === 5. FICHAS INDIVIDUAIS ===
+    doc.addPage();
+    cursorY = printHeaderFooter(false);
     doc.setFontSize(14); doc.setTextColor(0, 77, 64); doc.setFont(undefined, 'bold');
     doc.text("Detalhamento Técnico Individual", margin, cursorY);
     cursorY += 10;
@@ -196,6 +235,7 @@ export async function generatePDF() {
     for (let i = 0; i < state.registeredTrees.length; i++) {
         const tree = state.registeredTrees[i];
         
+        // Métricas
         const alturaNum = parseFloat(tree.altura) || 0;
         const dapNum = parseFloat(tree.dap) || 0;
         const dapM = dapNum / 100;
@@ -207,41 +247,60 @@ export async function generatePDF() {
         else if (tree.risco === 'Médio Risco') { bgColor = [255, 243, 224]; riskColor = [230, 81, 0]; }
         else { bgColor = [232, 245, 233]; riskColor = [46, 125, 50]; }
 
-        const risksList = (tree.riskFactors || []).map((val, idx) => val === 1 ? SAFE_RISK_LABELS[idx] : null).filter(v => v !== null);
+        const risksList = (tree.riskFactors || []).map((val, idx) => val === 1 ? RISK_LABELS[idx] : null).filter(v => v !== null);
         
-        const leftHeight = 50 + (risksList.length > 0 ? risksList.length * 5 : 10);
-        const rightColX = margin + 85; const obsWidth = pageWidth - rightColX - margin - 2; 
+        // Cálculo de Altura da Caixa (CORRIGIDO COM VARIÁVEL FINAL)
+        const rightColX = margin + 85; 
+        const obsWidth = pageWidth - rightColX - margin - 2; 
         const obsLines = doc.splitTextToSize(tree.observacoes || '—', obsWidth);
+        
+        const risksHeight = risksList.length * 5;
+        const dataLines = 4 * 5; 
+        const leftHeight = dataLines + risksHeight + 20; 
+        
         let rightHeight = 20 + 10 + (obsLines.length * 4) + 10;
         if (tree.hasPhoto) rightHeight += 50; 
 
         const boxHeight = Math.max(leftHeight, rightHeight, 60) + 5;
 
-        if (cursorY + boxHeight + 10 > pageHeight - 10) { doc.addPage(); cursorY = printHeader(false); }
+        // Quebra de página
+        if (cursorY + boxHeight + 10 > pageHeight - 10) {
+            doc.addPage();
+            cursorY = printHeaderFooter(false);
+        }
 
+        const finalBoxHeight = boxHeight; // Variável segura
+
+        // Desenho Caixa
         doc.setDrawColor(200); doc.setFillColor(...bgColor);
-        doc.rect(margin, cursorY, pageWidth - (margin*2), boxHeight, 'FD');
-        doc.setFillColor(...riskColor); doc.rect(margin, cursorY, 2, boxHeight, 'F');
+        doc.rect(margin, cursorY, pageWidth - (margin*2), finalBoxHeight, 'FD');
+        doc.setFillColor(...riskColor); doc.rect(margin, cursorY, 2, finalBoxHeight, 'F');
 
+        // Cabeçalho Card
         doc.setFontSize(11); doc.setTextColor(0); doc.setFont(undefined, 'bold');
         doc.text(`ID: ${tree.id} - ${tree.especie}`, margin + 6, cursorY + 8);
         doc.setTextColor(...riskColor);
         doc.text(tree.risco.toUpperCase(), pageWidth - margin - 5, cursorY + 8, { align: 'right' });
 
+        // Coluna Esquerda
         doc.setTextColor(50); doc.setFont(undefined, 'normal'); doc.setFontSize(9);
         const col1X = margin + 6; let lineY = cursorY + 16;
-        doc.text(`Data: ${tree.data.split('-').reverse().join('/')}`, col1X, lineY);
+        
+        doc.setFont(undefined, 'bold'); doc.text(`Altura: ${alturaNum.toFixed(1)} m`, col1X, lineY);
         doc.text(`DAP: ${tree.dap} cm`, col1X + 40, lineY); lineY += 5;
-        doc.text(`Local: ${tree.local}`, col1X, lineY); lineY += 5;
-        doc.text(`Coord: ${tree.coordX} E / ${tree.coordY} N`, col1X, lineY);
-        doc.text(`Raio Queda: ${rcq}m | Raio Raízes: ${rcr}m`, col1X, lineY + 5); // Métricas
-        lineY += 12;
+        doc.text(`Raio Queda (RCQ): ${rcq} m`, col1X, lineY);
+        doc.text(`Raio Radicular (RCR): ${rcr} m`, col1X + 40, lineY); lineY += 7;
+
+        doc.setFont(undefined, 'normal'); doc.text(`Local: ${tree.local}`, col1X, lineY); lineY += 5;
+        doc.text(`Coord: ${tree.coordX} / ${tree.coordY}`, col1X, lineY);
+        doc.text(`Zona: ${tree.utmZoneNum}${tree.utmZoneLetter}`, col1X + 60, lineY); lineY += 8;
 
         doc.setFont(undefined, 'bold'); doc.setTextColor(0);
         doc.text("Fatores de Risco:", col1X, lineY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); lineY += 5;
         if (risksList.length > 0) { risksList.forEach(risk => { doc.text(`• ${risk}`, col1X, lineY); lineY += 5; }); } 
         else { doc.text("• Nenhum fator crítico.", col1X, lineY); }
 
+        // Coluna Direita
         let contentY = cursorY + 16;
         if (tree.hasPhoto) {
             try {
@@ -258,9 +317,13 @@ export async function generatePDF() {
         doc.text("Observações:", rightColX, contentY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); contentY += 5;
         doc.text(obsLines, rightColX, contentY);
 
-        cursorY += boxHeight + 8; 
+        cursorY += finalBoxHeight + 8; 
     }
-    const filename = `Relatorio_Arboreo_${new Date().toISOString().slice(0,10)}.pdf`;
+
+    // Imprime rodapés em todas as páginas no final
+    printFooter();
+
+    const filename = `Relatorio_ArborIA_${new Date().toISOString().slice(0,10)}.pdf`;
     doc.save(filename);
     showToast("PDF Gerado com Sucesso!", "success");
 }

@@ -1,0 +1,57 @@
+/**
+ * ARBORIA 2.0 - WELCOME SCREEN
+ * Estilo para o modal de boas-vindas.
+ */
+
+.welcome-card {
+  background: linear-gradient(135deg, var(--color-forest), var(--color-tech));
+  color: white;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+
+  /* Animação de entrada */
+  transform: scale(0.95);
+  opacity: 0;
+  transition: all var(--transition-smooth);
+}
+
+.modal-overlay.active .welcome-card {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.welcome-card h3 {
+  color: white;
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+}
+
+.welcome-card p {
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+#welcome-screen .action-btn {
+  width: 100%;
+  max-width: 250px;
+  margin-top: 1.5rem; /* Espaçamento entre o card e o botão */
+  background: var(--color-accent);
+  color: white;
+}
+
+/* Ajuste para Desktop */
+@media (min-width: 769px) {
+    .welcome-card {
+        padding: 2.5rem;
+    }
+}
+
+/* [NOVO] Ajuste no padding do card */
+.welcome-card {
+    padding: 2rem 1.5rem;
+}

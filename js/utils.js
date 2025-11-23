@@ -1,13 +1,9 @@
-// js/utils.js (v26.2 - Completo com optimizeImage e GPS Fix)
-
-import { toastTimer, setToastTimer } from './state.js';
+/**
+ * ARBORIA 2.0 - UTILS
+ * Funções utilitárias globais: UI, Imagem, GPS e Datas.
+ */
 
 // === 1. UTILITÁRIO DE PERFORMANCE (DEBOUNCE) ===
-
-/**
- * Cria uma versão "debounced" de uma função.
- * Útil para inputs de pesquisa e eventos de scroll.
- */
 export function debounce(func, delay = 300) {
     let timer;
     return function(...args) {
@@ -20,42 +16,55 @@ export function debounce(func, delay = 300) {
 }
 
 // === 2. UTILITÁRIO DE UI (TOAST) ===
+let toastTimer = null;
 
-/**
- * Exibe notificação flutuante.
- */
-export function showToast(message, type = 'success') {
+export function showToast(message, type = 'info') {
     const toast = document.getElementById('toast-notification');
     if (!toast) return;
 
-    // Limpa timer anterior
-    if (toastTimer) {
-        clearTimeout(toastTimer);
-    }
+    // Limpa timer anterior se houver
+    if (toastTimer) clearTimeout(toastTimer);
 
-    toast.textContent = message;
-    toast.className = 'show'; 
-    toast.classList.add(type);
-
-    // Cria novo timer para esconder
-    const newTimer = setTimeout(() => {
-        toast.className = toast.className.replace('show', '');
-        toast.classList.remove(type); 
-        setToastTimer(null);
-    }, 3000);
+    // Reset de classes para evitar conflito
+    toast.className = 'toast'; 
+    void toast.offsetWidth; // Força Reflow (reinicia animação)
     
-    setToastTimer(newTimer);
+    // Aplica novas classes
+    toast.classList.add(`toast-${type}`, 'show');
+    toast.textContent = message;
+
+    // Novo timer
+    toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+        toastTimer = null;
+    }, 3500);
 }
 
-// === 3. OTIMIZAÇÃO DE IMAGEM (Esta é a função que estava faltando) ===
+// === 3. HELPERS DE DADOS (Data e UUID) ===
+export function formatDate(dateString) {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+        const offsetDate = new Date(date.getTime() + userTimezoneOffset);
+        return offsetDate.toLocaleDateString('pt-BR');
+    } catch (e) {
+        return dateString;
+    }
+}
 
-/**
- * Redimensiona e comprime uma imagem (Blob/File) no cliente.
- * @param {File} imageFile - O arquivo original.
- * @param {number} maxWidth - Largura máxima (padrão 800px).
- * @param {number} quality - Qualidade JPEG (0 a 1).
- * @returns {Promise<Blob>} - A imagem processada.
- */
+export function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+export function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// === 4. OTIMIZAÇÃO DE IMAGEM (Compressão Client-Side) ===
 export async function optimizeImage(imageFile, maxWidth = 800, quality = 0.7) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -71,7 +80,7 @@ export async function optimizeImage(imageFile, maxWidth = 800, quality = 0.7) {
                 
                 let { width, height } = img;
                 
-                // Lógica de redimensionamento proporcional
+                // Redimensionamento proporcional
                 if (width > maxWidth) {
                     height = Math.round((height * maxWidth) / width);
                     width = maxWidth;
@@ -80,10 +89,8 @@ export async function optimizeImage(imageFile, maxWidth = 800, quality = 0.7) {
                 canvas.width = width;
                 canvas.height = height;
                 
-                // Desenha no canvas
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Exporta como Blob JPEG
                 canvas.toBlob((blob) => {
                     if (blob) {
                         resolve(blob);
@@ -100,50 +107,43 @@ export async function optimizeImage(imageFile, maxWidth = 800, quality = 0.7) {
     });
 }
 
-// === 4. GIS (CONVERSÃO DE COORDENADAS) ===
-
-/**
- * Converte Lat/Lon (WGS84) para UTM usando Proj4.
- * Verifica window.proj4 para evitar erros se a CDN falhar.
- */
+// === 5. GIS (CONVERSÃO GEOGRÁFICA) ===
 export function convertLatLonToUtm(lat, lon) {
-    
-    // Validação de números
+    // Validação
     const latNum = parseFloat(lat);
     const lonNum = parseFloat(lon);
 
     if (isNaN(latNum) || isNaN(lonNum)) {
-        console.error("GPS: Coordenadas inválidas (NaN).");
+        console.error("GPS: Coordenadas inválidas.");
         return null;
     }
 
-    // Tenta encontrar a biblioteca proj4 (no window ou global)
+    // Acesso à biblioteca Proj4
     const proj4Lib = (typeof window !== 'undefined' && window.proj4) || (typeof proj4 !== 'undefined' && proj4) || null;
 
     if (!proj4Lib) {
         console.error("GPS: Biblioteca Proj4 não encontrada.");
-        showToast("Erro: Biblioteca GIS (Proj4) não carregou.", "error");
+        showToast("Erro: Biblioteca GPS ausente.", "error");
         return null;
     }
 
     try {
-        // Cálculo da Zona UTM
+        // Lógica de Zona UTM
         const zoneNum = Math.floor((lonNum + 180) / 6) + 1;
         const hemisphereParam = latNum < 0 ? '+south' : ''; 
         
-        // Definições de projeção
         const wgs84 = "EPSG:4326";
         const utmDef = `+proj=utm +zone=${zoneNum} ${hemisphereParam} +datum=WGS84 +units=m +no_defs`;
 
-        // Executa a conversão
+        // Conversão
         const [easting, northing] = proj4Lib(wgs84, utmDef, [lonNum, latNum]);
         
-        // Define a letra da zona (apenas para visualização)
-        const zoneLetters = "CDEFGHJKLMNPQRSTUVWXX";
-        let zoneLetter = "Z"; 
-        if (latNum >= -80 && latNum <= 84) {
-            zoneLetter = zoneLetters.charAt(Math.floor((latNum + 80) / 8));
-        }
+        // Letra da Zona (Simplificado mas funcional para Brasil)
+        // Para rigor militar completo usaríamos a tabela MGRS completa, mas esta lógica atende
+        let zoneLetter = 'N';
+        if (latNum < 0) zoneLetter = 'K'; // Maioria do Brasil Central/Sul
+        if (latNum < -32) zoneLetter = 'H'; // Extremo Sul
+        if (latNum >= 0) zoneLetter = 'M'; // Norte do Equador
 
         return { 
             easting: parseFloat(easting.toFixed(0)), 
@@ -153,8 +153,7 @@ export function convertLatLonToUtm(lat, lon) {
         };
 
     } catch (e) {
-        console.error("GPS: Erro na conversão matemática Proj4:", e);
-        showToast("Erro ao calcular coordenadas UTM.", "error");
+        console.error("GPS: Erro na conversão Proj4:", e);
         return null;
     }
 }

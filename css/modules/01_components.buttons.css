@@ -1,142 +1,177 @@
-/* css/modules/01_components.buttons.css */
+/**
+ * ARBORIA 2.0 - BUTTON COMPONENTS
+ * Estilo: Pill Shape, Gradient Background, Tactile Feedback
+ */
 
-/* -------------------------------------- */
-/* 8. BOTÕES (PADRONIZAÇÃO GERAL) */
-/* -------------------------------------- */
-
-/* Formulário de Contato e Chat */
-.send-btn,
-#chat-send-btn {
-  padding: var(--space-sm) var(--space-md);
+/* --- ESTILO BASE PARA TODOS OS BOTÕES --- */
+button {
+  font-family: inherit;
   font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--border-radius-md);
-  border: 2px solid transparent;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
-  text-decoration: none;
-  background-color: var(--color-primary-medium);
-  color: white;
-  width: 100%;
-}
-.send-btn:hover,
-#chat-send-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-  background-color: var(--color-primary-dark);
-}
-#chat-send-btn {
-  width: auto;
+  gap: 8px;
+  transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Área de Botões da Calculadora */
-.risk-buttons-area {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-  margin-top: var(--space-lg);
-  margin-bottom: var(--space-lg);
-}
-#add-tree-btn, #reset-risk-form-btn,
-.export-btn {
-  padding: var(--space-sm) var(--space-md);
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--border-radius-md);
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  text-decoration: none;
-  flex-grow: 1;
-  min-width: 150px;
-}
-#add-tree-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
-#reset-risk-form-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
-.export-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
-
-
-/* Aplica as classes de cor */
-#add-tree-btn {
-  background-color: var(--color-primary-medium);
-  color: white;
-}
-#add-tree-btn:hover { background-color: var(--color-primary-dark); }
-
-#reset-risk-form-btn {
-  background-color: var(--gray-200);
-  color: var(--color-text-light);
-  border-color: var(--gray-300);
-}
-#reset-risk-form-btn:hover { background-color: var(--gray-300); }
-
-/* Botão Importar e Exportar */
-#import-data-btn,
-#export-data-btn,
-#send-email-btn {
-  background-color: transparent;
-  color: var(--color-primary-medium);
-  border-color: var(--color-primary-medium);
-}
-#import-data-btn:hover,
-#export-data-btn:hover,
-#send-email-btn:hover {
-  background-color: var(--color-primary-lightest);
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(1);
 }
 
-#clear-all-btn {
-  background-color: var(--color-danger);
-  color: white;
+button:active {
+  transform: scale(0.96); /* Efeito tátil de clique */
 }
-#clear-all-btn:hover { background-color: var(--color-danger-dark); }
 
-/* Botão de GPS */
+/* --- BOTÕES DE AÇÃO PRIMÁRIA (Gradient Pills) --- */
+/* Usado em: Iniciar Medição, Salvar, Adicionar Árvore */
+.action-btn, 
+.hud-action-btn, 
+.send-btn, 
+#add-tree-btn, 
 #get-gps-btn {
-  background-color: var(--color-primary-dark);
+  background: var(--gradient-main);
+  color: white;
+  border-radius: var(--radius-pill);
+  padding: 12px 24px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-floating);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  width: 100%; /* Mobile First: ocupa largura total por padrão em containers pequenos */
+}
+
+/* Hover apenas em desktop para não atrapalhar touch */
+@media (hover: hover) {
+  .action-btn:hover, 
+  .hud-action-btn:hover, 
+  .send-btn:hover, 
+  #add-tree-btn:hover, 
+  #get-gps-btn:hover {
+    background: var(--gradient-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 121, 107, 0.4);
+  }
+}
+
+/* --- BOTÕES SECUNDÁRIOS / OUTLINE --- */
+/* Usado em: Exportar, Cancelar, Filtros */
+.export-btn, 
+.btn-secondary {
+  background: transparent;
+  border: 2px solid var(--color-forest);
+  color: var(--color-forest);
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.export-btn:hover {
+  background-color: rgba(0, 121, 107, 0.08); /* Tint verde bem suave */
+}
+
+/* Botão de Alerta/Perigo (ex: Limpar Tudo) */
+.btn-danger {
+  border-color: var(--risk-high);
+  color: var(--risk-high);
+}
+
+.btn-danger:hover {
+  background-color: rgba(211, 47, 47, 0.08);
+}
+
+.btn-danger-filled {
+  background: linear-gradient(135deg, #ef5350, var(--risk-high));
   color: white;
   border: none;
-  border-radius: var(--border-radius-md);
-  padding: var(--space-sm) var(--space-sm);
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  font-weight: 600;
   font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-}
-#get-gps-btn:hover { background-color: var(--color-primary-medium); }
-#get-gps-btn:disabled { background-color: var(--color-primary-medium); cursor: not-allowed; }
-
-/* Botão de Foto */
-.photo-btn {
-  padding: var(--space-sm) var(--space-md);
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--border-radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  text-decoration: none;
-  
-  background-color: transparent;
-  color: var(--color-primary-medium);
-  border: 2px solid var(--color-primary-medium);
-}
-.photo-btn:hover {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
-  background-color: var(--color-primary-lightest);
-  color: var(--color-primary-dark);
 }
+
+.btn-danger-filled:hover {
+  background: linear-gradient(135deg, var(--risk-high), #b71c1c);
+}
+
+.btn-clear {
+  background: linear-gradient(135deg, #ef5350, #d32f2f);
+  color: white;
+  border-radius: var(--radius-pill);
+  padding: 12px 24px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-floating);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  border: none;
+}
+.btn-clear:hover {
+  background: linear-gradient(135deg, #d32f2f, #b71c1c);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4);
+}
+
+/* --- BOTÕES DE CÂMERA (HUD) --- */
+/* Botão de Disparo/Captura */
+.hud-capture-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: transparent;
+  border: 4px solid white;
+  position: relative;
+  padding: 0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.hud-capture-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 54px; height: 54px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.hud-capture-btn:active::after {
+  transform: translate(-50%, -50%) scale(0.9);
+  background: var(--color-accent);
+}
+
+/* Botão Fechar HUD */
+.hud-close-btn {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  backdrop-filter: blur(4px);
+}
+
+/* --- BOTÃO VOLTAR (Navegação) --- */
+.btn-back {
+  background: transparent;
+  color: var(--color-tech); /* Azul Tecnológico */
+  font-weight: 700;
+  padding: 8px 0;
+  justify-content: flex-start;
+}
+
+.btn-back:hover {
+  text-decoration: underline;
+}
+
+

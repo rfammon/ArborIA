@@ -1,136 +1,121 @@
-// js/dap.estimator.js (v72.0 - Estimador de DAP Didático)
+/**
+ * ARBORIA 2.1 - DAP ESTIMATOR UI ENHANCEMENTS
+ * Improved usability and inline validation messages
+ */
 
 import { showToast } from './utils.js';
 
 // Estado interno
 let stream = null;
-let currentGamma = 0; // Ângulo horizontal (rotação eixo Z)
+let currentGamma = 0; 
 let distance = 10; 
 let angleLeftCapture = null; 
 let angleRightCapture = null;
 
-// Referências DOM (Mapeadas para o index.html v72.0)
-const videoEl = document.getElementById('dap-camera-feed');
-const angleDisplay = document.getElementById('dap-current-angle'); 
-const steps = {
-    distance: document.getElementById('dap-step-distance'),
-    left: document.getElementById('dap-step-left'),
-    right: document.getElementById('dap-step-right'),
-    result: document.getElementById('dap-step-result')
-};
+// Referências DOM
+const getElements = () => ({
+    videoEl: document.getElementById('dap-camera-feed'),
+    angleDisplay: document.getElementById('dap-current-angle'),
+    distInput: document.getElementById('dap-distance-input'),
+    steps: {
+        distance: document.getElementById('dap-step-distance'),
+        left: document.getElementById('dap-step-left'),
+        right: document.getElementById('dap-step-right'),
+        result: document.getElementById('dap-step-result')
+    }
+});
 
-/**
- * Inicia o Estimador de DAP.
- */
 export async function startDAPEstimator() {
+    const els = getElements();
     resetMeasurement();
-    showStep('distance');
+    showStep('distance'); 
 
-    // 1. Sincroniza distância inicial com o formulário (se houver valor)
     const mainDistInput = document.getElementById('risk-distancia-obs');
-    const dapDistInput = document.getElementById('dap-distance-input');
-    
-    if (mainDistInput && mainDistInput.value) {
+    if (mainDistInput && mainDistInput.value && parseFloat(mainDistInput.value) > 0) {
         distance = parseFloat(mainDistInput.value);
-        if(dapDistInput) dapDistInput.value = distance;
-    } else {
-        distance = 10; // Valor padrão
-        if(dapDistInput) dapDistInput.value = 10;
+    }
+    if (els.distInput) els.distInput.value = distance;
+
+    if (typeof DeviceOrientationEvent !== 'undefined') {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            try {
+                const response = await DeviceOrientationEvent.requestPermission();
+                if (response === 'granted') {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                } else {
+                    showToast("Permissão de sensores negada.", "error");
+                }
+            } catch (e) {
+                console.warn("Erro permissão iOS DAP:", e);
+                window.addEventListener('deviceorientation', handleOrientation);
+            }
+        } else {
+            window.addEventListener('deviceorientation', handleOrientation);
+        }
     }
 
-    // 2. Acessar Câmera
     try {
         stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: { exact: "environment" } } 
+            video: { facingMode: "environment" } 
         }).catch(() => {
             return navigator.mediaDevices.getUserMedia({ video: true });
         });
         
-        if (videoEl) {
-            videoEl.srcObject = stream;
-            videoEl.setAttribute("playsinline", true); 
-            videoEl.play();
+        if (els.videoEl) {
+            els.videoEl.srcObject = stream;
+            els.videoEl.setAttribute("playsinline", true);
+            els.videoEl.play().catch(e => console.warn(e));
         }
     } catch (err) {
         console.error(err);
-        showToast("Erro ao acessar câmera.", "error");
-    }
-
-    // 3. Acessar Giroscópio
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission()
-            .then(response => {
-                if (response === 'granted') {
-                    window.addEventListener('deviceorientation', handleOrientation);
-                } else {
-                    showToast("Permissão de giroscópio negada.", "error");
-                }
-            })
-            .catch(console.error);
-    } else {
-        window.addEventListener('deviceorientation', handleOrientation);
+        showToast("Erro na câmera. Verifique HTTPS.", "error");
     }
 }
 
-/**
- * Para a câmera e remove listeners.
- */
 export function stopDAPEstimator() {
+    const els = getElements();
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
     }
-    if (videoEl) videoEl.srcObject = null;
+    if (els.videoEl) els.videoEl.srcObject = null;
     window.removeEventListener('deviceorientation', handleOrientation);
 }
 
-/**
- * Lógica do Sensor.
- * Para DAP, usamos Gamma (rotação no eixo Z/vertical) se o celular estiver em pé.
- */
 function handleOrientation(event) {
-    const rawGamma = event.gamma; // Rotação Esquerda/Direita (Eixo Z)
-    const rawBeta = event.beta;   // Inclinação Frente/Trás (Eixo X)
+    const els = getElements();
+    const rawGamma = event.gamma;
+    const rawBeta = event.beta;
 
-    // Feedback visual: Mostra inclinação vertical para ajudar o usuário a manter o nível
-    if (rawBeta !== null && angleDisplay) {
-        // Beta ~90 graus é o celular em pé.
-        const level = 90 - rawBeta;
-        angleDisplay.textContent = `Nível: ${level.toFixed(1)}°`;
+    if (rawBeta !== null && els.angleDisplay) {
+        const level = 90 - Math.abs(rawBeta);
+        els.angleDisplay.textContent = 'Nível: ' + level.toFixed(1) + '°';
         
-        // Opcional: mudar cor se estiver muito inclinado
-        if (Math.abs(level) > 10) {
-            angleDisplay.style.color = '#ff5252'; // Vermelho se desnivelado
-        } else {
-            angleDisplay.style.color = '#FFEB3B'; // Amarelo normal
-        }
+        if (Math.abs(level) > 15) els.angleDisplay.style.color = '#ff5252';
+        else els.angleDisplay.style.color = '#00e676';
     }
 
     if (rawGamma !== null) {
-        // Suavização simples
-        currentGamma = (currentGamma * 0.8) + (rawGamma * 0.2); 
+        currentGamma = (currentGamma * 0.8) + (rawGamma * 0.2);
     }
 }
 
-// === FLUXO ===
-
 function showStep(stepName) {
-    Object.values(steps).forEach(el => { if(el) el.classList.remove('active'); });
-    if (steps[stepName]) steps[stepName].classList.add('active');
+    const els = getElements();
+    Object.values(els.steps).forEach(el => { if(el) el.classList.remove('active'); });
+    if (els.steps[stepName]) els.steps[stepName].classList.add('active');
 }
 
 export function initDAPEstimatorListeners() {
-    // Botão Fechar
     const closeBtn = document.getElementById('close-dap-estimator');
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             stopDAPEstimator();
-            const calcBtn = document.querySelector('.topico-btn[data-target="calculadora-risco"]');
+            const calcBtn = document.querySelector('.topico-btn[data-target="calculadora-view"]');
             if (calcBtn) calcBtn.click();
         });
     }
 
-    // 1. Confirmar Distância
     const nextBtn = document.getElementById('btn-dap-next-step');
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
@@ -142,7 +127,6 @@ export function initDAPEstimatorListeners() {
             }
             distance = val;
             
-            // Sincroniza com o formulário principal
             const formDist = document.getElementById('risk-distancia-obs');
             if(formDist) formDist.value = distance;
 
@@ -151,17 +135,15 @@ export function initDAPEstimatorListeners() {
         });
     }
 
-    // 2. Capturar Esquerda
     const leftBtn = document.getElementById('btn-dap-capture-left');
     if (leftBtn) {
         leftBtn.addEventListener('click', () => {
             angleLeftCapture = currentGamma;
-            showToast("Esquerda capturada. Gire para a DIREITA.", "info");
+            showToast("Capturado! Agora a borda DIREITA.", "success");
             setTimeout(() => showStep('right'), 500);
         });
     }
 
-    // 3. Capturar Direita e Calcular
     const rightBtn = document.getElementById('btn-dap-capture-right');
     if (rightBtn) {
         rightBtn.addEventListener('click', () => {
@@ -170,7 +152,6 @@ export function initDAPEstimatorListeners() {
         });
     }
 
-    // 4. Ações Finais
     const resetBtn = document.getElementById('btn-dap-reset');
     if (resetBtn) resetBtn.addEventListener('click', resetMeasurement);
 
@@ -178,52 +159,38 @@ export function initDAPEstimatorListeners() {
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
             const resultText = document.getElementById('dap-estimated-result').textContent;
-            const numericDAP = parseFloat(resultText);
-            
             const dapInput = document.getElementById('risk-dap');
+            
             if (dapInput) {
-                dapInput.value = numericDAP.toFixed(1);
-                showToast("DAP salvo no cadastro!", "success");
+                dapInput.value = parseFloat(resultText).toFixed(1);
+                showToast("DAP salvo!", "success");
                 stopDAPEstimator();
-                document.querySelector('.topico-btn[data-target="calculadora-risco"]').click();
+                const calcBtn = document.querySelector('.topico-btn[data-target="calculadora-view"]');
+                if (calcBtn) calcBtn.click();
             }
         });
     }
 }
 
 function calculateDAP() {
-    // Diferença angular absoluta
     let delta = Math.abs(angleRightCapture - angleLeftCapture);
-    
-    // Correção para virada de eixo (ex: passar de 89 para -89 ou 179 para -179)
-    // Como estamos usando Gamma (-90 a 90), a lógica é simples, mas protegemos contra loops
-    if (delta > 90) {
-        // Se girou demais, provavelmente houve erro de leitura ou virada de celular
-        showToast("Erro: Giro excessivo. Mantenha o celular estável.", "warning");
-        resetMeasurement();
-        return;
-    }
+    if (delta > 180) delta = 360 - delta;
 
-    if (delta < 0.1) {
+    if (Math.abs(delta) < 0.1) {
         showToast("Erro: Ângulo muito pequeno.", "warning");
         return;
     }
 
-    // Conversão para radianos
     const radDelta = delta * (Math.PI / 180);
-    
-    // FÓRMULA: Largura = Distancia * tan(Delta)
-    // (Considerando que o usuário gira o celular a partir de um eixo central)
     const widthMetros = distance * Math.tan(radDelta);
     const dapCentimetros = widthMetros * 100;
 
-    document.getElementById('dap-estimated-result').textContent = `${dapCentimetros.toFixed(1)} cm`;
+    document.getElementById('dap-estimated-result').textContent = dapCentimetros.toFixed(1) + " cm";
     showStep('result');
 }
 
 function resetMeasurement() {
     angleLeftCapture = null;
     angleRightCapture = null;
-    currentGamma = 0;
     showStep('distance');
 }

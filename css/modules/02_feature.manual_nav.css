@@ -1,50 +1,195 @@
-/* css/modules/02_feature.manual_nav.css */
+/**
+ * ARBORIA 2.0 - NAVIGATION FEATURE
+ * Design: App Launcher Grid (Mobile) -> Sidebar (Desktop)
+ */
 
-/* -------------------------------------- */
-/* 4. ESTILOS DO ÍNDICE (MAPA MENTAL) */
-/* -------------------------------------- */
+/* --- CONTAINER PRINCIPAL DO MENU --- */
+.mapa-navegacao {
+  padding: 10px;
+  /* No mobile, o menu é a "Home Page" */
+}
 
 .mapa-navegacao h2 {
-  color: var(--color-primary-dark);
   text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
 }
 
+/* --- GRID DE ÍCONES (Mobile "Launcher") --- */
 .topicos-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--space-md);
-  margin-bottom: var(--space-lg);
+  grid-template-columns: repeat(3, 1fr); /* 3 Colunas exatas */
+  gap: 15px; /* Espaçamento entre ícones */
+  padding-bottom: 20px;
 }
 
+/* --- BOTÕES DO MENU (Estilo Card/Ícone) --- */
 .topico-btn {
-  padding: var(--space-md) var(--space-sm);
-  background-color: var(--bg-surface);
-  color: var(--color-primary-medium);
-  border: 2px solid var(--gray-200);
-  border-radius: var(--border-radius-md);
+  background: var(--color-bg-card);
+  border: none;
+  border-radius: 24px; /* Mais arredondado, estilo iOS */
+  padding: 15px 5px;
+  
+  /* Layout Flex Vertical (Ícone em cima, Texto embaixo) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  
+  /* Visual */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Sombra mais suave */
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 700;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  min-height: 110px; /* Altura fixa para uniformidade */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Estado Ativo/Toque */
+.topico-btn:active {
+  transform: scale(0.95);
+  background-color: #f0f2f5; /* Feedback de toque mais sutil */
+}
+
+/* Ícones (PNG) */
+.topico-btn img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); /* Sombra no ícone para "pop" */
+  margin-bottom: 2px;
+}
+
+/* Texto do Botão */
+.topico-btn span,
+.topico-btn {
+  font-size: 0.75rem; /* Texto pequeno estilo App */
+  font-weight: 600;
+  color: var(--color-text-main);
   text-align: center;
-  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
-  height: 75px;
+  line-height: 1.2;
+  word-wrap: break-word; /* Quebra palavras longas se necessário */
+}
+
+/* Separador Visual (Linha) */
+.nav-separator {
+  grid-column: 1 / -1; /* Ocupa toda a largura */
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+  margin: 10px 0;
+}
+
+/* --- BOTÃO VOLTAR (Header de Navegação) --- */
+/* Aparece apenas quando entramos em uma seção no Mobile */
+#back-btn-container {
+  display: none; /* JS controla o display: flex */
+  align-items: center;
+  padding: 10px 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+  
+  position: sticky;
+  top: var(--header-height); /* Logo abaixo do Header Principal */
+  z-index: 900;
+}
+
+#btn-back-dashboard {
+  background: none;
+  border: none;
+  color: var(--color-tech);
+  font-weight: 700;
+  font-size: 1rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-sm);
+  gap: 8px;
+  cursor: pointer;
+  padding: 5px 0;
 }
 
-.topico-btn:hover {
-  background-color: var(--color-primary-lightest);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary-light);
-}
+/* --- DESKTOP (Sidebar Layout) --- */
+@media (min-width: 769px) {
+  /* Sidebar Fixa */
+  .mapa-navegacao {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    height: fit-content;
+    position: sticky;
+    top: 90px; /* Espaço do header */
+    max-height: calc(100vh - 100px);
+    overflow-y: auto; /* Scroll interno se a tela for pequena verticalmente */
+  }
 
-.topico-btn.active {
-  background-color: var(--color-accent);
-  color: var(--color-dark);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-accent-dark);
+  .mapa-navegacao h2 {
+    text-align: left;
+    margin-bottom: 1rem;
+    padding-left: 10px;
+  }
+
+  /* Lista Vertical */
+  .topicos-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 0;
+  }
+
+  /* Botão Estilo Lista (Horizontal) */
+  .topico-btn {
+    flex-direction: row; /* Ícone ao lado do texto */
+    align-items: center;
+    justify-content: flex-start;
+    min-height: auto; /* Altura automática */
+    padding: 10px 12px;
+    background: transparent; /* Fundo transparente até hover */
+    box-shadow: none;
+    border-radius: 8px;
+    gap: 12px;
+  }
+
+  .topico-btn:hover {
+    background-color: #e0f2f1; /* Verde bem claro */
+  }
+
+  /* Estado Ativo (Desktop precisa de indicador de "onde estou") */
+  .topico-btn.active {
+    background-color: #b2dfdb;
+    color: var(--color-forest);
+  }
+
+  .topico-btn.active span {
+    color: var(--color-forest);
+    font-weight: 800;
+  }
+
+  .topico-btn img {
+    width: 24px; /* Ícone menor no desktop */
+    height: 24px;
+    filter: none; /* Remove sombra pesada */
+    margin-bottom: 0;
+  }
+
+  .topico-btn span {
+    font-size: 0.95rem;
+    text-align: left;
+  }
+
+  .nav-separator {
+    background: var(--color-border);
+    margin: 10px 0;
+  }
+  
+  /* Oculta container de voltar no Desktop (sempre visível) */
+  #back-btn-container {
+    display: none !important;
+  }
 }

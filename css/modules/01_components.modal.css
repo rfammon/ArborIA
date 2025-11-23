@@ -1,204 +1,146 @@
-/* css/modules/01_components.modal.css */
+/**
+ * ARBORIA 2.0 - MODAL COMPONENTS
+ * Diálogos de Ação e Visualizador de Fotos
+ */
 
-/* -------------------------------------- */
-/* 16. MODAL DE IMPORT/EXPORT */
-/* -------------------------------------- */
-
+/* --- OVERLAY (Fundo Escuro) --- */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 1999;
-  display: flex;
-  justify-content: center;
+  background-color: rgba(15, 23, 42, 0.85); /* Fundo escuro profundo */
+  backdrop-filter: blur(8px); /* Desfoque mais intenso */
+  z-index: 2000; /* Acima de tudo, exceto Tooltips */
+  
+  /* Centralização Flexbox */
+  display: none; /* Controlado via JS */
   align-items: center;
-  padding: 1rem;
-  overflow-y: auto;
+  justify-content: center;
+  padding: 20px;
   opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+  transition: opacity var(--transition-fast);
 }
 
+/* Classe para ativar o modal com animação */
+.modal-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+/* --- DIÁLOGO (Caixa Branca) --- */
 .modal-dialog {
-  background-color: var(--bg-surface);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: var(--space-lg) var(--space-xl);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-floating);
   width: 100%;
-  max-width: 500px;
-  z-index: 2000;
-  opacity: 0;
-  transform: scale(0.95);
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-width: 400px; /* Largura ideal para leitura */
+  padding: 24px;
+  position: relative;
+  
+  /* Animação de Entrada (Zoom In Sutil) */
+  transform: scale(0.95) translateY(10px);
+  transition: transform var(--transition-smooth);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.modal-overlay.show { opacity: 1; visibility: visible; }
-.modal-overlay.show .modal-dialog { opacity: 1; transform: scale(1); }
+.modal-overlay.active .modal-dialog {
+  transform: scale(1) translateY(0);
+}
 
+/* Títulos e Textos do Modal */
 .modal-dialog h3 {
-  color: var(--color-primary-dark);
   margin-top: 0;
-  margin-bottom: var(--space-md);
-  font-size: 1.4rem;
+  color: var(--color-forest);
+  font-size: 1.25rem;
+  margin-bottom: 10px;
 }
 
 .modal-dialog p {
-  font-size: 1rem;
-  margin-bottom: var(--space-lg);
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
   line-height: 1.5;
-  color: var(--color-text-light);
 }
 
+/* [NOVO] Estilos para o modal de detalhes de risco */
+.modal-dialog.risk-high { background: linear-gradient(135deg, #ffebee, #ffcdd2); }
+.modal-dialog.risk-high h3 { color: var(--risk-high); }
+
+.modal-dialog.risk-medium { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
+.modal-dialog.risk-medium h3 { color: var(--risk-medium); }
+
+.modal-dialog.risk-low { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
+.modal-dialog.risk-low h3 { color: var(--risk-low); }
+
+.details-modal-grid {
+  font-size: 0.9rem;
+}
+
+.details-modal-grid p {
+  margin-bottom: 8px;
+}
+
+.details-risk-list {
+  font-size: 0.85rem;
+}
+
+/* [NOVO] Grid para métricas dendrométricas */
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+  margin: 8px 0;
+}
+
+/* --- AÇÕES (Botões do Modal) --- */
 .modal-actions {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+  gap: 10px;
+  justify-content: flex-end; /* Alinha à direita no Desktop */
 }
 
-/* Botões do Modal (Estilizados) */
-.modal-btn {
-  padding: var(--space-sm) var(--space-md);
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--border-radius-md);
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  text-decoration: none;
-  width: 100%;
-}
-.modal-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+/* No Mobile, botões ocupam largura total e empilham */
+@media (max-width: 480px) {
+  .modal-actions {
+    flex-direction: column-reverse; /* "Cancelar" embaixo de "Confirmar" */
+  }
+  
+  .modal-actions button {
+    width: 100%;
+  }
 }
 
-.modal-btn.primary {
-  background-color: var(--color-primary-medium);
-  color: white;
-}
-.modal-btn.primary:hover { background-color: var(--color-primary-dark); }
-
-.modal-btn.secondary {
-  background-color: var(--color-accent);
-  color: var(--color-dark);
-  font-weight: 700;
-}
-.modal-btn.secondary:hover { background-color: var(--color-accent-dark); }
-
-.modal-btn.cancel {
-  background-color: var(--gray-200);
-  color: var(--color-text-light);
-  border-color: var(--gray-300);
-  margin-top: var(--space-sm);
-}
-.modal-btn.cancel:hover { background-color: var(--gray-300); }
-
-
-/* -------------------------------------- */
-/* 16B. DIÁLOGO DE FOTOS FLUTUANTE */
-/* -------------------------------------- */
-
+/* --- VISUALIZADOR DE FOTOS (Photo Viewer) --- */
+/* Variação do modal para exibir imagens grandes */
 .photo-viewer-dialog {
-  /* Tamanho inicial (controlado pelo JS) */
-  width: 300px; 
-  max-width: 90vw;
-  
-  /* Posição e aparência de "flutuação" */
-  position: fixed;
-  z-index: 1001; /* Acima de todo o conteúdo, exceto outros modais */
-  display: none; /* Controlado pelo JS */
-  box-shadow: var(--shadow-lg);
-
-  /* Transição para abertura/fechamento (width é para o zoom) */
-  transition: opacity 0.2s, transform 0.2s, width 0.3s ease-in-out;
-  
-  /* Garante que o CSS centralize na abertura (JS irá definir isso) */
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.95);
-  opacity: 0;
-  visibility: hidden;
+  max-width: 90vw; /* Quase tela cheia */
+  max-height: 90vh;
+  padding: 0; /* Sem padding para a foto encostar na borda se quiser, ou pouco padding */
+  background: transparent; /* Fundo transparente para destacar a foto */
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.photo-viewer-dialog.show {
-  opacity: 1;
-  visibility: visible;
-  transform: translate(-50%, -50%) scale(1);
+.photo-viewer-content img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  object-fit: contain;
 }
 
-/* Título (Área de Arrastar) */
-.photo-viewer-dialog h3 {
-  padding-right: 30px; /* Espaço para o botão de fechar */
-  margin-bottom: var(--space-sm);
-  cursor: move;
-}
-
-/* Botão de Fechar (X) */
 .photo-viewer-close {
   position: absolute;
-  top: 10px;
-  right: 15px;
+  top: -40px;
+  right: 0;
   background: none;
   border: none;
+  color: white;
   font-size: 2rem;
-  font-weight: 300;
-  color: var(--color-text-light);
   cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-.photo-viewer-close:hover {
-  color: var(--color-dark);
-}
-
-/* Container da Imagem */
-.photo-viewer-content {
-  position: relative;
-}
-.photo-viewer-content img {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: var(--border-radius-md);
-  background-color: var(--gray-100);
-}
-
-/* Controles de Zoom (Copiado do .map-photo-zoom) */
-.photo-viewer-zoom-controls {
-  display: flex;
-  gap: 5px;
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  background: rgba(255,255,255,0.8);
-  padding: 3px;
-  border-radius: 4px;
-}
-.photo-viewer-zoom-controls button {
-  background-color: var(--gray-200);
-  border: 1px solid var(--gray-300);
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
-  width: 25px;
-  height: 25px;
-  line-height: 25px;
-}
-.photo-viewer-zoom-controls button:hover {
-  background-color: var(--gray-300);
-}
-
-@media (max-width: 768px) {
-  .photo-viewer-zoom-controls {
-    display: none;
-  }
+  padding: 10px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }

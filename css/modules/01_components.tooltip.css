@@ -1,108 +1,126 @@
-/* css/modules/01_components.tooltip.css */
+/**
+ * ARBORIA 2.0 - TOOLTIP COMPONENTS (Glossário Inteligente)
+ * UX: Transforma definições técnicas em Cards de Leitura Focada.
+ */
 
-/* -------------------------------------- */
-/* 6. GLOSSÁRIO INTERATIVO (TOOLTIP) */
-/* -------------------------------------- */
-
-.glossary-term,
-.equipment-term,
-.purpose-term,
-.checklist-term { /* [NOVO] Adicionado checklist-term */
-  font-weight: 600;
+/* --- GATILHO DO TOOLTIP (O Texto Clicável) --- */
+/* Usado em termos como "DAP", "Galhos Mortos", etc. */
+.checklist-term,
+.tooltip-trigger {
+  color: var(--color-tech);
+  border-bottom: 1px dashed var(--color-tech); /* Tracejado indica "clique para saber mais" */
   cursor: help;
-  border-bottom: 2px dotted;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  transition: all 0.2s ease;
+  position: relative;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  font-weight: 500;
 }
 
-.glossary-term { color: var(--color-primary-medium); border-color: var(--color-primary-light); }
-.glossary-term:hover { background-color: var(--color-primary-lightest); }
-
-.equipment-term { color: var(--color-accent-dark); border-color: var(--color-accent); }
-.equipment-term:hover { background-color: #FFF8E1; }
-
-.purpose-term { color: var(--color-danger); border-color: var(--color-danger-light); }
-.purpose-term:hover { background-color: var(--color-danger-light); }
-
-/* [NOVO] Estilo do Checklist */
-.checklist-term {
-  color: #d32f2f; 
-  border-color: #ef9a9a;
-}
-.checklist-term:hover {
-  background-color: #FFEBEE;
+.checklist-term:hover,
+.tooltip-trigger:hover {
+  background-color: rgba(2, 119, 189, 0.1); /* Highlight suave ao passar o mouse */
+  border-bottom-style: solid;
 }
 
-
-#glossary-tooltip {
-  position: absolute;
-  background-color: var(--color-dark);
-  color: #fff;
-  border-radius: var(--border-radius-md);
-  padding: var(--space-sm) var(--space-md);
-  max-width: 90vw;
-  box-shadow: var(--shadow-lg);
-  z-index: 1000;
-  transition: opacity 0.2s, visibility 0.2s, width 0.3s ease-in-out;
+/* --- BACKDROP (Fundo Escuro) --- */
+/* Garante foco na leitura da definição */
+.tooltip-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 3999; /* [CORREÇÃO] Acima do checklist mobile (z-index: 3000) */
+  
+  /* Estados de Visibilidade */
   opacity: 0;
   visibility: hidden;
-  text-align: left;
-  font-size: 0.9em;
+  transition: opacity var(--transition-fast);
 }
 
-#glossary-tooltip strong {
-  color: var(--color-accent);
-  display: block;
-  margin-bottom: var(--space-sm);
-  font-size: 1.1em;
+.tooltip-backdrop.active {
+  opacity: 1;
+  visibility: visible;
 }
 
-#glossary-tooltip p {
-  margin-top: var(--space-sm);
-  margin-bottom: var(--space-sm);
+/* --- CARD DO GLOSSÁRIO (O Tooltip em si) --- */
+.tooltip-card {
+  position: fixed;
+  z-index: 4000; /* [CORREÇÃO] O elemento mais alto da interface */
+  background: var(--color-bg-card);
+  padding: 24px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-floating);
+  
+  /* Posicionamento Mobile (Centralizado ou Bottom Sheet) */
+  left: 50%;
+  bottom: 30px; /* Começa de baixo para cima no mobile */
+  transform: translateX(-50%) translateY(20px);
+  width: 90%; /* Ocupa quase toda a largura no celular */
+  max-width: 400px;
+  
+  /* Estados de Animação */
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-smooth);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-#glossary-tooltip .manual-img {
-  margin: var(--space-sm) 0;
-  width: 100%; 
+.tooltip-card.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0); /* Sobe para posição final */
+}
+
+/* Conteúdo Interno */
+#tooltip-image-container {
+  margin-bottom: 15px;
+}
+#tooltip-image-container:empty {
+  display: none;
+}
+#tooltip-image-container img {
+  max-width: 100%;
   height: auto;
-  display: block;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
 }
 
-#tooltip-photo-container {
-  position: relative;
-  padding: 0;
-}
-#glossary-tooltip[data-current-element^="photo-"] {
-  padding: var(--space-sm);
-}
-#tooltip-photo-container .manual-img {
-  margin: 0; 
-  border-radius: var(--border-radius-md);
-}
-.tooltip-photo-zoom {
+.tooltip-card h4 {
+  margin-top: 0;
+  color: var(--color-forest);
+  font-size: 1.1rem;
+  margin-bottom: 12px;
   display: flex;
-  gap: 5px;
-  margin-top: 5px;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Ícone decorativo antes do título (injetado via CSS) */
+.tooltip-card h4::before {
+  content: '💡'; /* Emoji como ícone leve ou use url() */
+  font-size: 1.2rem;
+}
+
+.tooltip-card p {
+  margin: 0;
+  color: var(--color-text-main);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Pequena seta/indicador (Opcional, estilo balão) */
+/* No mobile centralizado não é necessário, mas adiciona charme */
+.tooltip-card::after {
+  content: '';
   position: absolute;
-  bottom: 10px;
-  right: 10px;
-  background: rgba(255,255,255,0.8);
-  padding: 3px;
-  border-radius: 4px;
-}
-.tooltip-photo-zoom button {
-  background-color: var(--gray-200);
-  border: 1px solid var(--gray-300);
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
-  width: 25px;
-  height: 25px;
-  line-height: 25px;
-  color: var(--color-dark);
-}
-.tooltip-photo-zoom button:hover {
-  background-color: var(--gray-300);
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0;
+  border-style: solid;
+  border-color: var(--color-bg-card) transparent transparent transparent;
+  display: none; /* Oculto no mobile float */
 }

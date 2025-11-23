@@ -1,256 +1,110 @@
-// js/tooltip.ui.js (NOVO v24.0)
-// Gerencia toda a lógica de criação, posicionamento e interação de tooltips.
-
-// === 1. IMPORTAÇÕES ===
-import * as state from './state.js';
-import { glossaryTerms, equipmentData, podaPurposeData } from './content.js';
-
-// === 2. ESTADO DO MÓDULO ===
-
-// Helper de template (privado para este módulo)
-const imgTag = (src, alt) => `<img src="img/${src}" alt="${alt}" class="manual-img">`;
-
-// Detecção de toque (privado para este módulo)
-const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-const termClickEvent = isTouchDevice ? 'touchend' : 'click';
-const popupCloseEvent = isTouchDevice ? 'touchend' : 'click';
-
-// Timer de tooltip
-let tooltipHideTimer = null;
-
-// === 3. LÓGICA DE TOOLTIP (Privada e Pública) ===
-
 /**
- * Cria ou obtém o elemento de tooltip global.
- * @returns {HTMLElement} O elemento do tooltip.
+ * ARBORIA 2.0 - TOOLTIP SYSTEM
+ * Transforma termos técnicos em Cards de Glossário (Mobile Friendly).
  */
-function createTooltip() {
-  let tooltip = document.getElementById('glossary-tooltip');
-  if (!tooltip) {
-    tooltip = document.createElement('div');
-    tooltip.id = 'glossary-tooltip';
-    document.body.appendChild(tooltip);
-  }
 
-  // Garante que o listener de fechar (em touch) seja anexado apenas uma vez
-  if (!tooltip.dataset.clickToCloseAdded) {
-    tooltip.addEventListener(popupCloseEvent, (e) => {
-      e.stopPropagation();
-      hideTooltip();
-    });
-    tooltip.dataset.clickToCloseAdded = 'true';
-  }
-  
-  state.setCurrentTooltip(tooltip);
-  return tooltip;
-}
+import { glossaryTerms, equipmentData, checklistData, podaPurposeData } from './content.js';
 
-/**
- * (PÚBLICO) Esconde o tooltip ativo e reseta o estado.
- */
-export function hideTooltip() {
-  if (state.currentTooltip) {
-    const img = state.currentTooltip.querySelector('img');
-    // Limpa blobs de URL para evitar vazamentos de memória
-    if (img && img.src.startsWith('blob:')) {
-      URL.revokeObjectURL(img.src);
+export const TooltipUI = {
+    definitions: {
+        "dap": "Diâmetro à Altura do Peito (1.30m do solo). Medida padrão mundial.",
+        "galhos-mortos": "Galhos sem atividade biológica, secos e quebradiços. Alto risco de queda.",
+        "rachaduras": "Fendas longitudinais ou transversais que comprometem a integridade mecânica.",
+        "apodrecimento": "Decomposição da madeira por fungos (cartilaginosa ou fibrosa).",
+        "casca-inclusa": "Casca presa na junção entre dois troncos, impedindo a união das fibras.",
+        "brotacao-intensa": "Muitos brotos saindo do mesmo ponto (epicórmicos), indicando estresse.",
+        "copa-assimetrica": "Desequilíbrio na distribuição de peso da copa, gerando alavanca.",
+        "inclinacao": "Desvio do eixo vertical. Crítico se houver levantamento de solo.",
+        "perda-raizes": "Danos mecânicos ou podas no sistema radicular de sustentação.",
+        "compactacao": "Solo endurecido que impede a respiração das raízes.",
+    },
+
+    elements: {
+        card: null,
+        title: null,
+        text: null,
+        backdrop: null,
+        imageContainer: null
+    },
+
+    init() {
+        this.elements.card = document.getElementById('tooltip-card');
+        this.elements.title = document.getElementById('tooltip-title');
+        this.elements.text = document.getElementById('tooltip-text');
+        this.elements.backdrop = document.getElementById('tooltip-backdrop');
+        this.elements.imageContainer = document.getElementById('tooltip-image-container');
+
+        if (!this.elements.card) {
+            console.warn("TooltipUI: Elementos do DOM não encontrados (tooltip-card).");
+            return; 
+        }
+
+        // Unifica todas as fontes de dados em um único objeto de definições.
+        // A ordem importa: dados mais específicos (com imagens) devem vir por último.
+        this.definitions = { 
+            ...glossaryTerms, 
+            ...this.definitions, 
+            ...equipmentData, 
+            ...checklistData,
+            ...podaPurposeData
+        };
+
+        // Fecha ao clicar no backdrop
+        this.elements.backdrop.addEventListener('click', () => this.hideTooltip());
+        this.elements.card.addEventListener('click', () => this.hideTooltip());
+
+        // Delegação de eventos para performance
+        document.body.addEventListener('click', (e) => {
+            if (e.target.classList.contains('checklist-term') || e.target.classList.contains('tooltip-trigger')) {
+                const termKey = e.target.getAttribute('data-term-key');
+                const termText = e.target.textContent;
+                
+                if (termKey && this.definitions[termKey]) {
+                    this.showTooltip(termText, this.definitions[termKey]);
+                } else {
+                    const nativeTitle = e.target.getAttribute('title');
+                    if (nativeTitle) this.showTooltip(termText, nativeTitle);
+                }
+            }
+        });
+        
+        console.log("✅ TooltipUI Initialized");
+    },
+
+    showTooltip(title, definition) {
+        let description = '';
+        let imageUrl = null;
+
+        if (typeof definition === 'string') {
+            description = definition;
+        } else if (typeof definition === 'object' && definition !== null) {
+            description = definition.desc;
+            if (definition.img) {
+                imageUrl = `img/${definition.img}`;
+            }
+        }
+
+        if(this.elements.title) this.elements.title.textContent = title;
+        if(this.elements.text) this.elements.text.textContent = description;
+        
+        if (this.elements.imageContainer) {
+            this.elements.imageContainer.innerHTML = '';
+            if (imageUrl) {
+                this.elements.imageContainer.innerHTML = `<img src="${imageUrl}" alt="${title}">`;
+            }
+        }
+        
+        if(this.elements.backdrop) this.elements.backdrop.classList.add('active');
+        if(this.elements.card) this.elements.card.classList.add('active');
+    },
+
+    hideTooltip() {
+        if(this.elements.backdrop) this.elements.backdrop.classList.remove('active');
+        if(this.elements.card) this.elements.card.classList.remove('active');
+        
+        // Limpa a imagem ao fechar para não aparecer em tooltips sem imagem
+        if (this.elements.imageContainer) {
+            this.elements.imageContainer.innerHTML = '';
+        }
     }
-    state.currentTooltip.style.opacity = '0';
-    state.currentTooltip.style.visibility = 'hidden';
-    state.currentTooltip.style.width = ''; // Reseta a largura
-    delete state.currentTooltip.dataset.currentElement;
-    state.setCurrentTooltip(null);
-  }
-}
-
-/**
- * Agenda o fechamento do tooltip (para mouseleave).
- */
-function scheduleHideTooltip() {
-  clearTimeout(tooltipHideTimer);
-  tooltipHideTimer = setTimeout(hideTooltip, 200);
-}
-
-/**
- * Cancela o fechamento do tooltip (para mouseenter).
- */
-function cancelHideTooltip() {
-  clearTimeout(tooltipHideTimer);
-}
-
-/**
- * Posiciona o tooltip em relação a um elemento.
- * @param {HTMLElement} termElement O elemento (span) que ativou o tooltip.
- */
-function positionTooltip(termElement) {
-  if (!state.currentTooltip) return;
-
-  const rect = termElement.getBoundingClientRect();
-  const scrollY = window.scrollY;
-  const scrollX = window.scrollX;
-
-  // Usa requestAnimationFrame para garantir que o DOM foi atualizado
-  requestAnimationFrame(() => {
-    if (!state.currentTooltip) return;
-
-    const tooltipWidth = state.currentTooltip.offsetWidth;
-    const tooltipHeight = state.currentTooltip.offsetHeight;
-
-    // Tenta posicionar acima, se não houver espaço, posiciona abaixo
-    let topPos = (rect.top > tooltipHeight + 10) 
-      ? (rect.top + scrollY - tooltipHeight - 10) 
-      : (rect.bottom + scrollY + 10);
-
-    // Centraliza horizontalmente
-    let leftPos = rect.left + scrollX + (rect.width / 2) - (tooltipWidth / 2);
-
-    // Evita transbordar a tela
-    if (leftPos < scrollX + 10) leftPos = scrollX + 10;
-    if (leftPos + tooltipWidth > window.innerWidth + scrollX - 10) {
-      leftPos = window.innerWidth + scrollX - tooltipWidth - 10;
-    }
-
-    state.currentTooltip.style.top = `${topPos}px`;
-    state.currentTooltip.style.left = `${leftPos}px`;
-  });
-}
-
-// === 4. INTERAÇÕES DO GLOSSÁRIO (Privado) ===
-
-function showGlossaryTooltip(event) {
-  cancelHideTooltip();
-  const termElement = event.currentTarget;
-  const termKey = termElement.getAttribute('data-term-key');
-  const definition = glossaryTerms[termKey];
-  if (!definition) return;
-
-  const tooltip = createTooltip();
-  tooltip.style.width = '350px'; // Largura padrão para texto
-  tooltip.innerHTML = `<strong>${termElement.textContent}</strong>: ${definition}`;
-  
-  positionTooltip(termElement);
-  tooltip.style.opacity = '1';
-  tooltip.style.visibility = 'visible';
-  tooltip.dataset.currentElement = termElement.textContent;
-}
-
-function toggleGlossaryTooltip(event) {
-  event.preventDefault(); event.stopPropagation();
-  const tooltip = document.getElementById('glossary-tooltip');
-  const isCurrent = tooltip && tooltip.dataset.currentElement === event.currentTarget.textContent;
-
-  if (tooltip && tooltip.style.visibility === 'visible' && isCurrent) {
-    hideTooltip();
-  } else {
-    showGlossaryTooltip(event);
-  }
-}
-
-// === 5. INTERAÇÕES DE EQUIPAMENTOS (Privado) ===
-
-function showEquipmentTooltip(event) {
-  cancelHideTooltip();
-  const termElement = event.currentTarget;
-  const termKey = termElement.getAttribute('data-term-key');
-  const data = equipmentData[termKey];
-  if (!data) return;
-
-  const tooltip = createTooltip();
-  tooltip.style.width = '350px';
-  tooltip.innerHTML = `<strong>${termElement.textContent}</strong><p>${data.desc}</p>${imgTag(data.img, termElement.textContent)}`;
-  
-  positionTooltip(termElement);
-  tooltip.style.opacity = '1';
-  tooltip.style.visibility = 'visible';
-  tooltip.dataset.currentElement = termElement.textContent;
-}
-
-function toggleEquipmentTooltip(event) {
-  event.preventDefault(); event.stopPropagation();
-  const tooltip = document.getElementById('glossary-tooltip');
-  const isCurrent = tooltip && tooltip.dataset.currentElement === event.currentTarget.textContent;
-
-  if (tooltip && tooltip.style.visibility === 'visible' && isCurrent) {
-    hideTooltip();
-  } else {
-    showEquipmentTooltip(event);
-  }
-}
-
-// === 6. INTERAÇÕES DE PROPÓSITO (Privado) ===
-
-function showPurposeTooltip(event) {
-  cancelHideTooltip();
-  const termElement = event.currentTarget;
-  const termKey = termElement.getAttribute('data-term-key');
-  const data = podaPurposeData[termKey];
-  if (!data) return;
-
-  const tooltip = createTooltip();
-  tooltip.style.width = '350px';
-  tooltip.innerHTML = `<strong>${termElement.textContent}</strong><p>${data.desc}</p>${imgTag(data.img, termElement.textContent)}`;
-  
-  positionTooltip(termElement);
-  tooltip.style.opacity = '1';
-  tooltip.style.visibility = 'visible';
-  tooltip.dataset.currentElement = termElement.textContent;
-}
-
-function togglePurposeTooltip(event) {
-  event.preventDefault(); event.stopPropagation();
-  const tooltip = document.getElementById('glossary-tooltip');
-  const isCurrent = tooltip && tooltip.dataset.currentElement === event.currentTarget.textContent;
-
-  if (tooltip && tooltip.style.visibility === 'visible' && isCurrent) {
-    hideTooltip();
-  } else {
-    showPurposeTooltip(event);
-  }
-}
-
-// === 7. FUNÇÕES DE SETUP (Público) ===
-
-/**
- * Anexa listeners de tooltip aos termos do glossário.
- * @param {HTMLElement} detailView O elemento pai (view) onde o conteúdo foi carregado.
- */
-export function setupGlossaryInteractions(detailView) {
-  const glossaryTermsElements = detailView.querySelectorAll('.glossary-term');
-  glossaryTermsElements.forEach((termElement) => {
-    if (!isTouchDevice) {
-      termElement.addEventListener('mouseenter', showGlossaryTooltip);
-      termElement.addEventListener('mouseleave', scheduleHideTooltip);
-    }
-    termElement.addEventListener(termClickEvent, toggleGlossaryTooltip);
-  });
-}
-
-/**
- * Anexa listeners de tooltip aos termos de equipamento.
- * @param {HTMLElement} detailView O elemento pai (view).
- */
-export function setupEquipmentInteractions(detailView) {
-  const equipmentTermsElements = detailView.querySelectorAll('.equipment-term');
-  equipmentTermsElements.forEach((termElement) => {
-    if (!isTouchDevice) {
-      termElement.addEventListener('mouseenter', showEquipmentTooltip);
-      termElement.addEventListener('mouseleave', scheduleHideTooltip);
-    }
-    termElement.addEventListener(termClickEvent, toggleEquipmentTooltip);
-  });
-}
-
-/**
- * Anexa listeners de tooltip aos termos de propósito de poda.
- * @param {HTMLElement} detailView O elemento pai (view).
- */
-export function setupPurposeInteractions(detailView) {
-  const purposeTermsElements = detailView.querySelectorAll('.purpose-term');
-  purposeTermsElements.forEach((termElement) => {
-    if (!isTouchDevice) {
-      termElement.addEventListener('mouseenter', showPurposeTooltip);
-      termElement.addEventListener('mouseleave', scheduleHideTooltip);
-    }
-    termElement.addEventListener(termClickEvent, togglePurposeTooltip);
-  });
-}
+};

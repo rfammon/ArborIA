@@ -1,18 +1,24 @@
-// js/database.js
-// Módulo responsável pelo armazenamento de imagens no IndexedDB
+/**
+ * ARBORIA 2.0 - DATABASE
+ * Gerenciamento de imagens via IndexedDB.
+ * Refatorado para manter a conexão local e evitar dependências circulares.
+ */
 
 import { showToast } from './utils.js';
-import { setDb, db as stateDb } from './state.js'; 
 
 const DB_NAME = "treeImageDB";
 const STORE_NAME = "treeImages";
 const DB_VERSION = 1;
 
+// Variável interna do módulo para segurar a conexão (Substitui o state.db)
+let dbInstance = null;
+
 /**
  * Inicializa o banco de dados IndexedDB para imagens.
  */
 export function initImageDB() {
-    console.log("Iniciando ImageDB...");
+    console.log("📂 Iniciando ImageDB...");
+    
     if (!window.indexedDB) {
         console.error("Seu navegador não suporta IndexedDB.");
         showToast("Erro: Navegador incompatível com banco de imagens.", "error");
@@ -34,11 +40,10 @@ export function initImageDB() {
     };
 
     request.onsuccess = (event) => {
-        const database = event.target.result;
-        setDb(database); 
-        console.log("Banco de imagens (IndexedDB) pronto.");
+        dbInstance = event.target.result; // Armazena a conexão localmente
+        console.log("✅ Banco de imagens (IndexedDB) pronto.");
         
-        database.onerror = (event) => {
+        dbInstance.onerror = (event) => {
             console.error("Erro genérico no IndexedDB: ", event.target.error);
         };
     };
@@ -46,25 +51,30 @@ export function initImageDB() {
 
 /**
  * Salva uma imagem no banco.
+ * @param {number} id - ID da árvore.
+ * @param {Blob} blob - O arquivo de imagem.
  */
 export function saveImageToDB(id, blob) {
-    // Verifica se o banco está aberto acessando o estado global
-    // Nota: Precisamos ler o estado atual, pois 'db' pode ser null na inicialização
-    const database = stateDb; 
-    
-    if (!database) {
-        console.warn("Tentativa de salvar imagem sem conexão com DB.");
+    if (!dbInstance) {
+        console.warn("Tentativa de salvar imagem sem conexão com DB. Tentando reconectar...");
+        // Se por acaso a conexão caiu ou não iniciou, tenta abrir de novo (fallback)
+        // Mas idealmente o initImageDB já rodou no main.js
         return;
     }
     
     try {
-        const transaction = database.transaction([STORE_NAME], "readwrite");
+        const transaction = dbInstance.transaction([STORE_NAME], "readwrite");
         const objectStore = transaction.objectStore(STORE_NAME);
         const request = objectStore.put({ id: id, imageBlob: blob });
         
+        request.onsuccess = () => {
+            // Silencioso no sucesso para não spammar o usuário, logs apenas se necessário
+            // console.log(`Imagem ${id} salva.`);
+        };
+
         request.onerror = (event) => {
             console.error("Erro ao salvar imagem:", event.target.error);
-            showToast("Erro ao salvar a foto.", "error");
+            showToast("Erro ao salvar a foto no banco local.", "error");
         };
     } catch (e) {
         console.error("Erro na transação saveImage:", e);
@@ -73,15 +83,17 @@ export function saveImageToDB(id, blob) {
 
 /**
  * Recupera uma imagem do banco.
+ * @param {number} id - ID da árvore.
+ * @param {function} callback - Função que recebe o blob (ou null).
  */
 export function getImageFromDB(id, callback) {
-    const database = stateDb;
-    if (!database) {
+    if (!dbInstance) {
+        console.warn("DB fechado ao tentar ler imagem.");
         callback(null);
         return;
     }
     try {
-        const transaction = database.transaction([STORE_NAME], "readonly");
+        const transaction = dbInstance.transaction([STORE_NAME], "readonly");
         const objectStore = transaction.objectStore(STORE_NAME);
         const request = objectStore.get(id);
 
@@ -100,13 +112,12 @@ export function getImageFromDB(id, callback) {
 }
 
 /**
- * Deleta uma imagem.
+ * Deleta uma imagem do banco.
  */
 export function deleteImageFromDB(id) {
-    const database = stateDb;
-    if (!database) return;
+    if (!dbInstance) return;
     try {
-        const transaction = database.transaction([STORE_NAME], "readwrite");
+        const transaction = dbInstance.transaction([STORE_NAME], "readwrite");
         const objectStore = transaction.objectStore(STORE_NAME);
         objectStore.delete(id);
     } catch (e) {
@@ -116,14 +127,14 @@ export function deleteImageFromDB(id) {
 
 /**
  * Recupera TODAS as imagens (para exportação ZIP).
+ * Retorna uma Promise.
  */
 export function getAllImagesFromDB() {
     return new Promise((resolve, reject) => {
-        const database = stateDb;
-        if (!database) {
-            return reject(new Error("Banco de dados fechado."));
+        if (!dbInstance) {
+            return reject(new Error("Banco de dados de imagens fechado ou não inicializado."));
         }
-        const transaction = database.transaction([STORE_NAME], "readonly");
+        const transaction = dbInstance.transaction([STORE_NAME], "readonly");
         const objectStore = transaction.objectStore(STORE_NAME);
         const request = objectStore.getAll();
 
@@ -137,15 +148,14 @@ export function getAllImagesFromDB() {
 }
 
 /**
- * Limpa todo o banco de imagens.
+ * Limpa todo o banco de imagens (Reset).
  */
 export function clearImageDB() {
      return new Promise((resolve, reject) => {
-        const database = stateDb;
-        if (!database) {
+        if (!dbInstance) {
             return reject(new Error("Banco de dados fechado."));
         }
-        const transaction = database.transaction([STORE_NAME], "readwrite");
+        const transaction = dbInstance.transaction([STORE_NAME], "readwrite");
         const objectStore = transaction.objectStore(STORE_NAME);
         const request = objectStore.clear();
 

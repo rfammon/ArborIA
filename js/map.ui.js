@@ -1,4 +1,7 @@
-// js/map.ui.js (v58.0 - Fix Zoom PDF Aproximado)
+/**
+ * ARBORIA 2.0 - MAP UI (v59.0 - Symbology & Fall Risk Radius)
+ * Visualização avançada: Raios reais baseados na altura da árvore (Zona de Queda).
+ */
 
 import * as state from './state.js';
 import * as features from './features.js';
@@ -22,13 +25,17 @@ let satelliteLayer = null;
 function handleMapFilterChange(e) {
   const selectedRisk = e.target.value;
   if (!state.mapMarkerGroup) return;
+  
   state.mapMarkerGroup.eachLayer(layer => {
-    if (selectedRisk === 'Todos' || layer.options.riskLevel === selectedRisk) {
-      layer.setStyle({ opacity: 1, fillOpacity: 0.6 });
-      if(layer.getTooltip()) layer.openTooltip();
-    } else {
-      layer.setStyle({ opacity: 0, fillOpacity: 0 });
-      if(layer.getTooltip()) layer.closeTooltip();
+    if (layer.options.isTreeMarker) {
+        if (selectedRisk === 'Todos' || layer.options.riskLevel === selectedRisk) {
+            layer.setStyle({ opacity: 1, fillOpacity: 0.6 });
+            if(layer.getTooltip()) layer.openTooltip();
+            layer.bringToFront();
+        } else {
+            layer.setStyle({ opacity: 0, fillOpacity: 0 });
+            if(layer.getTooltip()) layer.closeTooltip();
+        }
     }
   });
   hideMapInfoBox();
@@ -47,33 +54,88 @@ function hideMapInfoBox() {
 function showMapInfoBox(tree) {
   const infoBox = document.getElementById('map-info-box');
   if (!infoBox) return;
-  let color, riskText;
-  if (tree.risco === 'Alto Risco') { color = '#C62828'; riskText = '🔴 Alto Risco'; }
-  else if (tree.risco === 'Médio Risco') { color = '#E65100'; riskText = '🟠 Médio Risco'; }
-  else { color = '#2E7D32'; riskText = '🟢 Baixo Risco'; }
 
-  let infoHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <strong>ID: ${tree.id}</strong>
-        <button id="close-info-box" style="font-size:1.5rem; border:none; background:none; cursor:pointer;">&times;</button>
-    </div>
-    <p><strong>Espécie:</strong> ${tree.especie}</p>
-    <p><strong>Risco:</strong> <span style="color:${color}; font-weight:bold;">${riskText}</span></p>
-    <div style="margin: 10px 0;"><button id="infobox-goto-table" style="width:100%; padding:8px; background:var(--color-primary-medium); color:white; border:none; border-radius:4px; cursor:pointer;">📄 Ver na Tabela</button></div>
-  `;
-  if (tree.hasPhoto) infoHTML += `<div id="map-info-photo" class="loading-photo">Carregando...</div>`;
-  infoBox.innerHTML = infoHTML;
-  infoBox.classList.remove('hidden');
-  document.getElementById('close-info-box').addEventListener('click', hideMapInfoBox);
-  document.getElementById('infobox-goto-table').addEventListener('click', () => features.handleMapMarkerClick(tree.id));
+  infoBox.innerHTML = '';
+  infoBox.className = ''; 
 
+  let colorCode = '#388e3c'; 
+  let riskLabel = 'Baixo Risco';
+  
+  if (tree.risco === 'Alto Risco') { colorCode = '#d32f2f'; riskLabel = 'Alto Risco'; }
+  else if (tree.risco === 'Médio Risco') { colorCode = '#f57c00'; riskLabel = 'Médio Risco'; }
+
+  // Header
+  const headerDiv = document.createElement('div');
+  headerDiv.style.cssText = "display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;";
+  
+  const title = document.createElement('strong');
+  title.textContent = `ID: ${tree.id}`;
+  title.style.color = '#00796b';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '&times;';
+  closeBtn.style.cssText = "font-size:1.5rem; border:none; background:none; cursor:pointer; color:#999;";
+  closeBtn.onclick = hideMapInfoBox;
+
+  headerDiv.appendChild(title);
+  headerDiv.appendChild(closeBtn);
+  infoBox.appendChild(headerDiv);
+
+  // Body
+  const pSpecies = document.createElement('p');
+  pSpecies.innerHTML = `<strong>Espécie:</strong> `;
+  pSpecies.appendChild(document.createTextNode(tree.especie));
+  infoBox.appendChild(pSpecies);
+
+  const pRisk = document.createElement('p');
+  pRisk.innerHTML = `<strong>Risco:</strong> <span style="color:${colorCode}; font-weight:bold;">${riskLabel}</span>`;
+  infoBox.appendChild(pRisk);
+  
+  // Altura info
+  const pHeight = document.createElement('p');
+  pHeight.innerHTML = `<strong>Altura (Raio):</strong> ${tree.altura || '?'} m`;
+  pHeight.style.fontSize = '0.85rem';
+  pHeight.style.color = '#555';
+  infoBox.appendChild(pHeight);
+
+  // Photo
+  let photoContainer = null;
   if (tree.hasPhoto) {
+    photoContainer = document.createElement('div');
+    photoContainer.id = 'map-info-photo';
+    photoContainer.textContent = 'Carregando foto...';
+    photoContainer.style.cssText = "margin: 10px 0; min-height: 100px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 0.8rem; color: #666;";
+    infoBox.appendChild(photoContainer);
+  }
+
+  // Actions
+  const actionDiv = document.createElement('div');
+  actionDiv.style.marginTop = '10px';
+  
+  const btnGoto = document.createElement('button');
+  btnGoto.textContent = '📄 Ver Detalhes';
+  btnGoto.className = 'hud-action-btn'; 
+  btnGoto.style.fontSize = '0.8rem';
+  btnGoto.style.padding = '6px 12px';
+  btnGoto.onclick = () => features.handleMapMarkerClick(tree.id);
+  
+  actionDiv.appendChild(btnGoto);
+  infoBox.appendChild(actionDiv);
+
+  infoBox.style.display = 'block'; 
+  infoBox.classList.remove('hidden');
+
+  if (tree.hasPhoto && photoContainer) {
     getImageFromDB(tree.id, (imageBlob) => {
-      const photoDiv = document.getElementById('map-info-photo');
-      if (photoDiv && imageBlob) {
+      if (imageBlob) {
         const imgUrl = URL.createObjectURL(imageBlob);
-        photoDiv.innerHTML = `<img src="${imgUrl}" class="manual-img" style="width:100%">`;
-        photoDiv.classList.remove('loading-photo');
+        photoContainer.innerHTML = ''; 
+        const img = document.createElement('img');
+        img.src = imgUrl;
+        img.style.cssText = "width:100%; border-radius:8px; object-fit:cover; max-height:150px;";
+        photoContainer.appendChild(img);
+      } else {
+        photoContainer.textContent = '(Erro ao carregar foto)';
       }
     });
   }
@@ -82,25 +144,62 @@ function showMapInfoBox(tree) {
 function renderMapMarkers() {
   if (!state.mapMarkerGroup) return;
   state.mapMarkerGroup.clearLayers();
+  
   state.registeredTrees.forEach(tree => {
     const coords = features.convertToLatLon(tree);
     if (coords) {
-      let color, radius = 6;
-      let labelClass = 'lbl-low';
-      if (tree.risco === 'Alto Risco') { color = '#C62828'; radius = 8; labelClass = 'lbl-high'; }
-      else if (tree.risco === 'Médio Risco') { color = '#E65100'; radius = 7; labelClass = 'lbl-med'; }
-      else { color = '#2E7D32'; radius = 6; labelClass = 'lbl-low'; }
+      let color;
+      let defaultRadius; // Em metros
+      
+      // Lógica de Simbologia (Cor e Tamanho Padrão)
+      if (tree.risco === 'Alto Risco' || tree.riscoClass === 'risk-high') { 
+          color = '#d32f2f'; // Vermelho
+          defaultRadius = 8; // Grande
+      } else if (tree.risco === 'Médio Risco' || tree.riscoClass === 'risk-medium') { 
+          color = '#f57c00'; // Laranja
+          defaultRadius = 5; // Médio
+      } else { 
+          color = '#388e3c'; // Verde
+          defaultRadius = 3; // Pequeno
+      }
 
-      const circle = L.circle(coords, { color: color, fillColor: color, fillOpacity: 0.4, radius: radius, weight: 2, stroke: true, color: 'white', isTreeMarker: true, riskLevel: tree.risco });
-      circle.bindTooltip(`<div class="map-label-content ${labelClass}">${tree.id}</div>`, { permanent: true, direction: 'center', className: 'map-id-label' });
+      // Lógica de Raio Real (Fall Zone)
+      // Se tiver altura válida, usa a altura como raio. Senão, usa o padrão do risco.
+      const treeHeight = parseFloat(tree.altura);
+      const radiusInMeters = (treeHeight > 0) ? treeHeight : defaultRadius;
+
+      // [MUDANÇA] L.circle usa metros (Geográfico), L.circleMarker usa pixels (Tela)
+      // Usamos L.circle para representar a projeção real da copa/queda no terreno.
+      const circle = L.circle(coords, { 
+          color: color, 
+          weight: 1, // Borda fina
+          fillColor: color, 
+          fillOpacity: 0.5, // Transparente para ver o que está embaixo (zona de alvo)
+          radius: radiusInMeters, 
+          isTreeMarker: true, 
+          riskLevel: tree.risco 
+      });
+      
+      // Configuração do Rótulo (Label dentro do ponto)
+      // O CSS .map-label-clean deve ser adicionado ao style.css ou injetado
+      circle.bindTooltip(`${tree.id}`, { 
+          permanent: true, 
+          direction: 'center', 
+          className: 'map-label-clean' 
+      });
+      
       circle.addTo(state.mapMarkerGroup);
-      circle.on('click', (e) => { L.DomEvent.stopPropagation(e); showMapInfoBox(tree); });
+      
+      circle.on('click', (e) => { 
+          L.DomEvent.stopPropagation(e); 
+          showMapInfoBox(tree); 
+      });
     }
   });
   return state.mapMarkerGroup.getBounds();
 }
 
-// === [CORREÇÃO] PREPARAÇÃO DO MAPA (ZOOM MAIS PRÓXIMO) ===
+// === PREPARAÇÃO DO MAPA (PDF) ===
 export async function prepareMapForScreenshot() {
     const map = state.mapInstance;
     if (!map) return false;
@@ -116,16 +215,13 @@ export async function prepareMapForScreenshot() {
     
     const bounds = state.mapMarkerGroup.getBounds();
     if (bounds.isValid() && state.registeredTrees.length > 0) {
-        // [MUDANÇA AQUI] 
-        // padding reduzido para 40 (aperta mais o zoom)
-        // maxZoom aumentado para 21 (permite chegar muito perto)
-        // Removido o map.setZoom(-1) que causava o afastamento
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 21, animate: false });
+        // padding reduzido e zoom alto para ver detalhes
+        map.fitBounds(bounds, { padding: [20, 20], maxZoom: 20, animate: false });
     } else {
         map.setView([-15.78, -47.92], 4, { animate: false }); 
     }
 
-    await new Promise(r => setTimeout(r, 2500)); 
+    await new Promise(r => setTimeout(r, 2000)); 
     return true;
 }
 
@@ -134,7 +230,7 @@ export function zoomToAllPoints() {
     if (!state.mapMarkerGroup || !state.mapInstance) return;
     const bounds = state.mapMarkerGroup.getBounds();
     if (bounds.isValid() && state.registeredTrees.length > 0) {
-        state.mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 19 });
+        state.mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 20 });
         showToast("Zoom ajustado.", "success");
     } else {
         showToast("Nenhum ponto válido.", "warning");
@@ -161,6 +257,7 @@ export function setupMapListeners() {
   const zoomBtn = document.getElementById('zoom-to-extent-btn');
   const layerBtn = document.getElementById('toggle-map-layer-btn');
   const locBtn = document.getElementById('show-my-location-btn');
+  
   if (mapLegend) mapLegend.addEventListener('change', handleMapFilterChange);
   if (zoomBtn) zoomBtn.addEventListener('click', zoomToAllPoints);
   if (layerBtn) layerBtn.addEventListener('click', toggleMapLayer);
@@ -179,7 +276,8 @@ export function initializeMap() {
     state.setMapMarkerGroup(L.featureGroup().addTo(map));
     map.on('click', hideMapInfoBox);
   }
-  map.invalidateSize();
+  
+  setTimeout(() => map.invalidateSize(), 100);
 
   if (!osmLayer || !satelliteLayer) {
       osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22, maxNativeZoom: 19, attribution: '© OpenStreetMap' });
@@ -196,8 +294,10 @@ export function initializeMap() {
   const bounds = renderMapMarkers();
 
   if (state.zoomTargetCoords) {
-    map.setView(state.zoomTargetCoords, 21); 
+    // Zoom muito próximo para ver a copa da árvore no satélite
+    map.setView(state.zoomTargetCoords, 20); 
     state.setZoomTargetCoords(null);
+    
     if (state.openInfoBoxId !== null) {
        const t = state.registeredTrees.find(x => x.id === state.openInfoBoxId);
        if(t) setTimeout(() => showMapInfoBox(t), 500);
@@ -216,31 +316,39 @@ function stopLocationWatch() {
   const btn = document.getElementById('show-my-location-btn');
   if (btn) { btn.innerHTML = '🛰️ Minha Posição'; btn.classList.remove('active-tracking'); }
 }
+
 function onLocationUpdate(position) {
   const { latitude, longitude, accuracy } = position.coords;
   const latLng = [latitude, longitude];
+  
   if (!state.mapInstance) return;
+  
   if (!userLocationMarker) {
-    showToast(`Localização encontrada!`, "success");
-    userLocationMarker = L.circleMarker(latLng, { radius: 8, weight: 3, color: '#FFF', fillColor: '#2196F3', fillOpacity: 1, zIndexOffset: 1000 }).addTo(state.mapInstance);
-    userLocationMarker.bindPopup("Sua Posição").openPopup();
+    showToast(`GPS Encontrado!`, "success");
+    userLocationMarker = L.circleMarker(latLng, { radius: 6, weight: 2, color: '#FFF', fillColor: '#2196F3', fillOpacity: 1, zIndexOffset: 1000 }).addTo(state.mapInstance);
+    userLocationMarker.bindPopup("Você").openPopup();
+    
     userAccuracyCircle = L.circle(latLng, { radius: accuracy, color: '#2196F3', weight: 1, fillOpacity: 0.15 }).addTo(state.mapInstance);
+    
     state.mapInstance.setView(latLng, 18); 
   } else {
     userLocationMarker.setLatLng(latLng);
     if (userAccuracyCircle) { userAccuracyCircle.setLatLng(latLng); userAccuracyCircle.setRadius(accuracy); }
   }
+  
   const btn = document.getElementById('show-my-location-btn');
   if (btn) btn.innerHTML = '🛰️ Rastreando...';
 }
+
 function onLocationError(error) {
   if (error.code === 3 && userLocationMarker) return; 
-  showToast("Erro ao rastrear posição.", "error");
+  showToast("Sinal GPS perdido.", "error");
   stopLocationWatch();
 }
+
 export function toggleUserLocation() {
   if (!navigator.geolocation) { showToast("GPS não suportado.", "error"); return; }
-  if (locationWatchId) { stopLocationWatch(); showToast("Rastreamento parado.", "success"); } 
+  if (locationWatchId) { stopLocationWatch(); showToast("Rastreamento pausado.", "info"); } 
   else {
     const btn = document.getElementById('show-my-location-btn');
     if (btn) btn.innerHTML = '🛰️ Buscando...';

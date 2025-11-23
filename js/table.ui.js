@@ -1,372 +1,335 @@
-// js/table.ui.js (V24.3 - FINALMENTE CORRIGIDO: Imports Circulares Removidas)
-// Gerencia a renderização, atualização e interação com a tabela de resumo.
-
-// === 1. IMPORTAÇÕES (Apenas o que é estritamente necessário) ===
-import * as state from './state.js';
-import * as features from './features.js';
-import * as modalUI from './modal.ui.js';
-import { debounce } from './utils.js';
-
-// **ATENÇÃO: As imports circulares de 'ui.js' e 'calculator.form.ui.js' foram removidas.
-// As funcionalidades agora são injetadas através do objeto 'callbacks' em initSummaryTable.**
-
-// === 2. HELPERS DE RENDERIZAÇÃO (Privado) ===
-
 /**
- * Cria uma célula de tabela (<td>) com texto seguro (usando .textContent).
- * @param {string} text O conteúdo de texto.
- * @param {string} [className] Classe CSS opcional.
- * @returns {HTMLTableCellElement}
- */
-function createSafeCell(text, className) {
-  const cell = document.createElement('td');
-  cell.textContent = text || '---';
-  if (className) cell.className = className;
-  return cell;
-}
+ * ARBORIA 2.0 - TABLE UI (V28.0 - Fixed Overflow & Toggle Logic)
+ * Renderiza a tabela de resumo e gerencia ações de linha.
+ */ 
 
-/**
- * Cria uma célula de tabela (<td>) com um botão de ação.
- * @param {object} options
- * @param {string} options.className Classe CSS para o botão.
- * @param {string} options.icon O ícone (HTML seguro, ex: '🔍').
- * @param {number} options.treeId O ID da árvore.
- * @param {string} [options.cellClassName] Classe CSS opcional para a <td>.
- * @returns {HTMLTableCellElement}
- */
-function createActionCell({ className, icon, treeId, cellClassName }) {
-  const cell = document.createElement('td');
-  const button = document.createElement('button');
-  if (cellClassName) cell.className = cellClassName;
-  
-  button.type = 'button';
-  button.className = className;
-  button.dataset.id = treeId;
-  button.innerHTML = icon;
-  
-  cell.appendChild(button);
-  return cell;
-}
+import * as State from './state.js';
+import * as features from './features.js'; // Importação correta
+import { showConfirmModal, openPhotoViewer, showDetailsModal } from './modal.ui.js'; // Adiciona showDetailsModal
+import { getImageFromDB } from './database.js';
 
-/**
- * Helper privado que constrói um <tr> para uma árvore.
- * @param {object} tree O objeto da árvore.
- * @returns {HTMLTableRowElement}
- */
-function _createTreeRow(tree) {
-  const row = document.createElement('tr');
-  row.dataset.treeId = tree.id;
-
-  const [y, m, d] = (tree.data || '---').split('-');
-  const displayDate = (y === '---' || !y) ? 'N/A' : `${d}/${m}/${y}`;
-  const utmZone = `${tree.utmZoneNum || 'N/A'}${tree.utmZoneLetter || ''}`;
-
-  const photoCell = document.createElement('td');
-  photoCell.style.textAlign = 'center';
-  if (tree.hasPhoto) {
-    const photoButton = document.createElement('button');
-    photoButton.type = 'button';
-    photoButton.className = 'photo-preview-btn';
-    photoButton.dataset.id = tree.id;
-    photoButton.innerHTML = '📷';
-    photoCell.appendChild(photoButton);
-  } else {
-    photoCell.textContent = '—';
-  }
-
-  row.appendChild(createSafeCell(tree.id));
-  row.appendChild(createSafeCell(displayDate));
-  row.appendChild(createSafeCell(tree.especie));
-  row.appendChild(photoCell);
-  row.appendChild(createSafeCell(tree.coordX));
-  row.appendChild(createSafeCell(tree.coordY));
-  row.appendChild(createSafeCell(utmZone));
-  row.appendChild(createSafeCell(tree.dap));
-  row.appendChild(createSafeCell(tree.local));
-  row.appendChild(createSafeCell(tree.avaliador));
-  row.appendChild(createSafeCell(tree.pontuacao));
-  row.appendChild(createSafeCell(tree.risco, tree.riscoClass));
-  row.appendChild(createSafeCell(tree.observacoes));
-  
-  row.appendChild(createActionCell({ className: 'zoom-tree-btn', icon: '🔍', treeId: tree.id, cellClassName: 'col-zoom' }));
-  row.appendChild(createActionCell({ className: 'edit-tree-btn', icon: '✎', treeId: tree.id, cellClassName: 'col-edit' }));
-  row.appendChild(createActionCell({ className: 'delete-tree-btn', icon: '✖', treeId: tree.id, cellClassName: 'col-delete' }));
-  
-  return row;
-}
-
-// === 3. FUNÇÕES DE RENDERIZAÇÃO (Público) ===
-
-/**
- * Adiciona uma ÚNICA linha à tabela (Performance O(1)).
- * @param {object} tree O objeto da nova árvore.
- */
-export function appendTreeRow(tree) {
-  const container = document.getElementById('summary-table-container');
-  if (!container) return;
-
-  const placeholder = document.getElementById('summary-placeholder');
-  if (placeholder) {
-    renderSummaryTable();
-    return;
-  }
-
-  const tbody = container.querySelector('.summary-table tbody');
-  if (tbody) {
-    const row = _createTreeRow(tree);
-    tbody.appendChild(row);
-  } else {
-    renderSummaryTable();
-  }
-  
-  const summaryBadge = document.getElementById('summary-badge');
-  if (summaryBadge) {
-    const count = state.registeredTrees.length;
-    summaryBadge.textContent = `(${count})`;
-    summaryBadge.style.display = 'inline';
-  }
-}
-
-/**
- * Remove uma ÚNICA linha da tabela (Performance O(1)).
- * @param {number} id O ID da árvore a ser removida.
- */
-export function removeTreeRow(id) {
-  const container = document.getElementById('summary-table-container');
-  if (!container) return;
-
-  const row = container.querySelector(`.summary-table tr[data-tree-id="${id}"]`);
-  if (row) row.remove();
-
-  const tbody = container.querySelector('.summary-table tbody');
-  const summaryBadge = document.getElementById('summary-badge');
-  
-  if (tbody && tbody.children.length === 0) {
-    renderSummaryTable();
-  } else if (summaryBadge) {
-    const count = state.registeredTrees.length;
-    summaryBadge.textContent = count > 0 ? `(${count})` : '';
-    summaryBadge.style.display = count > 0 ? 'inline' : 'none';
-  }
-}
-
-/**
- * Renderiza a tabela de resumo de árvores (O(N log N) devido à ordenação).
- */
-export function renderSummaryTable() {
-  const container = document.getElementById('summary-table-container');
-  const importExportControls = document.getElementById('import-export-controls');
-  const summaryBadge = document.getElementById('summary-badge');
-  if (!container) return;
-
-  const count = state.registeredTrees.length;
-
-  if (summaryBadge) {
-    summaryBadge.textContent = count > 0 ? `(${count})` : '';
-    summaryBadge.style.display = count > 0 ? 'inline' : 'none';
-  }
-
-  if (count === 0) {
-    container.innerHTML = '<p id="summary-placeholder">Nenhuma árvore cadastrada ainda.</p>';
-    if (importExportControls) {
-      document.getElementById('export-data-btn')?.setAttribute('style', 'display:none');
-      document.getElementById('send-email-btn')?.setAttribute('style', 'display:none');
-      document.getElementById('clear-all-btn')?.setAttribute('style', 'display:none');
-    }
-    return;
-  }
-
-  if (importExportControls) {
-    document.getElementById('export-data-btn')?.setAttribute('style', 'display:inline-flex');
-    document.getElementById('send-email-btn')?.setAttribute('style', 'display:inline-flex');
-    document.getElementById('clear-all-btn')?.setAttribute('style', 'display:inline-flex');
-  }
-
-  container.innerHTML = '';
-  const table = document.createElement('table');
-  table.className = 'summary-table';
-
-  // --- Cabeçalho (Thead) ---
-  const thead = document.createElement('thead');
-  const headerRow = document.createElement('tr');
-  const getThClass = (key) => {
-    let classes = 'sortable';
-    if (state.sortState.key === key) {
-      classes += state.sortState.direction === 'asc' ? ' sort-asc' : ' sort-desc';
-    }
-    return classes;
-  };
-  const headers = [
-    { key: 'id', text: 'ID' }, { key: 'data', text: 'Data' }, { key: 'especie', text: 'Espécie' },
-    { key: null, text: 'Foto' }, { key: 'coordX', text: 'Coord. X' }, { key: 'coordY', text: 'Coord. Y' },
-    { key: 'utmZoneNum', text: 'Zona UTM' }, { key: 'dap', text: 'DAP (cm)' }, { key: 'local', text: 'Local' },
-    { key: 'avaliador', text: 'Avaliador' }, { key: 'pontuacao', text: 'Pontos' }, { key: 'risco', text: 'Risco' },
-    { key: null, text: 'Observações' }, { key: null, text: 'Zoom', className: 'col-zoom' },
-    { key: null, text: 'Editar', className: 'col-edit' }, { key: null, text: 'Excluir', className: 'col-delete' },
-  ];
-
-  headers.forEach((header) => {
-    const th = document.createElement('th');
-    th.textContent = header.text;
-    if (header.key) {
-      th.className = getThClass(header.key);
-      th.dataset.sortKey = header.key;
-    }
-    if (header.className) th.classList.add(header.className);
-    headerRow.appendChild(th);
-  });
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
-
-  // --- Corpo (Tbody) ---
-  const sortedData = [...state.registeredTrees].sort((a, b) => {
-    const valA = features.getSortValue(a, state.sortState.key);
-    const valB = features.getSortValue(b, state.sortState.key);
-    if (valA < valB) return state.sortState.direction === 'asc' ? -1 : 1;
-    if (valA > valB) return state.sortState.direction === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  const tbody = document.createElement('tbody');
-  const fragment = document.createDocumentFragment();
-  sortedData.forEach((tree) => {
-    const row = _createTreeRow(tree);
-    fragment.appendChild(row);
-  });
-  
-  tbody.appendChild(fragment);
-  table.appendChild(tbody);
-  container.appendChild(table);
-}
-
-/**
- * Destaque da linha da tabela.
- * @param {number} id O ID da árvore a ser destacada.
- */
-export function highlightTableRow(id) {
-  setTimeout(() => {
-    const row = document.querySelector(`.summary-table tr[data-tree-id="${id}"]`);
-    if (row) {
-      const oldHighlights = document.querySelectorAll('.summary-table tr.highlight');
-      oldHighlights.forEach((r) => r.classList.remove('highlight'));
-      
-      row.classList.add('highlight');
-      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      setTimeout(() => { row.classList.remove('highlight'); }, 2500);
-    } else {
-      console.warn(`Linha da tabela [data-tree-id="${id}"] não encontrada.`);
-    }
-  }, 100);
-}
-
-
-// === 4. FUNÇÕES DE SETUP (Privado e Público) ===
-
-/**
- * [PRIVADO] Anexa listeners aos controles acima da tabela (Filtro, Importar, etc.).
- * @param {object} callbacks Funções de callback para ações externas (modal, email).
- */
-function _setupCalculatorControls(callbacks) {
-  const importDataBtn = document.getElementById('import-data-btn');
-  const exportDataBtn = document.getElementById('export-data-btn');
-  const sendEmailBtn = document.getElementById('send-email-btn');
-  const clearAllBtn = document.getElementById('clear-all-btn');
-  const filterInput = document.getElementById('table-filter-input');
-
-  if (importDataBtn) importDataBtn.addEventListener('click', callbacks.onImport);
-  if (exportDataBtn) exportDataBtn.addEventListener('click', callbacks.onExport);
-  if (filterInput) filterInput.addEventListener('keyup', callbacks.onFilter);
-  if (sendEmailBtn) sendEmailBtn.addEventListener('click', callbacks.onEmail);
-  
-  if (clearAllBtn) {
-    clearAllBtn.addEventListener('click', () => {
-      modalUI.showGenericModal({
-        title: '🗑️ Limpar Tabela',
-        description: 'Tem certeza que deseja apagar TODOS os registros? Esta ação não pode ser desfeita.',
-        buttons: [
-          { text: 'Sim, Apagar Tudo', class: 'primary', action: callbacks.onClear },
-          { text: 'Cancelar', class: 'cancel' },
-        ],
-      });
-    });
-  }
-}
-
-/**
- * [PRIVADO] Anexa o listener de delegação de eventos da tabela.
- * @param {HTMLElement} summaryContainer O contêiner da tabela.
- * @param {object} callbacks Funções de callback para ações na linha (edit, delete, zoom).
- */
-function _setupTableDelegation(summaryContainer, callbacks) {
-  if (!summaryContainer) return;
-
-  summaryContainer.addEventListener('click', (e) => {
-    const target = e.target;
+export const TableUI = {
     
-    // Ação: Excluir
-    const deleteButton = target.closest('.delete-tree-btn');
-    if (deleteButton) {
-      const treeId = parseInt(deleteButton.dataset.id, 10);
-      modalUI.showGenericModal({
-        title: 'Excluir Registro',
-        description: `Tem certeza que deseja excluir a Árvore ID ${treeId}?`,
-        buttons: [
-          { text: 'Sim, Excluir', class: 'primary', action: () => callbacks.onDelete(treeId) },
-          { text: 'Cancelar', class: 'cancel' },
-        ],
-      });
-      return;
+    container: null,
+    badgeElement: null,
+    
+    // [MUDANÇA] isCompactMode agora é apenas para desktop. Mobile terá sua própria renderização.
+    isCompactMode: window.innerWidth <= 768,
+
+    render() {
+        this.container = document.getElementById('summary-table-container');
+        this.badgeElement = document.getElementById('summary-badge');
+
+        if (!this.container || !this.badgeElement) return;
+
+        const trees = State.registeredTrees || [];
+        this.updateBadge(trees.length);
+
+        // [MUDANÇA] Controles de expandir/compactar só aparecem no desktop.
+        if (window.innerWidth > 768) {
+            this.renderControls();
+        }
+
+        if (trees.length === 0) {
+            this.container.innerHTML = `
+                <div class="text-center" style="padding: 40px; color: #999;">
+                    <p style="font-size: 3rem; margin-bottom: 10px;">🌳</p>
+                    <p>Nenhuma árvore cadastrada.</p>
+                    <p style="font-size: 0.9rem;">Use a aba "Registrar" ou importe um arquivo.</p>
+                </div>
+            `;
+            this.toggleExportButtons(false);
+            return;
+        }
+
+        this.toggleExportButtons(true);
+
+        // [MUDANÇA] Lógica de renderização condicional
+        if (window.innerWidth <= 768) {
+            this.renderMobileList(trees);
+        } else {
+            this.renderDesktopTable(trees);
+        }
+    },
+
+    /**
+     * [NOVO] Renderiza a tabela completa para desktop.
+     */
+    renderDesktopTable(trees) {
+        const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
+
+        // Aplica classe de modo compacto
+        let tableClass = 'summary-table';
+        if (this.isCompactMode) tableClass += ' compact-mode';
+
+        // Colunas com 'col-secondary' são ocultadas no modo compacto
+        let html = `
+            <div class="table-responsive">
+            <table class="${tableClass}">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">ID</th>
+                        <th>Espécie</th>
+                        <th class="col-secondary">Data</th>
+                        <th class="col-secondary">Coord. UTM</th>
+                        <th class="col-secondary">DAP/Alt</th>
+                        <th>Local</th>
+                        <th class="col-secondary">Avaliador</th>
+                        <th>Risco</th>
+                        <th style="text-align: center;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        sortedTrees.forEach(tree => {
+            let badgeClass = 'badge-low'; 
+            if (tree.riscoClass === 'risk-high' || tree.risco === 'Alto Risco') badgeClass = 'badge-high';
+            else if (tree.riscoClass === 'risk-medium' || tree.risco === 'Médio Risco') badgeClass = 'badge-medium';
+
+            const photoIcon = tree.hasPhoto ? '📷' : '';
+            const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
+
+            html += `
+                <tr id="row-${tree.id}">
+                    <td class="col-id"><strong>${tree.id}</strong></td>
+                    <td>
+                        <div style="font-weight: 700; color: #333;">${tree.especie}</div>
+                        <div class="col-mobile-summary">${dateSimple} &nbsp; | &nbsp; ${tree.local} ${photoIcon}</div>
+                    </td>
+                    
+                    <td class="col-secondary">${dateSimple}</td>
+                    
+                    <td class="col-secondary">
+                        <div style="font-size:0.75rem;">E:${tree.coordX}<br>N:${tree.coordY}</div>
+                    </td>
+                    
+                    <td class="col-secondary">
+                        <div style="font-size:0.75rem;">D:${tree.dap} cm<br>H:${tree.altura} m</div>
+                    </td>
+                    
+                    <td style="font-size:0.85rem;">${tree.local}</td>
+                    
+                    <td class="col-secondary" style="font-size:0.8rem;">${tree.avaliador}</td>
+                    
+                    <td><span class="badge ${badgeClass}" style="font-size:0.7rem;">${tree.risco}</span></td>
+                    
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 5px; justify-content: center;">
+                            <button class="action-btn-icon btn-map" data-id="${tree.id}" title="Mapa" 
+                                style="background:#e3f2fd; color:#0277BD; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">📍</button>
+                            
+                            ${tree.hasPhoto ? `
+                            <button class="action-btn-icon btn-photo" data-id="${tree.id}" title="Foto" 
+                                style="background:#e8f5e9; color:#2e7d32; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">📷</button>` : ''}
+
+                            <button class="action-btn-icon btn-edit" data-id="${tree.id}" title="Editar" 
+                                style="background:#fff3e0; color:#f57c00; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">✏️</button>
+                            
+                            <button class="action-btn-icon btn-delete" data-id="${tree.id}" title="Excluir" 
+                                style="background:#ffebee; color:#d32f2f; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody></table></div>`;
+        this.container.innerHTML = html;
+        this.bindEvents();
+    },
+
+    /**
+     * [NOVO] Renderiza a lista de cards para mobile.
+     */
+    renderMobileList(trees) {
+        const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
+        let html = `<div class="summary-list-mobile">`;
+
+        sortedTrees.forEach(tree => {
+            let badgeClass = 'badge-low';
+            if (tree.risco === 'Alto Risco') badgeClass = 'badge-high';
+            else if (tree.risco === 'Médio Risco') badgeClass = 'badge-medium';
+
+            const photoIcon = tree.hasPhoto ? '📷' : '';
+
+            html += `
+                <div class="summary-list-item" data-tree-id="${tree.id}">
+                    <div class="item-main-info">
+                        <span class="item-id">ID: ${tree.id}</span>
+                        <strong class="item-species">${tree.especie}</strong>
+                        <p class="item-location">${tree.local || 'N/A'} ${photoIcon}</p>
+                    </div>
+                    <div class="item-risk-info">
+                        <span class="badge ${badgeClass}">${tree.risco}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        this.container.innerHTML = html;
+        this.bindMobileListEvents();
+    },
+
+    /**
+     * [NOVO] Anexa eventos de clique para a lista mobile.
+     */
+    bindMobileListEvents() {
+        this.container.querySelectorAll('.summary-list-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const treeId = parseInt(item.dataset.treeId, 10);
+                this.showTreeDetailsModal(treeId);
+            });
+        });
+    },
+
+    /**
+     * [NOVO] Exibe o modal com os detalhes da árvore.
+     */
+    showTreeDetailsModal(treeId) {
+        const tree = State.registeredTrees.find(t => t.id === treeId);
+        if (!tree) return;
+
+        const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
+        
+        // [MELHORIA] Usa as descrições dos fatores de risco
+        const riskLabels = [
+            "Galhos Mortos > 5cm", "Rachaduras/Fendas", "Sinais de Apodrecimento", "Casca Inclusa", 
+            "Galhos Cruzados", "Copa Assimétrica", "Inclinação Anormal", "Próxima a Vias Públicas", 
+            "Risco sobre Alvos", "Interferência em Redes", "Espécie com Falhas", "Brotação Epicórmica", 
+            "Calçadas Rachadas", "Perda de Raízes", "Compactação do Solo", "Apodrecimento em Raízes"
+        ];
+        const riskFactors = (tree.riskFactors || []).map((val, idx) => val === 1 ? `<li>${riskLabels[idx]}</li>` : null).filter(v => v).join('');
+
+        const content = `
+            <div class="details-modal-grid">
+                <p><strong>Data:</strong> ${dateSimple}</p>
+                <p><strong>Local:</strong> ${tree.local}</p>
+                <p><strong>Avaliador:</strong> ${tree.avaliador}</p>
+                <p><strong>DAP:</strong> ${tree.dap} cm</p>
+                <p><strong>Altura:</strong> ${tree.altura} m</p>
+                <p><strong>Coordenadas:</strong> ${tree.coordX} / ${tree.coordY} (Zona ${tree.utmZoneNum}${tree.utmZoneLetter})</p>
+                <p><strong>Observações:</strong> ${tree.observacoes || 'Nenhuma.'}</p>
+            </div>
+            ${riskFactors ? `<h4>Fatores de Risco Ativos:</h4><ul class="details-risk-list">${riskFactors}</ul>` : ''}
+        `;
+
+        const actions = [
+            { text: '✏️ Editar', className: 'action-btn', onClick: () => features.handleEditTree(tree.id) },
+            { text: '🗑️ Excluir', className: 'btn-danger-filled', closesModal: false, onClick: () => {
+                showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${tree.id}?`, () => features.handleDeleteTree(tree.id));
+            }}
+        ];
+
+        if (tree.hasPhoto) {
+            actions.unshift({ text: '📷 Ver Foto', className: 'action-btn', onClick: () => getImageFromDB(tree.id, blob => blob && openPhotoViewer(URL.createObjectURL(blob))) });
+        }
+
+        // [MELHORIA] Passa a classe de risco para o modal
+        const riskClass = tree.risco === 'Alto Risco' ? 'risk-high' : tree.risco === 'Médio Risco' ? 'risk-medium' : 'risk-low';
+
+        showDetailsModal(`Detalhes: ${tree.especie} (ID: ${tree.id})`, content, actions, riskClass);
+    },
+
+    renderControls() {
+        const wrapper = document.querySelector('.table-filter-container');
+        if (!wrapper) return; // Sai se o container não existir
+
+        // Se o botão já existe, apenas atualiza o texto
+        const existingBtn = document.getElementById('toggle-cols-btn');
+        if (existingBtn) {
+            existingBtn.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
+            return;
+        }
+
+        // Cria o layout de controles pela primeira vez
+        wrapper.className = 'table-controls-wrapper';
+        const input = document.getElementById('table-filter-input');
+        
+        const btnToggle = document.createElement('button');
+        btnToggle.id = 'toggle-cols-btn';
+        btnToggle.type = 'button';
+        btnToggle.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
+        
+        btnToggle.onclick = () => {
+            this.isCompactMode = !this.isCompactMode;
+            btnToggle.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
+            
+            // Alterna a classe na tabela para o CSS reagir
+            const table = this.container.querySelector('table');
+            if (table) {
+                if (this.isCompactMode) table.classList.add('compact-mode');
+                else table.classList.remove('compact-mode');
+            }
+        };
+
+        wrapper.innerHTML = ''; // Limpa o container
+        const divInput = document.createElement('div');
+        divInput.className = 'table-filter-container';
+        divInput.appendChild(input); 
+
+        wrapper.appendChild(divInput);
+        wrapper.appendChild(btnToggle);
+    },
+
+    updateBadge(count) {
+        if (this.badgeElement) {
+            this.badgeElement.textContent = count;
+            if (count > 0) this.badgeElement.classList.add('badge-medium');
+            else this.badgeElement.classList.remove('badge-medium');
+        }
+    },
+
+    toggleExportButtons(show) {
+        const ctrls = document.getElementById('import-export-controls');
+        if (!ctrls) return;
+        const exportBtns = ctrls.querySelectorAll('#export-data-btn, #generate-pdf-btn, #send-email-btn, #clear-all-btn');
+        exportBtns.forEach(btn => {
+            btn.style.display = show ? 'inline-flex' : 'none';
+        });
+    },
+
+    bindEvents() {
+        // Ver Mapa
+        this.container.querySelectorAll('.btn-map').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                features.handleZoomToPoint(id);
+            });
+        });
+
+        // Editar
+        this.container.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                features.handleEditTree(id);
+            });
+        });
+
+        // Excluir
+        this.container.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                showConfirmModal(
+                    "Excluir Registro?", 
+                    `Deseja apagar a árvore ID ${id}?`, 
+                    () => features.handleDeleteTree(id)
+                );
+            });
+        });
+
+        // Ver Foto
+        this.container.querySelectorAll('.btn-photo').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                getImageFromDB(id, (blob) => {
+                    if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        openPhotoViewer(url);
+                    }
+                });
+            });
+        });
     }
-
-    // Ação: Editar
-    const editButton = target.closest('.edit-tree-btn');
-    if (editButton) {
-      callbacks.onEdit(parseInt(editButton.dataset.id, 10));
-      return;
-    }
-
-    // Ação: Zoom
-    const zoomButton = target.closest('.zoom-tree-btn');
-    if (zoomButton) {
-      callbacks.onZoom(parseInt(zoomButton.dataset.id, 10));
-      return;
-    }
-
-    // Ação: Ordenar
-    const sortButton = target.closest('th.sortable');
-    if (sortButton) {
-      callbacks.onSort(sortButton.dataset.sortKey);
-      return;
-    }
-
-    // Ação: Ver Foto
-    const photoButton = target.closest('.photo-preview-btn');
-    if (photoButton) {
-      e.preventDefault();
-      callbacks.onPhoto(parseInt(photoButton.dataset.id, 10));
-    }
-  });
-}
-
-/**
- * (PÚBLICO) Função "maestro" que inicializa a Tabela.
- * @param {boolean} isTouchDevice Indica se é um dispositivo de toque (agora inútil, mas mantido).
- * @param {object} uiCallbacks Callbacks definidos pelo módulo maestro (ui.js).
- */
-export function initSummaryTable(isTouchDevice, uiCallbacks) {
-  const summaryContainer = document.getElementById('summary-table-container');
-  if (!summaryContainer) {
-    console.error("initSummaryTable: Contêiner 'summary-table-container' não encontrado.");
-    return;
-  }
-
-  // 1. Renderiza a tabela inicial (O(N))
-  renderSummaryTable();
-  
-  // 2. Anexa listeners aos controles, usando os callbacks passados
-  _setupCalculatorControls(uiCallbacks.controls);
-  
-  // 3. Anexa o listener de delegação principal, usando os callbacks passados
-  _setupTableDelegation(summaryContainer, uiCallbacks.actions);
-}
+};

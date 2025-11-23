@@ -1,118 +1,233 @@
-/* css/modules/02_feature.checklist_mobile.css */
+/**
+ * ARBORIA 2.0 - MOBILE CHECKLIST (v81.0 - Flash Card UI)
+ * Estilo para o Checklist em Modo "Flash Card" (Tela Cheia).
+ */
 
-/* -------------------------------------- */
-/* 13. CHECKLIST MOBILE (v15.1) */
-/* -------------------------------------- */
+/* --- 1. CONTAINER TELA CHEIA --- */
+#checklist-flashcard-view {
+  position: fixed; /* Chave para o overlay */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 23, 42, 0.95); /* Fundo escuro profundo */
+  backdrop-filter: blur(8px);
+  z-index: 3000; /* Acima de tudo */
+  padding: 20px;
+  
+  /* Layout Flex para centralizar */
+  display: none; /* JS controla o display: flex */
+  pointer-events: none; /* Não intercepta cliques quando oculto */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 
-.mobile-checklist-wrapper { display: none; }
+/* Quando ativo, volta a ser clicável */
+#checklist-flashcard-view:not([style*="display:none"]):not([style*="display: none"]) {
+    display: flex !important;
+    pointer-events: auto;
+}
 
-@media (max-width: 768px) {
-  /* Esconde a tabela desktop no mobile */
-  .risk-table { display: none; }
+/* Wrapper interno */
+.mobile-checklist-wrapper-fullscreen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+}
 
-  /* Mostra o novo wrapper do carrossel */
-  .mobile-checklist-wrapper {
-    display: block;
-    margin-top: var(--space-md);
-  }
+/* --- 2. O FLASH CARD (Cartão de Pergunta) --- */
+.mobile-checklist-card {
+  width: 100%;
+  /* Gradiente Inicial: Verde Floresta -> Azul Tech (Neutro/Seguro) */
+  background: linear-gradient(135deg, var(--color-forest), var(--color-tech)); 
+  border-radius: 24px;
+  padding: 2.5rem 1.5rem;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  color: white;
+  
+  /* Efeito de "Pop" ao aparecer */
+  animation: swipeInFromRight 0.4s ease-out;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.5s ease, box-shadow 0.3s ease;
+  /* Garante espaço para o conteúdo */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 
-  /* Estilo do Cartão */
-  .mobile-checklist-card {
-    background-color: var(--color-primary-lightest);
-    border: 2px solid var(--color-primary-light);
-    border-radius: var(--border-radius-lg);
-    padding: var(--space-lg);
-    margin-bottom: var(--space-md);
-    text-align: center;
-  }
-  .checklist-card-question {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--color-dark);
-    display: block;
-    margin-bottom: var(--space-sm);
-    line-height: 1.4;
-  }
-  .checklist-card-question strong { color: var(--color-primary-dark); }
-  .checklist-card-peso {
-    font-size: 0.9rem;
-    color: var(--color-text-light);
-    font-style: italic;
-    display: block;
-    margin-bottom: var(--space-md);
-  }
+@keyframes cardPopIn {
+  from { opacity: 0; transform: scale(0.8) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
 
-  /* Estilo do Toggle Switch (Sim/Não) */
-  .checklist-card-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    user-select: none;
-  }
-  .checklist-card-toggle .mobile-checkbox-proxy { display: none; }
-  .checklist-card-toggle .toggle-label {
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--color-text-light);
-    transition: color 0.2s;
-  }
-  .checklist-card-toggle .toggle-switch {
-    background-color: var(--gray-400);
-    border-radius: 15px;
-    width: 60px;
-    height: 30px;
-    margin: 0 15px;
-    position: relative;
-    transition: background-color 0.2s;
-  }
-  .checklist-card-toggle .toggle-switch::before {
-    content: '';
-    position: absolute;
-    background-color: white;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    top: 3px;
-    left: 3px;
-    transition: transform 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  }
-  /* Estado Ativo (Checado = SIM) */
-  .checklist-card-toggle .mobile-checkbox-proxy:checked ~ .toggle-label:nth-of-type(2) {
-    color: var(--color-primary-medium);
-  }
-  .checklist-card-toggle .mobile-checkbox-proxy:checked ~ .toggle-switch {
-    background-color: var(--color-primary-medium);
-  }
-  .checklist-card-toggle .mobile-checkbox-proxy:checked ~ .toggle-switch::before {
-    transform: translateX(30px);
-  }
+/* Estado de RISCO DETECTADO (Laranja -> Vermelho) */
+.mobile-checklist-card.answered-yes {
+  background: linear-gradient(135deg, #f57c00, #d32f2f);
+  box-shadow: 0 15px 35px rgba(211, 47, 47, 0.4);
+}
 
-  /* Navegação do Carrossel */
-  .mobile-checklist-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-  }
-  .mobile-checklist-nav button {
-    background-color: var(--color-primary-medium);
-    color: white;
-    border: none;
-    border-radius: var(--border-radius-md);
-    padding: 10px 15px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .mobile-checklist-nav button:disabled {
-    background-color: var(--gray-300);
-    cursor: not-allowed;
-  }
-  .mobile-checklist-nav .checklist-counter {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--color-primary-dark);
-  }
+/* Indicador visual de alerta (Ícone de fundo) */
+.mobile-checklist-card.answered-yes::before {
+  content: '⚠️';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 8rem;
+  opacity: 0.1;
+  pointer-events: none;
+  transform: rotate(15deg);
+}
+
+/* --- TIPOGRAFIA DO CARD --- */
+#flashcard-counter {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  font-weight: 700;
+}
+
+#flashcard-question-text {
+  font-size: 1.3rem;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #ffffff;
+  min-height: 3em; /* Altura mínima para evitar pulos */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Termos técnicos dentro da pergunta */
+#flashcard-question-text .checklist-term {
+  color: #A7FFEB; /* Verde água neon */
+  border-bottom: 2px dashed rgba(167, 255, 235, 0.5);
+  cursor: help;
+  margin: 0 4px;
+}
+
+/* --- 3. TOGGLE SWITCH (INTERRUPTOR) --- */
+.flashcard-toggle-area {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.mobile-checklist-toggle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 10px 25px;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* O Input Checkbox invisível */
+.mobile-checklist-toggle input {
+  display: none;
+}
+
+/* O Trilho do Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  margin: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.3);
+  transition: background-color .4s; /* [MELHORIA] Anima a cor do trilho */
+  border-radius: 34px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+/* A Bolinha do Switch */
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: transform .4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* [MELHORIA] Anima o movimento da bolinha */
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Estado LIGADO (Sim) */
+.mobile-checklist-toggle input:checked + .toggle-slider {
+  background-color: #00E676; /* Verde Neon */
+  border-color: #00E676;
+}
+
+/* [MELHORIA] Move a bolinha para a direita quando ligado */
+.mobile-checklist-toggle input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+/* --- 4. NAVEGAÇÃO INFERIOR --- */
+.mobile-checklist-nav {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding: 0 10px;
+}
+
+.mobile-checklist-nav button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  backdrop-filter: blur(5px);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.mobile-checklist-nav button:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.mobile-checklist-nav button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+  border-color: transparent;
+}
+
+/* Botão Fechar no Topo */
+.mobile-checklist-wrapper-fullscreen .hud-close-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  font-size: 1.2rem;
+  padding: 10px 15px;
+  border-radius: 20px;
+  cursor: pointer;
 }

@@ -1,71 +1,159 @@
-/* css/modules/02_feature.manual_content.css */
+/**
+ * ARBORIA 2.0 - MANUAL CONTENT STYLES
+ * Foco: Leitura Confortável (Typography) e Animações de Transição (SPA Feel)
+ */
 
-/* -------------------------------------- */
-/* 5. ESTILOS DE CONTEÚDO (CARD PRINCIPAL) */
-/* -------------------------------------- */
+/* --- CONTAINER DE CONTEÚDO GENÉRICO --- */
+/* Classe base para todas as seções que não são o Menu */
+.content-section {
+  display: none; /* Oculto por padrão (JS controla) */
+  background: var(--color-bg-card);
+  
+  /* Mobile: Preenche a tela abaixo do header */
+  min-height: calc(100vh - var(--header-height) - 50px);
+  padding: 1.5rem;
+  padding-bottom: 80px; /* Espaço extra no fundo para scroll confortável */
+  
+  /* Animação de Entrada Estilo App (Slide Up) */
+  animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 
-.conteudo-detalhe,
-.app-view {
-  background-color: var(--bg-surface);
-  border: none;
-  border-radius: var(--border-radius-lg);
-  padding: var(--space-lg);
-  margin-bottom: var(--space-lg);
+/* Animação definida */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Quando ativo (JS adiciona esta classe para display) */
+.content-section.active {
+  display: block;
+}
+
+/* --- TIPOGRAFIA DE CONTEÚDO --- */
+.conteudo-detalhe h3 {
+  color: var(--color-forest);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--color-border); /* Usando variável de borda ou um cinza mais escuro */
+  padding-bottom: 10px;
+  letter-spacing: -0.5px;
+}
+
+.conteudo-detalhe h4 {
+  color: var(--color-tech);
+  font-size: 1.1rem;
+  margin-top: 1.8rem; /* Aumentado */
+  margin-bottom: 0.9rem; /* Aumentado */
+  font-weight: 700;
+}
+
+.conteudo-detalhe h5 {
+  color: var(--color-forest);
+  font-size: 1rem;
+  margin-top: 1.6rem;
+  margin-bottom: 0.7rem;
+  font-weight: 700;
+}
+
+.conteudo-detalhe h6 {
+  color: var(--color-text-main);
+  font-size: 0.95rem;
+  margin-top: 1.4rem;
+  margin-bottom: 0.6rem;
+  font-weight: 700;
+}
+
+.conteudo-detalhe p {
+  color: var(--color-text-main);
+  line-height: 1.7; /* Altura de linha aumentada para leitura mobile */
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  text-align: left; /* Opcional: ou left para mais modernidade */
+}
+
+/* Listas dentro do texto */
+.conteudo-detalhe ul, 
+.conteudo-detalhe ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.conteudo-detalhe li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+  color: var(--color-text-main);
+}
+
+/* Destaques no texto */
+.conteudo-detalhe strong {
+  color: var(--color-forest);
+  font-weight: 700;
+}
+
+/* --- IMAGENS DENTRO DO CONTEÚDO --- */
+.conteudo-detalhe img {
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
-}
-
-#detalhe-view h3 {
-  color: var(--color-primary-dark);
-  margin-bottom: var(--space-md);
-  border-bottom: 3px solid var(--color-accent);
-  padding-bottom: var(--space-sm);
-  font-size: 1.4rem;
-}
-
-#detalhe-view p {
-  margin-bottom: var(--space-md);
-  font-size: 1em;
-}
-
-#detalhe-view ul,
-#detalhe-view ol {
-  padding-left: 25px;
-  margin-bottom: var(--space-md);
-}
-
-#detalhe-view li {
-  margin-bottom: var(--space-sm);
-  font-size: 1em;
-}
-
-.manual-img {
+  margin: 1.5rem auto;
   max-width: 100%;
-  height: auto;
-  border-radius: var(--border-radius-md);
-  margin: var(--space-md) 0;
-  box-shadow: var(--shadow-sm);
+  display: block;
 }
 
-/* Estilos da Tabela de Glossário */
-.glossary-table {
+/* Legendas de Imagem (Figure/Figcaption se houver) */
+.conteudo-detalhe figcaption {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-top: -10px;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+/* --- TABELAS DE TEXTO (Não a de Risco) --- */
+/* Ex: Tabelas de normas ou dados simples */
+.content-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: var(--space-md);
-  font-size: 0.9em;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
 }
-.glossary-table th, .glossary-table td {
-  border: 1px solid var(--gray-300);
-  padding: var(--space-sm) var(--space-md);
+
+.content-table th {
+  background: #f0f2f5;
   text-align: left;
-  vertical-align: middle;
+  padding: 10px;
+  font-weight: 700;
+  color: var(--color-text-main);
 }
-.glossary-table th {
-  background-color: var(--gray-100);
+
+.content-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 10px;
 }
-.glossary-category-header {
-  background-color: var(--color-primary-medium);
-  color: #fff;
-  font-weight: bold;
-  font-size: 1.1em;
-  text-align: center !important;
+
+/* --- DESKTOP ADJUSTMENTS --- */
+@media (min-width: 769px) {
+  .content-section {
+    /* Desktop: Vira um Card ao lado do menu */
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    min-height: auto; /* Altura definida pelo conteúdo */
+    margin-bottom: 0;
+    animation: fadeIn 0.4s ease-out; /* Animação mais suave no desktop */
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .conteudo-detalhe h3 {
+    font-size: 1.75rem;
+  }
 }

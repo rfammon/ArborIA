@@ -1,172 +1,362 @@
-// js/main.js (v87.0 - Fix Import modalUI)
+// js/main.js (v2.5 - Maestro do ArborIA 2.0 - Flash Card Integration)
 
-import * as ui from './ui.js';
-import * as db from './database.js';
 import * as state from './state.js';
-import * as modalUI from './modal.ui.js'; // [CORREÇÃO] Importação adicionada
-import { manualContent } from './content.js';
-import { showToast } from './utils.js';
-import * as chat from './chat.js';
+import { UI } from './ui.js'; 
+import { TooltipUI } from './tooltip.ui.js';
+import { TableUI } from './table.ui.js';
+
 import * as features from './features.js';
-import * as clinometer from './clinometer.js';
+import { initImageDB } from './database.js'; 
+import * as modalUI from './modal.ui.js'; 
+import * as mapUI from './map.ui.js'; 
+
+import { manualContent } from './content.js'; 
+import * as utils from './utils.js';
+import * as clinometer from './clinometer.js'; 
 import * as dapEstimator from './dap.estimator.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // 1. Inicialização do Banco de Dados
-        await db.initDB();
-        await state.loadStateFromDB();
+// Tenta importar o gerador de PDF dinamicamente
+let pdfGenerator = null;
 
-        console.log("ArborIA inicializado v87.0");
+// === 1. SELETORES GLOBAIS ===
+const detailView = document.getElementById('detalhe-view');
+const topNavContainer = document.querySelector('.topicos-container');
 
-        // Referências DOM
-        const detailView = document.getElementById('detalhe-view');
-        const navButtons = document.querySelectorAll('.topico-btn');
-        const backToTopBtn = document.getElementById('back-to-top-btn');
-        const calculatorView = document.getElementById('calculadora-view');
-        const clinometerView = document.getElementById('clinometro-view');
-        const dapEstimatorView = document.getElementById('dap-estimator-view');
-        const chatSendBtn = document.getElementById('chat-send-btn');
-        const chatInput = document.getElementById('chat-input');
-        const contactForm = document.getElementById('contact-form');
+// === 2. LÓGICA DE NAVEGAÇÃO (CORE) ===
+function handleMainNavigation(event) {
+  const targetButton = event.target.closest('.topico-btn');
+  if (!targetButton) return;
 
-        // Estado da Aplicação
-        let currentManualTopic = 'conceitos-basicos';
-        
-        // === Funções de Navegação ===
-        function showView(viewId) {
-            // Esconde todas as views
-            document.querySelectorAll('.app-view, .conteudo-detalhe').forEach(view => {
-                // Garante que escondemos as views principais
-                if(view.id === 'manual-view' || view.id === 'calculadora-view' || view.id === 'clinometro-view' || view.id === 'dap-estimator-view') {
-                    view.style.display = 'none';
-                }
-            });
+  const targetId = targetButton.dataset.target;
+  state.saveActiveTab(targetId);
 
-            // Mostra a view específica
-            const viewToShow = document.getElementById(viewId);
-            if (viewToShow) {
-                viewToShow.style.display = 'block';
+  // 1. CICLO DE VIDA DE SENSORES
+  if (targetId !== 'clinometro-view') clinometer.stopClinometer();
+  if (targetId !== 'dap-estimator-view') dapEstimator.stopDAPEstimator();
 
-                // Lógica específica para cada view (Ligar/Desligar Câmeras)
-                if (viewId === 'clinometro-view') {
-                    clinometer.startClinometer();
-                } else {
-                    clinometer.stopClinometer(); 
-                }
+  // 2. DELEGAÇÃO VISUAL (SPA)
+  UI.navigateTo(targetId);
 
-                if (viewId === 'dap-estimator-view') {
-                    dapEstimator.startDAPEstimator();
-                } else {
-                    dapEstimator.stopDAPEstimator(); 
-                }
-            }
-        }
-
-        function loadManualTopic(topicKey) {
-            if (!detailView) return;
-            if (manualContent[topicKey]) {
-                ui.loadContent(detailView, manualContent[topicKey]);
-                currentManualTopic = topicKey;
-            }
-            
-            // Ativa o botão de navegação correspondente
-            navButtons.forEach(btn => {
-                if (btn.dataset.target === topicKey) btn.classList.add('active');
-                else btn.classList.remove('active');
-            });
-            
-            showView('manual-view');
-        }
-
-        // === Event Listeners ===
-
-        // Navegação Principal
-        navButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const target = button.dataset.target;
-                
-                if (target === 'calculadora-risco') {
-                    showView('calculadora-view');
-                    navButtons.forEach(b => b.classList.remove('active'));
-                    button.classList.add('active');
-                } else if (target === 'clinometro-view') {
-                    showView('clinometro-view');
-                    navButtons.forEach(b => b.classList.remove('active'));
-                    button.classList.add('active');
-                } else if (target === 'dap-estimator-view') {
-                    showView('dap-estimator-view');
-                    navButtons.forEach(b => b.classList.remove('active'));
-                    button.classList.add('active');
-                } else {
-                    loadManualTopic(target);
-                }
-                
-                ui.hideTooltip();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-        });
-
-        // Botões de Fechar Ferramentas
-        document.getElementById('close-clinometer')?.addEventListener('click', () => {
-            clinometer.stopClinometer();
-            loadManualTopic(currentManualTopic); 
-        });
-        document.getElementById('close-dap-estimator')?.addEventListener('click', () => {
-            dapEstimator.stopDAPEstimator();
-            loadManualTopic(currentManualTopic); 
-        });
-
-        // Botão Voltar ao Topo
-        if (backToTopBtn) {
-            window.addEventListener('scroll', () => {
-                if (window.scrollY > 300) backToTopBtn.classList.add('show');
-                else backToTopBtn.classList.remove('show');
-            });
-            backToTopBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-        }
-
-        // Chatbot
-        if (chatSendBtn && chatInput) {
-            chatSendBtn.addEventListener('click', chat.handleChatInput);
-            chatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') chat.handleChatInput();
-            });
-        }
-
-        // Contact Form
-        if (contactForm) {
-            contactForm.addEventListener('submit', features.handleContactForm);
-        }
-
-        // Inicialização da UI
-        ui.setupRiskCalculator();
-        
-        clinometer.initClinometerListeners();
-        dapEstimator.initDAPEstimatorListeners();
-        
-        // Inicializa Photo Viewer se existir
-        if (modalUI && typeof modalUI.initPhotoViewer === 'function') {
-            modalUI.initPhotoViewer();
-        }
-
-        // Carrega conteúdo inicial
-        loadManualTopic(currentManualTopic);
-
-    } catch (error) {
-        console.error("Erro fatal no main.js:", error);
-        showToast("Erro ao inicializar app.", "error");
+  // 3. LÓGICA ESPECÍFICA POR ABA
+  if (targetId === 'calculadora-view') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    TableUI.render();
+    
+    // [MAP FIX] Se a última sub-aba ativa era o mapa, força resize
+    const mapTab = document.getElementById('tab-content-mapa');
+    if (mapTab && mapTab.style.display === 'block') {
+        setTimeout(() => mapUI.prepareMapForScreenshot(), 100);
     }
-});
 
-// PWA Service Worker
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-            .then(reg => console.log('SW OK:', reg.scope))
-            .catch(err => console.log('SW Falha:', err));
-    });
+  } else if (targetId === 'clinometro-view') {
+    clinometer.startClinometer();
+
+  } else if (targetId === 'dap-estimator-view') {
+    dapEstimator.startDAPEstimator();
+
+  } else {
+    // --- MANUAL TÉCNICO ---
+    if (manualContent && manualContent[targetId]) {
+        loadManualContent(targetId);
+    } else {
+        if(detailView) detailView.innerHTML = `<h3>Conteúdo em Breve</h3><p>O tópico <strong>${targetId}</strong> está em desenvolvimento.</p>`;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
+
+function loadManualContent(topicId) {
+    if (!detailView) return;
+    detailView.style.opacity = 0;
+    setTimeout(() => {
+        const content = typeof manualContent[topicId] === 'object' ? manualContent[topicId].html : manualContent[topicId];
+        const title = typeof manualContent[topicId] === 'object' ? `<h3>${manualContent[topicId].titulo}</h3>` : '';
+        const finalHTML = (content.includes('<h3>') || !title) ? content : title + content;
+        
+        detailView.innerHTML = finalHTML;
+        detailView.style.opacity = 1;
+    }, 150);
+}
+
+// === 3. CONEXÃO DOS BOTÕES DE AÇÃO ===
+function setupActionButtons() {
+    console.log("🔌 Conectando botões de ação...");
+
+    // --- FORMULÁRIO DE RISCO ---
+    const riskForm = document.getElementById('risk-calculator-form');
+    if (riskForm) {
+        riskForm.addEventListener('submit', (e) => {
+            const result = features.handleAddTreeSubmit(e); 
+            if (result && result.success) {
+                TableUI.render(); 
+                mapUI.initializeMap(); 
+                
+                const summaryTab = document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]');
+                if (summaryTab) summaryTab.click();
+            }
+        });
+        
+        const resetBtn = document.getElementById('reset-risk-form-btn');
+        if(resetBtn) resetBtn.addEventListener('click', () => {
+            riskForm.reset();
+            features.clearPhotoPreview();
+        });
+    }
+
+    // --- [NOVO] CHECKLIST FLASH CARD ---
+    const openFlashcardBtn = document.getElementById('open-flashcard-btn');
+    if (openFlashcardBtn) {
+      openFlashcardBtn.addEventListener('click', () => {
+        const checklistView = document.getElementById('checklist-flashcard-view');
+        if (checklistView) {
+          checklistView.style.display = 'flex';
+          // Inicia a lógica interna do card
+          if (typeof features.initChecklistFlashCard === 'function') {
+            features.initChecklistFlashCard();
+          }
+        }
+      });
+    }
+
+    // Adiciona o listener para o botão de fechar o checklist
+    const closeChecklistBtn = document.getElementById('close-checklist-btn');
+    if (closeChecklistBtn) {
+      closeChecklistBtn.addEventListener('click', () => {
+        const checklistView = document.getElementById('checklist-flashcard-view');
+        if (checklistView) checklistView.style.display = 'none';
+      });
+    }
+
+    // --- GPS ---
+    const gpsBtn = document.getElementById('get-gps-btn');
+    if (gpsBtn) gpsBtn.addEventListener('click', features.handleGetGPS);
+
+    // --- IMPORTAÇÃO / EXPORTAÇÃO ---
+    const btnImport = document.getElementById('import-data-btn');
+    const inputZip = document.getElementById('zip-importer');
+    
+    if (btnImport && inputZip) {
+        btnImport.addEventListener('click', () => inputZip.click()); 
+        inputZip.addEventListener('change', async (e) => {
+            await features.handleImportZip(e);
+            TableUI.render(); 
+            mapUI.initializeMap(); 
+        });
+    }
+
+    const btnExport = document.getElementById('export-data-btn');
+    if (btnExport) {
+        btnExport.addEventListener('click', features.exportActionZip); 
+    }
+
+    // --- GERAR PDF ---
+    const btnPdf = document.getElementById('generate-pdf-btn');
+    if (btnPdf) {
+        btnPdf.addEventListener('click', () => {
+            if (pdfGenerator && typeof pdfGenerator.generatePDF === 'function') {
+                pdfGenerator.generatePDF(state.registeredTrees);
+            } else {
+                features.sendEmailReport(); 
+            }
+        });
+    }
+
+    const btnEmail = document.getElementById('send-email-btn');
+    if (btnEmail) {
+        btnEmail.addEventListener('click', features.sendEmailReport);
+    }
+
+    // --- LIMPAR BANCO ---
+    const btnClear = document.getElementById('clear-all-btn');
+    if (btnClear) {
+        btnClear.addEventListener('click', () => {
+            modalUI.showConfirmModal(
+                "Excluir Tudo?", 
+                "Esta ação apagará todas as árvores e fotos. Confirma?", 
+                () => {
+                    features.handleClearAll();
+                    TableUI.render();
+                    mapUI.initializeMap(); 
+                }
+            );
+        });
+    }
+
+    // --- FILTRO DA TABELA ---
+    const filterInput = document.getElementById('table-filter-input');
+    if(filterInput) filterInput.addEventListener('keyup', features.handleTableFilter);
+
+    // --- CHAT & CONTATO ---
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const chatInput = document.getElementById('chat-input');
+    if (chatSendBtn) chatSendBtn.addEventListener('click', features.handleChatSend);
+    if (chatInput) chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') features.handleChatSend(); });
+
+    // --- LÓGICA DE UPLOAD E PREVIEW DE FOTO ---
+    const photoInput = document.getElementById('tree-photo-input');
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+
+    if (photoInput) {
+        photoInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            features.clearPhotoPreview(); // Limpa qualquer preview anterior
+            try {
+                utils.showToast('Otimizando foto...', 'success');
+                const optimizedBlob = await utils.optimizeImage(file, 800, 0.7);
+                state.setCurrentTreePhoto(optimizedBlob);
+
+                const previewContainer = document.getElementById('photo-preview-container');
+                const preview = document.createElement('img');
+                preview.id = 'photo-preview';
+                preview.src = URL.createObjectURL(optimizedBlob);
+                previewContainer.prepend(preview); // Adiciona a imagem antes do botão
+                if(removePhotoBtn) removePhotoBtn.style.display = 'block';
+
+            } catch (error) {
+                console.error('Erro ao otimizar imagem:', error);
+                utils.showToast('Erro ao processar a foto.', 'error');
+            }
+        });
+    }
+
+    if (removePhotoBtn) {
+        removePhotoBtn.addEventListener('click', features.clearPhotoPreview);
+    }
+}
+
+// === 4. ATALHOS DE FERRAMENTAS ===
+function setupToolShortcuts() {
+    const btnHeight = document.getElementById('btn-measure-height-form');
+    const btnDap = document.getElementById('btn-measure-dap-form');
+    
+    if (btnHeight) {
+        btnHeight.addEventListener('click', () => {
+            const navBtn = document.querySelector('.topico-btn[data-target="clinometro-view"]');
+            if (navBtn) navBtn.click();
+        });
+    }
+    if (btnDap) {
+        btnDap.addEventListener('click', () => {
+            const navBtn = document.querySelector('.topico-btn[data-target="dap-estimator-view"]');
+            if (navBtn) navBtn.click();
+        });
+    }
+}
+
+function setupBackToTop() {
+  const backToTopBtn = document.getElementById('back-to-top-btn');
+  if (!backToTopBtn) return;
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) backToTopBtn.style.display = 'block';
+    else backToTopBtn.style.display = 'none';
+  }, { passive: true });
+}
+
+function setupWelcomeScreen() {
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const closeBtn = document.getElementById('close-welcome-btn');
+
+    if (!welcomeScreen || !closeBtn) return;
+
+    const closeWelcome = () => {
+        welcomeScreen.classList.remove('active');
+        setTimeout(() => {
+            welcomeScreen.style.display = 'none';
+            localStorage.setItem('arboriaWelcomeShown', 'true');
+        }, 300);
+    };
+
+    closeBtn.addEventListener('click', closeWelcome);
+
+    if (!localStorage.getItem('arboriaWelcomeShown')) {
+        setTimeout(() => welcomeScreen.classList.add('active'), 500);
+    }
+}
+
+function initFormDefaults() {
+    try {
+      const dateInput = document.getElementById('risk-data');
+      if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+      
+      const avaliadorInput = document.getElementById('risk-avaliador');
+      if (avaliadorInput && state.lastEvaluatorName) avaliadorInput.value = state.lastEvaluatorName;
+    } catch(e) { console.warn(e); }
+}
+
+// === 5. INICIALIZAÇÃO PRINCIPAL ===
+async function initApp() {
+  try {
+    console.log("🚀 Inicializando ArborIA 2.0...");
+    try {
+        pdfGenerator = await import('./pdf.generator.js');
+    } catch (e) {
+        console.warn("Módulo de PDF não encontrado.", e);
+    }
+
+    // 1. Inicializa UI Base
+    UI.init();
+    TooltipUI.init();
+    if (modalUI && typeof modalUI.initPhotoViewer === 'function') modalUI.initPhotoViewer();
+
+    // 2. Carrega Dados
+    state.loadDataFromStorage();
+    if (typeof initImageDB === 'function') await initImageDB(); 
+
+    // 3. Configura Listeners
+    if (topNavContainer) topNavContainer.addEventListener('click', handleMainNavigation);
+    setupActionButtons(); 
+    setupToolShortcuts();
+    setupBackToTop();
+    setupWelcomeScreen();
+    initFormDefaults();
+    
+    // 4. Inicializa Componentes Complexos
+    mapUI.initializeMap();
+    mapUI.setupMapListeners();
+    
+    clinometer.initClinometerListeners();
+    dapEstimator.initDAPEstimatorListeners();
+
+    // [NOTA] Não iniciamos mais o checklist automaticamente aqui.
+    // Ele é iniciado apenas pelo clique do botão #open-checklist-btn
+
+    // 5. Renderiza Tabela Inicial
+    TableUI.render();
+
+    // 6. Listener Global de Resize (Mapa)
+    window.addEventListener('resize', () => {
+        const mapContainer = document.getElementById('map-container');
+        if (mapContainer && mapContainer.offsetParent !== null) {
+            mapUI.initializeMap(); 
+            if (state.mapInstance) state.mapInstance.invalidateSize();
+        }
+    });
+
+    // 7. Restaura Estado
+    // [MUDANÇA] Força o início na calculadora/painel, em vez de restaurar a última aba.
+    // A UI já exibe o painel por padrão, então não precisamos clicar em nada.
+    const calcViewButton = document.querySelector('.topico-btn[data-target="calculadora-view"]');
+    if (window.innerWidth > 768 && calcViewButton) {
+      UI.navigateTo('calculadora-view');
+    }
+    
+    console.log("✅ ArborIA 2.0 Pronto.");
+
+  } catch (error) {
+    console.error("❌ Falha crítica ao inicializar:", error);
+    try { UI.showToast("Erro ao carregar aplicação.", "error"); } catch(e){}
+  }
+}
+
+// === 6. SERVICE WORKER (PWA) ===
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .catch((err) => console.log('SW Falhou:', err));
+  });
+}
+
+// Executa a aplicação
+document.addEventListener('DOMContentLoaded', initApp);
