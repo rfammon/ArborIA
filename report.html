@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Laudo Técnico - ArborIA</title>
+
+
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Main application stylesheet -->
+    <link rel="stylesheet" href="style.css?v=3.0">
+
+    <!-- Leaflet for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+
+    <style>
+        /* A4 print configuration */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--color-bg-body, #f0f2f5); /* Use CSS variable with fallback */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            margin: 0; /* Remove default body margin */
+            padding: 0; /* Remove default body padding */
+        }
+        
+        /* Styles for the screen view of the report */
+        .report-container {
+            background: white;
+            width: 210mm; /* A4 width */
+            min-height: 297mm; /* A4 minimum height */
+            margin: 20px auto; /* Center on screen with some margin */
+            padding: 15mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            position: relative;
+            box-sizing: border-box;
+            overflow: hidden; /* Prevent content from visually spilling */
+        }
+
+        /* Override example.html header for the application's header */
+        .report-container header {
+            border-bottom: none; /* Remove example.html header border */
+            padding-bottom: 0;
+            margin-bottom: 1rem;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .report-container header h1 {
+            font-size: 1.5rem;
+            color: var(--color-forest, #004d40); /* Match app's dark teal */
+            border-left: 5px solid var(--color-accent, #4caf50); /* Green accent */
+            padding-left: 10px;
+        }
+        .report-container header p.project-name {
+            font-size: 0.8rem;
+            color: var(--color-text-muted, #616161);
+            margin-top: 5px;
+        }
+        .report-container header .header-meta {
+            text-align: right;
+            width: 100%;
+            margin-top: 10px;
+            color: var(--color-text-muted, #616161);
+        }
+
+        /* Summary section */
+        .report-container section.summary {
+            background-color: #e8f5e9; /* Light green background - keep for now, or define a var */
+            border: 1px solid var(--color-border, #c8e6c9); /* Green border */
+            padding: 1rem;
+            border-radius: var(--radius-sm, 8px);
+            margin-bottom: 1.5rem;
+        }
+        .report-container section.summary h2 {
+            color: var(--risk-low, #388e3c); /* Darker green for heading */
+            border-bottom: 1px solid var(--color-border, #a5d6a7);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        .report-container section.summary div strong {
+            color: var(--risk-low, #1b5e20); /* Even darker green */
+        }
+
+        /* Map Section */
+        .report-map-section {
+            margin-bottom: 1.5rem;
+        }
+        #report-map-container {
+            height: 300px; /* Define a height for the map */
+            width: 100%;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            overflow: hidden; /* Important for map tiles */
+        }
+        .report-map-section h2 {
+            font-size: 1.3rem;
+            color: var(--color-text-main, #333);
+            margin-bottom: 1rem;
+            border-left: 5px solid var(--color-tech, #2196f3); /* Blue accent */
+            padding-left: 10px;
+        }
+
+        /* Inventário Fotográfico heading */
+        .report-container h2.inventory-heading {
+            font-size: 1.3rem;
+            color: var(--color-text-main, #333);
+            margin-bottom: 1.5rem;
+            border-left: 5px solid var(--color-tech, #2196f3); /* Blue accent */
+            padding-left: 10px;
+        }
+
+        /* Tree Card Styling */
+        .tree-card {
+            border: 1px solid var(--color-border, #b0bec5); /* Light blue-gray border */
+            border-radius: var(--radius-sm, 8px);
+            background-color: var(--color-bg-card, #ffffff);
+            box-shadow: var(--shadow-sm, 0 2px 4px rgba(0,0,0,0.1));
+            margin-bottom: 1rem;
+            page-break-inside: avoid;
+            display: flex; /* Ensure flex layout */
+            min-height: 11rem;
+            overflow: hidden;
+        }
+        .tree-card .card-photo {
+            width: 30%;
+            background-color: #eceff1; /* Light gray background - keep for now, or define a var */
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden; /* Hide overflowing images */
+        }
+        .tree-card .card-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Cover the area without distortion */
+            position: absolute;
+            top: 0;
+            left: 0;
+            filter: grayscale(20%); /* Slight grayscale effect */
+        }
+        .tree-card .card-photo .no-photo-icon {
+            color: var(--color-text-muted, #90a4ae); /* Muted icon color */
+            font-size: 3rem;
+            z-index: 1; /* Bring icon above image */
+        }
+        .tree-card .card-photo .photo-id {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--color-text-muted, #607d8b);
+            background-color: rgba(255,255,255,0.7);
+            padding: 2px 0;
+            z-index: 1;
+        }
+        .tree-card .card-photo .risk-badge {
+            position: absolute;
+            top: 0;
+            left: 0;
+            color: white;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-bottom-right-radius: var(--radius-sm, 8px);
+            z-index: 2;
+            font-size: 0.8rem;
+        }
+        .tree-card .card-photo .risk-badge.risk-low { background-color: var(--risk-low, #4caf50); }
+        .tree-card .card-photo .risk-badge.risk-medium { background-color: var(--risk-medium, #ff9800); }
+        .tree-card .card-photo .risk-badge.risk-high { background-color: var(--risk-high, #f44336); }
+
+        .tree-card .card-content {
+            width: 70%;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            border-left: 1px solid var(--color-border, #cfd8dc); /* Separator */
+        }
+        .tree-card .card-content .risk-indicator-bar {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+        }
+        .tree-card .card-content .risk-indicator-bar.risk-low { background-color: var(--risk-low, #4caf50); }
+        .tree-card .card-content .risk-indicator-bar.risk-medium { background-color: var(--risk-medium, #ff9800); }
+        .tree-card .card-content .risk-indicator-bar.risk-high { background-color: var(--risk-high, #f44336); }
+
+        .tree-card .card-content .tree-id-tag {
+            font-size: 0.7rem;
+            font-family: 'Roboto Mono', monospace; /* Keep for mono-spaced effect */
+            color: var(--color-text-muted, #78909c);
+            background-color: #eceff1; /* Keep for now, or define a var */
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--color-border, #cfd8dc);
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+        .tree-card .card-content h3.tree-species {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--color-text-main, #37474f); /* Dark blue-gray */
+            line-height: 1.3;
+            margin-bottom: 0.2rem;
+        }
+        .tree-card .card-content p.tree-scientific-name {
+            font-style: italic;
+            font-size: 0.8rem;
+            color: var(--color-text-muted, #78909c);
+            margin-bottom: 0.8rem;
+        }
+        .tree-card .card-content .tech-data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .tree-card .card-content .tech-data-item {
+            background-color: #f5f5f5; /* Keep for now, or define a var */
+            border-radius: var(--radius-sm, 6px);
+            padding: 0.5rem;
+            border: 1px solid var(--color-border, #eee);
+        }
+        .tree-card .card-content .tech-data-item span:first-child {
+            display: block;
+            font-size: 0.65rem;
+            color: var(--color-text-muted, #9e9e9e);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .tree-card .card-content .tech-data-item span:last-child {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--color-text-main, #455a64);
+        }
+        .tree-card .card-content .tech-data-item span.risk-emphasis {
+            color: var(--risk-high, #f44336); /* Red for emphasis */
+        }
+        .tree-card .card-content .card-footer {
+            margin-top: 1rem;
+        }
+        .tree-card .card-content p.observation {
+            font-size: 0.8rem;
+            color: var(--color-text-main, #546e7a);
+            margin-bottom: 0.8rem;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .tree-card .card-content .action-tag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: var(--radius-sm, 6px);
+            font-size: 0.75rem;
+            font-weight: bold;
+            width: fit-content;
+            max-width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .tree-card .card-content .action-tag i {
+            flex-shrink: 0;
+        }
+        .tree-card .card-content .action-tag.action-low {
+            background-color: #e8f5e9; /* Keep for now, or define a var */
+            color: var(--risk-low, #2e7d32);
+            border: 1px solid var(--color-border, #c8e6c9);
+        }
+        .tree-card .card-content .action-tag.action-medium {
+            background-color: #fff3e0; /* Keep for now, or define a var */
+            color: var(--risk-medium, #ef6c00);
+            border: 1px solid var(--color-border, #ffe0b2);
+        }
+        .tree-card .card-content .action-tag.action-high {
+            background-color: #ffebee; /* Keep for now, or define a var */
+            color: var(--risk-high, #d32f2f);
+            border: 1px solid var(--color-border, #ffcdd2);
+        }
+
+        .report-footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 15mm;
+            right: 15mm;
+            text-align: center;
+            border-top: 1px solid var(--color-border, #e0e0e0);
+            padding-top: 10px;
+            font-size: 0.7rem;
+            color: var(--color-text-muted, #757575);
+        }
+        
+        /* Utility for print breaking */
+        .break-inside-avoid {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+            }
+            .report-container {
+                width: 100%;
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+                overflow: visible;
+                padding: 0; /* Remove padding in print, adjust content padding directly */
+            }
+            .report-container:last-child {
+                page-break-after: auto;
+            }
+            /* Adjust header/footer for print */
+            .header-main, .report-footer {
+                position: static;
+                width: auto;
+                margin: 0;
+                padding: 10mm 15mm; /* Apply print padding */
+                border-radius: 0;
+                box-shadow: none;
+            }
+            .report-container > header { /* The internal header */
+                padding: 0 15mm;
+                margin-bottom: 1rem;
+            }
+            .report-container section.summary {
+                margin: 0 15mm 1.5rem 15mm;
+            }
+            .report-container h2.inventory-heading {
+                margin: 0 15mm 1.5rem 15mm;
+            }
+            .report-container .tree-cards-container {
+                padding: 0 15mm;
+            }
+            .report-footer {
+                text-align: center;
+                padding-top: 10px;
+                border-top: 1px solid var(--color-border, #e0e0e0);
+                color: var(--color-text-muted, #757575);
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        .generate-pdf-btn-container {
+            text-align: center;
+            margin-top: 20px;
+            padding-bottom: 20px; /* Ensure space for the button */
+        }
+        .generate-pdf-btn {
+            background-color: var(--color-forest, #00796b); /* Teal */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm, 5px);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition-smooth, background-color 0.3s ease);
+        }
+        .generate-pdf-btn:hover {
+            background-color: var(--color-tech, #004d40); /* Darker teal, using var-color-tech as a darker alternative */
+        }
+    </style>
+</head>
+<body>
+    <!-- Global application header, visible when viewing the report in the browser -->
+    <header class="header-main no-print" id="app-header-report">
+        <div class="logo-container">
+            <span class="arboria-text"><span class="blue">Arbor</span><span class="green">IA</span></span>
+            <img src="/img/icons/favicon.png" alt="Logo ArborIA" class="header-logo">
+        </div>
+        <p class="app-description">Sistema de Manejo Integrado Arbóreo</p>
+    </header>
+
+    <div class="generate-pdf-btn-container no-print">
+        <button id="generate-pdf-btn" class="generate-pdf-btn">Gerar Laudo PDF</button>
+    </div>
+
+    <!-- The actual report content, designed for A4 -->
+    <div class="report-container" id="report-content">
+        <!-- Report Header -->
+        <header>
+            <h1 class="text-2xl font-bold text-gray-800 uppercase tracking-tight leading-tight">Laudo de Risco Arbóreo</h1>
+            <p class="project-name" id="report-project-name">Projeto: Carregando...</p>
+            <div class="header-meta">
+                <div class="text-green-700 font-bold text-lg whitespace-nowrap"><i class="fa-solid fa-leaf"></i> ArborIA</div>
+                <p class="text-xs text-gray-400" id="report-ref">Ref: <span id="report-ref-id">Gerado automaticamente</span></p>
+            </div>
+        </header>
+
+        <!-- Executive Summary Section -->
+        <section class="summary">
+            <h2 class="text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Resumo</h2>
+            <div class="flex justify-between items-center text-sm flex-wrap gap-2">
+                <div><strong>Total de Árvores:</strong> <span id="report-total-trees">0</span></div>
+                <div><strong>Risco Crítico:</strong> <span class="text-red-600 font-bold" id="report-critical-risk">0 indiv.</span></div>
+                <div><strong>Risco Alto:</strong> <span class="text-orange-500 font-bold" id="report-high-risk">0 indiv.</span></div>
+                <div><strong>Risco Médio:</strong> <span class="text-yellow-600 font-bold" id="report-medium-risk">0 indiv.</span></div>
+                <div><strong>Risco Baixo:</strong> <span class="text-green-600 font-bold" id="report-low-risk">0 indiv.</span></div>
+                <div><strong>Data do Laudo:</strong> <span id="report-date">--/--/----</span></div>
+            </div>
+        </section>
+
+        <!-- Map Section -->
+        <section class="report-map-section">
+            <h2 class="report-map-section-heading">Localização das Árvores</h2>
+            <div id="report-map-container"></div>
+        </section>
+
+        <h2 class="inventory-heading">Inventário Fotográfico</h2>
+
+        <!-- Tree Cards Container - populated by JavaScript -->
+        <div class="tree-cards-container" id="tree-cards-container">
+            <!-- Tree cards will be inserted here by JavaScript -->
+            <p class="text-center text-gray-500" id="no-trees-message">Nenhuma árvore registrada para este laudo.</p>
+        </div>
+        
+        <!-- Report Footer -->
+        <div class="report-footer">
+            <p><span id="report-page-number">Página 1 de 1</span> - Gerado por ArborIA em <span id="report-generation-date">--/--/----</span></p>
+        </div>
+    </div>
+
+    <!-- Libraries for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Utility script -->
+    <script type="module" src="js/utils.js"></script>
+    
+    <!-- Script to populate the report and handle PDF generation -->
+    <script type="module" src="js/report.js"></script>
+</body>
+</html>

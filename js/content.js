@@ -5,52 +5,53 @@
  */
 
 // Helper local para imagens dentro do texto
-const imgTag = (src, alt) => `<img src="img/${src}" alt="${alt}" class="manual-img" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin: 20px auto; display: block; max-width: 100%;">`;
+const imgTag = (src, alt) => `<img src="img/${src}" alt="${alt}" class="manual-img" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'24\\' height=\\'24\\' viewBox=\\'0 0 24 24\\'%3E%3Cpath fill=\\'#ccc\\' d=\\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z\\'%3E%3C/path%3E%3C/svg%3E';this.style.width='24px';this.style.height='24px';this.style.margin='auto';this.title='Imagem não encontrada: ${src}';" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin: 20px auto; display: block; max-width: 100%;">`;
 
-// Helper para gerar o HTML do glossário dinamicamente
+
+// Definir as categorias e os termos associados a cada uma
+const glossaryCategories = {
+    'Termos Estruturais e Anatômicos': [
+        'colar do galho', 'crista da casca', 'lenho de cicatrização', 'casca inclusa',
+        'lenho de reação', 'gemas epicórmicas', 'entreno', 'no', 'lenho'
+    ],
+    'Instrumentos e Equipamentos': [
+        'podao', 'tesourao-poda', 'serra-poda', 'motosserra-glossario',
+        'motopoda-glossario', 'podador-bypass-glossario', 'podador-bigorna', 'hipsometro'
+    ],
+    'Técnicas de Poda': [
+        'poda-conducao', 'poda-formacao', 'poda-limpeza', 'poda-adequacao',
+        'poda-reducao', 'poda-emergencia', 'poda-raizes', 'poda-cabecote',
+        'poda drástica', 'poda-reducao-garfo', 'corte-rente', 'corte-toco',
+        'poda-tres-cortes', 'desbaste-copa', 'elevacao-copa', 'reducao-copa', 'topping'
+    ],
+    'Parâmetros de Avaliação': [
+        'dap', 'projecao-copa', 'indice-vitalidade', 'rcr',
+        'nivel-1-avaliacao', 'nivel-2-avaliacao', 'nivel-3-avaliacao'
+    ],
+    'Termos Legais e Normativos': [
+        'asv', 'app', 'ctf', 'art', 'tcra', 'compensacao-ambiental', 'pnrs', 'mtr', 'spi q'
+    ],
+    'Outros Termos': [] // Catch-all for terms not explicitly categorized
+};
+
 const generateGlossaryHtml = (terms) => {
-    const categories = {
-        'Termos Estruturais e Anatômicos': [
-            'colar do galho', 'crista da casca', 'lenho de cicatrização', 'casca inclusa',
-            'lenho de reação', 'gemas epicórmicas', 'entreno', 'no', 'lenho'
-        ],
-        'Instrumentos e Equipamentos': [
-            'podao', 'tesourao-poda', 'serra-poda', 'motosserra-glossario',
-            'motopoda-glossario', 'podador-bypass-glossario', 'podador-bigorna', 'hipsometro'
-        ],
-        'Técnicas de Poda': [
-            'poda-conducao', 'poda-formacao', 'poda-limpeza', 'poda-adequacao',
-            'poda-reducao', 'poda-emergencia', 'poda-raizes', 'poda-cabecote',
-            'poda drástica', 'poda-reducao-garfo', 'corte-rente', 'corte-toco',
-            'poda-tres-cortes', 'desbaste-copa', 'elevacao-copa', 'reducao-copa', 'topping'
-        ],
-        'Parâmetros de Avaliação': [
-            'dap', 'projecao-copa', 'indice-vitalidade', 'rcr',
-            'nivel-1-avaliacao', 'nivel-2-avaliacao', 'nivel-3-avaliacao'
-        ],
-        'Termos Legais e Normativos': [
-            'asv', 'app', 'ctf', 'art', 'tcra', 'compensacao-ambiental', 'pnrs', 'mtr', 'spi q'
-        ],
-        'Outros Termos': [] // Catch-all for terms not explicitly categorized
-    };
-
-    // Populate categories based on existing glossaryTerms
+    // Populate categories based on existing glossaryCategories
     const categorizedTerms = {};
-    for (const category in categories) {
-        categorizedTerms[category] = {};
+    for (const category in glossaryCategories) {
+        categorizedTerms[category] = []; // Initialize as array
     }
 
     for (const termKey in terms) {
         let found = false;
-        for (const category in categories) {
-            if (categories[category].includes(termKey)) {
-                categorizedTerms[category][termKey] = terms[termKey];
+        for (const categoryName in glossaryCategories) {
+            if (glossaryCategories[categoryName].includes(termKey)) {
+                categorizedTerms[categoryName].push({ key: termKey, definition: terms[termKey] });
                 found = true;
                 break;
             }
         }
         if (!found) {
-            categorizedTerms['Outros Termos'][termKey] = terms[termKey];
+            categorizedTerms['Outros Termos'].push({ key: termKey, definition: terms[termKey] });
         }
     }
 
@@ -65,19 +66,17 @@ const generateGlossaryHtml = (terms) => {
             <tbody>
     `;
 
-    for (const category in categorizedTerms) {
-        const categoryTerms = categorizedTerms[category];
-        const termKeys = Object.keys(categoryTerms).sort(); // Sort terms alphabetically within each category
-
-        if (termKeys.length > 0) {
+    for (const categoryName in categorizedTerms) {
+        const termsInCategory = categorizedTerms[categoryName].sort((a, b) => a.key.localeCompare(b.key)); // Sort alphabetically by key
+        
+        if (termsInCategory.length > 0) {
             html += `
-                <tr><td colspan="2" class="glossary-category-header" style="background: #e0f7fa; padding: 8px; font-weight: bold; color: #00796b;">${category}</td></tr>
+                <tr><td colspan="2" class="glossary-category-header" style="background: #e0f7fa; padding: 8px; font-weight: bold; color: #00796b;">${categoryName}</td></tr>
             `;
-            termKeys.forEach(termKey => {
-                let displayTerm = termKey.split('-glossario').join(''); // Remove "-glossario" suffix for display
-                // Check if the current category is 'Termos Legais e Normativos' and the term is an acronym
+            termsInCategory.forEach(termItem => {
+                let displayTerm = termItem.key.split('-glossario').join('');
                 const legalAcronyms = ['asv', 'app', 'ctf', 'art', 'tcra', 'pnrs', 'mtr', 'spi q'];
-                if (category === 'Termos Legais e Normativos' && legalAcronyms.includes(termKey)) {
+                if (categoryName === 'Termos Legais e Normativos' && legalAcronyms.includes(termItem.key)) {
                     displayTerm = displayTerm.toUpperCase();
                 } else {
                     displayTerm = displayTerm.charAt(0).toUpperCase() + displayTerm.slice(1);
@@ -85,7 +84,7 @@ const generateGlossaryHtml = (terms) => {
                 html += `
                     <tr>
                         <td style="padding: 8px; border-bottom: 1px solid #eee;">${displayTerm}</td>
-                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${categoryTerms[termKey]}</td>
+                        <td style="padding: 8px; border-bottom: 1px solid #eee;">${termItem.definition}</td>
                     </tr>
                 `;
             });
@@ -105,30 +104,30 @@ const generateGlossaryHtml = (terms) => {
 
 // Helper para obter todos os termos do glossário e ordená-los por tamanho
 const getAllGlossaryKeys = () => {
-    const allTerms = {};
+    const allTermKeys = new Set(); // Use a Set to ensure unique keys
 
-    // Adicionar glossaryTerms
+    // Add keys from glossaryTerms
     for (const key in glossaryTerms) {
-        allTerms[key] = glossaryTerms[key];
+        allTermKeys.add(key);
     }
 
-    // Adicionar equipmentData
+    // Add keys from equipmentData
     for (const key in equipmentData) {
-        allTerms[key] = equipmentData[key].desc;
+        allTermKeys.add(key);
     }
 
-    // Adicionar checklistData
+    // Add keys from checklistData
     for (const key in checklistData) {
-        allTerms[key] = checklistData[key].desc;
+        allTermKeys.add(key);
     }
 
-    // Adicionar podaPurposeData
+    // Add keys from podaPurposeData
     for (const key in podaPurposeData) {
-        allTerms[key] = podaPurposeData[key].desc;
+        allTermKeys.add(key);
     }
     
-    // Retornar apenas as chaves, ordenadas por tamanho em ordem decrescente
-    return Object.keys(allTerms).sort((a, b) => b.length - a.length);
+    // Convert Set to Array and sort by length in descending order
+    return Array.from(allTermKeys).sort((a, b) => b.length - a.length);
 };
 
 const applyTooltipsToHtml = (htmlString, termsToMatch) => {
@@ -423,7 +422,7 @@ export const manualContent = {
             <ol>
                 <li><strong>Corte de Alívio (Inferior):</strong> 20-30cm do tronco, de baixo para cima, até 1/3 do diâmetro.</li>
                 <li><strong>Corte de Queda (Superior):</strong> Um pouco à frente do primeiro corte, de cima para baixo. O galho cai.</li>
-                <li><strong>Corte de Acabamento (Final):):</strong> Rente à crista da casca/colar, sem deixar toco e sem ferir o tronco.</li>
+                <li><strong>Corte de Acabamento (Final):</strong> Rente à crista da casca/colar, sem deixar toco e sem ferir o tronco.</li>
             </ol>
 
             <h5>Práticas Proibidas (Mutilação)</h5>

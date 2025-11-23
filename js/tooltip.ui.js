@@ -27,6 +27,11 @@ export const TooltipUI = {
         imageContainer: null
     },
 
+    // Helper para normalizar chaves para o formato "lowercase-hyphenated"
+    normalizeKey(key) {
+        return key.toLowerCase().replace(/\s+/g, '-');
+    },
+
     init() {
         this.elements.card = document.getElementById('tooltip-card');
         this.elements.title = document.getElementById('tooltip-title');
@@ -39,15 +44,58 @@ export const TooltipUI = {
             return; 
         }
 
-        // Unifica todas as fontes de dados em um único objeto de definições.
+        // Normaliza as chaves de todos os termos antes de unificá-los.
         // A ordem importa: dados mais específicos (com imagens) devem vir por último.
-        this.definitions = { 
-            ...glossaryTerms, 
-            ...this.definitions, 
-            ...equipmentData, 
-            ...checklistData,
-            ...podaPurposeData
+        const normalizedGlossaryTerms = {};
+        for (const key in glossaryTerms) {
+            normalizedGlossaryTerms[this.normalizeKey(key)] = glossaryTerms[key];
+        }
+
+        const normalizedEquipmentData = {};
+        for (const key in equipmentData) {
+            normalizedEquipmentData[this.normalizeKey(key)] = equipmentData[key];
+        }
+
+        const normalizedChecklistData = {};
+        for (const key in checklistData) {
+            normalizedChecklistData[this.normalizeKey(key)] = checklistData[key];
+        }
+
+        const normalizedPodaPurposeData = {};
+        for (const key in podaPurposeData) {
+            normalizedPodaPurposeData[this.normalizeKey(key)] = podaPurposeData[key];
+        }
+
+        // Unifica todas as fontes de dados em um único objeto de definições, com chaves normalizadas.
+        // Ordem de precedência (do menor para o maior):
+        // 1. Definições base (hardcoded no objeto TooltipUI.definitions).
+        // 2. Termos do glossário geral (glossaryTerms).
+        // 3. Dados específicos de equipamentos, checklist, propósito de poda (equipmentData, checklistData, podaPurposeData).
+        
+        // Captura as definições base antes de serem sobrescritas
+        const baseDefinitions = this.definitions;
+        this.definitions = {}; // Reseta para construir com a ordem correta
+
+        // Helper para normalizar e adicionar termos
+        const addNormalizedTerms = (sourceObj, isNestedWithDesc = false) => {
+            for (const key in sourceObj) {
+                const normalizedKey = this.normalizeKey(key);
+                if (isNestedWithDesc) {
+                    this.definitions[normalizedKey] = sourceObj[key]; // Mantém o objeto {desc, img}
+                } else {
+                    this.definitions[normalizedKey] = sourceObj[key]; // Termo simples (string)
+                }
+            }
         };
+
+        // 1. Adiciona as definições base
+        addNormalizedTerms(baseDefinitions);
+        // 2. Adiciona os termos do glossário geral (pode sobrescrever os base)
+        addNormalizedTerms(glossaryTerms);
+        // 3. Adiciona dados específicos (sobrescrevem os anteriores se houver conflito)
+        addNormalizedTerms(equipmentData, true);
+        addNormalizedTerms(checklistData, true);
+        addNormalizedTerms(podaPurposeData, true);
 
         // Fecha ao clicar no backdrop
         this.elements.backdrop.addEventListener('click', () => this.hideTooltip());
@@ -56,7 +104,7 @@ export const TooltipUI = {
         // Delegação de eventos para performance
         document.body.addEventListener('click', (e) => {
             if (e.target.classList.contains('checklist-term') || e.target.classList.contains('tooltip-trigger')) {
-                const termKey = e.target.getAttribute('data-term-key');
+                const termKey = e.target.getAttribute('data-term-key'); // Já vem normalizado
                 const termText = e.target.textContent;
                 
                 if (termKey && this.definitions[termKey]) {
