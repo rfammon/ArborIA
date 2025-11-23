@@ -245,7 +245,7 @@
 
 
 @media (max-width: 768px) {
-  #clinometro-view, #dap-estimator-view {
+  #clinometer-view, #dap-estimator-view {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -258,14 +258,64 @@
   }
 
   .hud-top {
-    padding: 15px 20px;
-    font-size: 1.1rem;
+    padding: 10px 15px; /* Reduced padding */
+    height: 60px; /* Fixed height for consistency */
+    background: linear-gradient(to bottom, rgba(10,10,10,0.9), transparent); /* Ensure gradient covers reduced padding */
+    font-size: 1rem; /* Adjusted font size for mobile */
   }
 
   #clinometer-angle, #dap-current-angle {
-    font-size: 1.8rem;
-    white-space: nowrap;
-    padding-left: 8px;
-    padding-right: 8px;
+    font-size: 1.6rem; /* Adjusted font size for mobile readability */
+    /* Removed white-space: nowrap and padding to prevent overflow */
+    position: relative; /* Ensure z-index control if needed */
+  }
+  
+  .hud-close-btn {
+    font-size: 0.9rem; /* Smaller close button text */
+    padding: 8px 12px; /* Smaller padding for close button */
+  }
+
+  .hud-overlay {
+    bottom: 15px; /* Adjust bottom spacing */
+    left: 15px; /* Adjust left spacing */
+    right: 15px; /* Adjust right spacing */
+    max-height: 40vh; /* Allow scrolling if content is too tall */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 20px; /* Adjust inner padding */
+  }
+
+  .hud-step p {
+    font-size: 1rem; /* Smaller paragraph text */
+  }
+
+  .hud-step strong {
+    font-size: 1.1rem; /* Smaller strong text */
+  }
+
+  .hud-step input[type="number"] {
+    width: 100%; /* Make input full width */
+    max-width: 180px; /* Limit max width for better aesthetic */
+    font-size: 1.5rem; /* Adjusted font size for input */
+    padding: 10px 12px; /* Adjusted padding for input */
+  }
+  
+  .hud-action-btn,
+  .hud-capture-btn,
+  .export-btn {
+    width: 100%; /* Make buttons full width */
+    display: block; /* Ensure buttons stack vertically */
+    margin-top: 10px; /* Add vertical spacing between buttons */
+    font-size: 1rem; /* Adjusted font size for buttons */
+    padding: 12px 20px; /* Adjusted padding for buttons */
+  }
+
+  .result-actions {
+    flex-direction: column; /* Stack result action buttons vertically */
+    gap: 10px; /* Adjust gap between stacked buttons */
+  }
+
+  #tree-height-result,
+  #dap-estimated-result {
+    font-size: 3rem; /* Adjusted font size for results */
   }
 }
