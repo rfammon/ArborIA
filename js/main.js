@@ -260,15 +260,23 @@ function setupWelcomeScreen() {
 
     if (!welcomeScreen || !closeBtn) return;
 
+    // Temporarily disable welcome screen for debugging
+    welcomeScreen.style.display = 'none';
+    localStorage.setItem('arboriaWelcomeShown', 'true'); // Pretend it was shown already
+    return;
+
     const closeWelcome = () => {
+        console.log("Welcome screen close button clicked.");
         welcomeScreen.classList.remove('active');
         setTimeout(() => {
             welcomeScreen.style.display = 'none';
+            console.log("Welcome screen hidden.");
             localStorage.setItem('arboriaWelcomeShown', 'true');
         }, 300);
     };
 
     closeBtn.addEventListener('click', closeWelcome);
+    console.log("Welcome screen close button event listener attached.");
 
     if (!localStorage.getItem('arboriaWelcomeShown')) {
         setTimeout(() => welcomeScreen.classList.add('active'), 500);

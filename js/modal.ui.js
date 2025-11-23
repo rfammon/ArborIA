@@ -26,7 +26,12 @@ export function initPhotoViewer() {
     const dialog = document.getElementById('photo-viewer-dialog');
     const closeBtn = document.getElementById('photo-viewer-close');
     
-    if (!dialog || !closeBtn) return;
+    if (!dialog) return; // Add this check first
+
+    // Ensure it's hidden on initialization
+    dialog.style.display = 'none';
+
+    if (!closeBtn) return;
 
     // Evento: Botão X
     closeBtn.addEventListener('click', closePhotoViewer);

@@ -295,15 +295,16 @@ export function initializeMap() {
 
   if (state.zoomTargetCoords) {
     // Zoom muito próximo para ver a copa da árvore no satélite
-    map.setView(state.zoomTargetCoords, 20); 
-    state.setZoomTargetCoords(null);
-    
-    if (state.openInfoBoxId !== null) {
-       const t = state.registeredTrees.find(x => x.id === state.openInfoBoxId);
-       if(t) setTimeout(() => showMapInfoBox(t), 500);
-       state.setOpenInfoBoxId(null);
-    }
-  } else if (bounds && bounds.isValid() && state.registeredTrees.length > 0) {
+        map.setView(state.zoomTargetCoords, 20); 
+        if (state.openInfoBoxId !== null) {
+           const t = state.registeredTrees.find(x => x.id === state.openInfoBoxId);
+           if(t) setTimeout(() => showMapInfoBox(t), 500);
+        }
+        // Clear state after a short delay to ensure rendering happens
+        setTimeout(() => {
+            state.setZoomTargetCoords(null); 
+            state.setOpenInfoBoxId(null);
+        }, 1000); // Give it 1 second to render  } else if (bounds && bounds.isValid() && state.registeredTrees.length > 0) {
       if (map.getZoom() <= 5) {
           map.fitBounds(bounds, { padding: [50, 50], maxZoom: 19 });
       }
