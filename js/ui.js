@@ -41,7 +41,9 @@ export const UI = {
         this.elements.navPanel = document.getElementById('main-navigation');
         this.elements.backBtnContainer = document.getElementById('back-btn-container');
         this.elements.backBtn = document.getElementById('btn-back-dashboard');
-        
+        this.elements.headerMain = document.getElementById('page-top'); // Add header
+        this.elements.appContent = document.getElementById('app-content'); // Add app-content
+
         // Seleciona todas as seções que funcionam como "páginas"
         this.elements.sections = document.querySelectorAll('.content-section');
         

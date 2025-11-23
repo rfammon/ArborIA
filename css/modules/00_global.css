@@ -1,0 +1,10 @@
+/*
+ * ARBORIA 2.1 - GLOBAL OVERRIDES
+ * Styles defined here are intended to globally affect the layout,
+ * often used for toggling fullscreen modes or other high-level display changes.
+ */
+
+body.fullscreen-active #page-top,
+body.fullscreen-active #app-content {
+  display: none !important;
+}

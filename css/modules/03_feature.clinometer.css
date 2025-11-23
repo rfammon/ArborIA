@@ -265,7 +265,7 @@
   }
 
   #clinometer-angle, #dap-current-angle {
-    font-size: 1.6rem; /* Adjusted font size for mobile readability */
+    font-size: 1.2rem; /* Adjusted font size for mobile readability */
     /* Removed white-space: nowrap and padding to prevent overflow */
     position: relative; /* Ensure z-index control if needed */
   }
