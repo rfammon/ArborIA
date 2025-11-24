@@ -24,6 +24,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
 </head>
 <body>
 
@@ -108,7 +109,12 @@
                     <button class="topico-btn" data-target="dap-estimator-view">
                         <img src="img/icons/dap.png" alt=""> 
                         <span>Medir DAP</span>
-                    </button> 
+                    </button>
+
+                    <button class="topico-btn" data-target="plano-intervencao-view">
+                        <img src="img/icons/planejamento.png" alt=""> 
+                        <span>Plano de Intervenção</span>
+                    </button>
                 </nav>
             </section>
 
@@ -376,6 +382,12 @@
                     </fieldset>
                 </div>
             </section>
+
+            <section class="app-view content-section" id="plano-intervencao-view" style="display: none;">
+                <h3><img src="img/icons/planejamento.png" alt="Plano de Intervenção" class="section-title-icon"> Plano de Intervenção</h3>
+                <p>Elaboração do plano de manejo e supressão para as árvores avaliadas.</p>
+                <div id="planning-module-root"></div>
+            </section>
         </div>
 
         <section id="gemini-chat" class="content-section" style="margin-top: 2rem; display:none;">
@@ -440,6 +452,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
+    <script type="module" src="js/arboria-module.js?v=2.0"></script>
     <script type="module" src="js/main.js?v=2.0"></script>
 </body>
 </html>

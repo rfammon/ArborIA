@@ -6,7 +6,7 @@ import { TooltipUI } from './tooltip.ui.js';
 import { TableUI } from './table.ui.js';
 
 import * as features from './features.js';
-import { initImageDB } from './database.js'; 
+import { initImageDB, getImageFromDB } from './database.js'; 
 import * as modalUI from './modal.ui.js'; 
 import * as mapUI from './map.ui.js'; 
 
@@ -54,6 +54,9 @@ function handleMainNavigation(event) {
   } else if (targetId === 'dap-estimator-view') {
     dapEstimator.startDAPEstimator();
 
+  } else if (targetId === 'plano-intervencao-view') {
+    openPlanningModule();
+  
   } else {
     // --- MANUAL TÉCNICO ---
     if (manualContent && manualContent[targetId]) {
@@ -64,6 +67,57 @@ function handleMainNavigation(event) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
+
+async function openPlanningModule() {
+    const trees = state.registeredTrees.map(tree => ({
+        ...tree,
+        species: tree.especie,
+        location: tree.local,
+        riskLevel: tree.risco,
+        riskFactorsCode: tree.riskFactors ? tree.riskFactors.join(',') : '',
+        defects: tree.observacoes ? [tree.observacoes] : [],
+        riskScore: tree.pontuacao,
+        date: tree.data,
+        dap: tree.dap,
+        height: tree.altura,
+        coordinates: (tree.coordX && tree.coordY && tree.coordX !== 'N/A' && tree.coordY !== 'N/A') ? { lat: parseFloat(tree.coordY.replace(',', '.')), lng: parseFloat(tree.coordX.replace(',', '.')) } : null
+    }));
+
+    const treesWithImages = await Promise.all(trees.map(async (tree) => {
+        if (tree.hasPhoto) {
+            return new Promise((resolve) => {
+                getImageFromDB(tree.id, (blob) => {
+                    if (blob) {
+                        resolve({ ...tree, image: URL.createObjectURL(blob) });
+                    } else {
+                        resolve({ ...tree, image: null });
+                    }
+                });
+            });
+        }
+        return tree;
+    }));
+
+    const currentUser = document.getElementById('risk-avaliador').value || 'Usuário';
+
+    if (window.ArborIA && window.ArborIA.PlanningModule) {
+        window.ArborIA.PlanningModule.mount('planning-module-root', {
+            trees: treesWithImages,
+            currentUser: currentUser,
+            onSavePlan: (plan) => {
+                console.log("Plano recebido pelo App Mãe:", plan);
+                utils.showToast("Plano Salvo com Sucesso!", "success");
+                const calcViewButton = document.querySelector('.topico-btn[data-target="calculadora-view"]');
+                if (calcViewButton) calcViewButton.click();
+            },
+            onCancel: () => {
+                const calcViewButton = document.querySelector('.topico-btn[data-target="calculadora-view"]');
+                if (calcViewButton) calcViewButton.click();
+            }
+        });
+    }
+}
+
 
 function loadManualContent(topicId) {
     if (!detailView) return;

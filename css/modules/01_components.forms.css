@@ -101,8 +101,8 @@ select:required:not(:placeholder-shown) + label::after {
     gap: 0.5rem;
 }
 
-input[type="checkbox"],
-input[type="radio"] {
+form input[type="checkbox"],
+form input[type="radio"] {
     appearance: none;
     width: 1.25rem;
     height: 1.25rem;
@@ -112,14 +112,15 @@ input[type="radio"] {
     place-content: center;
     cursor: pointer;
     transition: background-color 0.2s, border-color 0.2s;
+    background-color: var(--color-white);
 }
 
-input[type="radio"] {
+form input[type="radio"] {
     border-radius: 50%;
 }
 
-input[type="checkbox"]::before,
-input[type="radio"]::before {
+form input[type="checkbox"]::before,
+form input[type="radio"]::before {
     content: "";
     width: 0.75rem;
     height: 0.75rem;
@@ -129,19 +130,19 @@ input[type="radio"]::before {
     background-color: CanvasText; /* Fallback for older browsers */
 }
 
-input[type="checkbox"]:checked::before {
+form input[type="checkbox"]:checked::before {
     transform: scale(1);
     background-color: var(--color-primary);
     clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
 }
 
-input[type="radio"]:checked::before {
+form input[type="radio"]:checked::before {
     transform: scale(1);
     border-radius: 50%;
 }
 
-input[type="checkbox"]:checked,
-input[type="radio"]:checked {
+form input[type="checkbox"]:checked,
+form input[type="radio"]:checked {
     background-color: var(--color-primary);
     border-color: var(--color-primary);
 }

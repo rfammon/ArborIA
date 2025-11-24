@@ -1,0 +1,115 @@
+/* css/modules/02_feature.planning.css */
+
+.tree-card {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.tree-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.tree-card-img {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+}
+
+.tree-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tree-card-risk-badge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.risk-high {
+    background-color: var(--color-danger);
+}
+
+.risk-medium {
+    background-color: var(--color-warning);
+}
+
+.risk-low {
+    background-color: var(--color-success);
+}
+
+.tree-card-info {
+    flex-grow: 1;
+}
+
+.tree-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.tree-card-header h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text-dark);
+    margin: 0;
+}
+
+.tree-card-id {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--color-text-light);
+    background-color: var(--color-light-gray);
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--radius-sm);
+}
+
+.tree-card-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.tree-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.tree-card-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.tree-card-details-item {
+    background-color: var(--color-light-gray);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-pill);
+    color: var(--color-text-main);
+}
