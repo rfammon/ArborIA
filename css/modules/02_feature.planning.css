@@ -1,0 +1,232 @@
+/* css/modules/02_feature.planning.css */
+
+.tree-card {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.tree-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.tree-card-img {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+}
+
+.tree-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tree-card-risk-badge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 0.25rem;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.risk-high {
+    background-color: var(--color-danger);
+}
+
+.risk-medium {
+    background-color: var(--color-warning);
+}
+
+.risk-low {
+    background-color: var(--color-success);
+}
+
+.tree-card-info {
+    flex-grow: 1;
+}
+
+.tree-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.tree-card-header h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text-dark);
+    margin: 0;
+}
+
+.tree-card-id {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--color-text-light);
+    background-color: var(--color-light-gray);
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--radius-sm);
+}
+
+.tree-card-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.75rem;
+}
+
+.tree-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.tree-card-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.tree-card-details-item {
+    background-color: var(--color-light-gray);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-pill);
+    color: var(--color-text-main);
+}
+
+/* Styles for checkbox containers in the planning form */
+.checkbox-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.checkbox-container-box {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    margin-top: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #f8fafc; /* A slightly off-white background */
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.checkbox-group span {
+    font-size: 0.95rem;
+    color: var(--color-text-main);
+}
+
+/* --- Estilos para o Documento de Plano de Intervenção --- */
+#printable-area {
+    background-color: var(--color-white);
+    padding: 2rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md); /* Add a subtle shadow to the whole document */
+}
+
+.planning-box {
+    background-color: var(--color-white);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
+    overflow: hidden; /* Garante que os elementos filhos respeitem o border-radius */
+}
+
+.planning-box-header {
+    display: flex;
+    align-items: baseline; /* Alinha pela linha de base do texto */
+    gap: 0.75rem; /* Espaço reduzido para um visual mais coeso */
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+    margin: -1.5rem -1.5rem 1rem -1.5rem;
+    padding: 1rem 1.5rem;
+    background-color: rgba(var(--color-tech-rgb), 0.04);
+}
+
+.planning-box-header .icon {
+    font-size: 1.2rem; /* Tamanho do ícone um pouco maior que o texto */
+    line-height: 1; /* Garante alinhamento vertical */
+}
+
+.planning-box-header h3 {
+    font-size: 1.1rem; /* Tamanho de fonte do título ajustado */
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-tech);
+    line-height: 1.2; /* Altura da linha para melhor espaçamento */
+}
+
+/* Variações de cor para os headers */
+.planning-box.green .planning-box-header {
+    background-color: rgba(var(--color-forest-rgb), 0.04);
+}
+.planning-box.green .planning-box-header h3 {
+    color: var(--color-forest);
+}
+
+.planning-box ul, .planning-box ol {
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.planning-box li {
+    margin-bottom: 0.5rem;
+    color: var(--color-text-muted);
+}
+.planning-box li strong {
+    color: var(--color-text-main);
+}
+
+.report-photo-container {
+    margin-top: 1.5rem;
+}
+
+.report-photo {
+    width: 100%;
+    height: 400px; /* Fixed height */
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    display: block;
+}
+
+#printable-area #map-container {
+    width: 100%;
+    height: 400px; /* Same height as photo */
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    margin-top: 1.5rem;
+    background-color: var(--color-bg-body);
+}

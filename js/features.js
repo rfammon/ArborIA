@@ -6,7 +6,7 @@
 import * as state from './state.js';
 import * as utils from './utils.js';
 import * as db from './database.js';
-import { TableUI } from './table.ui.js'; 
+import { TableUI } from './table.ui.js';
 
 // ============================================================
 // 1. LÓGICA DO CHECKLIST (MODO FLASH CARD / TELA CHEIA)
@@ -304,16 +304,10 @@ export function clearPhotoPreview() {
   const pi = document.getElementById('tree-photo-input');
   if (pi) pi.value = null;
 
-  const submitBtn = document.getElementById('add-tree-btn');
-  if (submitBtn) {
-      submitBtn.innerHTML = '➕ Registrar Árvore';
-  }
-  state.setEditingTreeId(null);
+
+
   
   // Limpa Checkboxes da Tabela Oculta
-  const form = document.getElementById('risk-calculator-form');
-  if(form) form.reset();
-  
   document.querySelectorAll('.risk-checkbox').forEach(cb => cb.checked = false);
   
   TableUI.render();
@@ -388,7 +382,11 @@ export function handleAddTreeSubmit(event) {
   
   state.setEditingTreeId(null);
   form.reset();
-  clearPhotoPreview();
+  clearPhotoPreview(); 
+  const submitBtn = document.getElementById('add-tree-btn');
+  if (submitBtn) {
+      submitBtn.innerHTML = '➕ Registrar Árvore';
+  }
   if(document.activeElement) document.activeElement.blur();
 
   TableUI.render();
@@ -504,7 +502,13 @@ export function handleZoomToPoint(id) {
   const t = state.registeredTrees.find(tr => tr.id === id); 
   if (!t) return;
   
-  const coords = utils.convertLatLonToUtm(0,0); 
+  const latLonCoords = convertToLatLon(t); // Use mapUI's function to get LatLon
+  if (!latLonCoords) {
+      utils.showToast("Coordenadas inválidas para esta árvore.", "error");
+      return;
+  }
+
+  state.setZoomTargetCoords(latLonCoords); // Set zoom target coords
   state.setHighlightTargetId(id);
   state.setOpenInfoBoxId(id);
   
@@ -520,8 +524,10 @@ export function handleMapMarkerClick(id) {
       const row = document.getElementById(`row-${id}`);
       if(row) {
           row.scrollIntoView({behavior: 'smooth', block: 'center'});
-          row.style.backgroundColor = '#fff9c4';
-          setTimeout(() => row.style.backgroundColor = '', 1500);
+          row.classList.add('glow-effect');
+          setTimeout(() => {
+              row.classList.remove('glow-effect');
+          }, 1500);
       }
   }, 300);
 }

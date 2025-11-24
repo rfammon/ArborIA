@@ -370,7 +370,7 @@ const manualContent = {
 
     // (CORRIGIDO v19.3) HTML da Calculadora: HTML estático completo (sem auto-referência)
     'calculadora-risco': {
-        titulo: '📊 Calculadora de Risco Arbóreo',
+        titulo: '📊 Levantamento de Dados Arbóreo',
         html: `
             <p>Use o mapa para visualização geoespacial do risco, a aba "Registrar" para coleta e "Resumo" para gerenciar os dados.</p>
             

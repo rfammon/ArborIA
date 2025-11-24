@@ -15,7 +15,7 @@ export function debounce(func, delay = 300) {
     };
 }
 
-// === 2. UTILITÁRIO DE UI (TOAST) ===
+// === 2. UTILITÁRIO DE UI (TOAST E VALIDAÇÃO DE INPUTS) ===
 let toastTimer = null;
 
 export function showToast(message, type = 'info') {
@@ -38,6 +38,36 @@ export function showToast(message, type = 'info') {
         toast.classList.remove('show');
         toastTimer = null;
     }, 3500);
+}
+
+/**
+ * Exibe uma mensagem de erro abaixo do elemento de input.
+ * @param {HTMLElement} inputElement O elemento de input ao qual o erro se refere.
+ * @param {string} message A mensagem de erro a ser exibida.
+ */
+export function showInputError(inputElement, message) {
+    if (!inputElement) return;
+    clearInputError(inputElement); // Limpa qualquer erro existente
+
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'input-error-message';
+    errorDiv.textContent = message;
+    
+    inputElement.parentNode.insertBefore(errorDiv, inputElement.nextSibling);
+    inputElement.classList.add('input-error');
+}
+
+/**
+ * Remove a mensagem de erro e a estilização de erro de um elemento de input.
+ * @param {HTMLElement} inputElement O elemento de input do qual remover o erro.
+ */
+export function clearInputError(inputElement) {
+    if (!inputElement) return;
+    const existingError = inputElement.parentNode.querySelector('.input-error-message');
+    if (existingError) {
+        existingError.remove();
+    }
+    inputElement.classList.remove('input-error');
 }
 
 // === 3. HELPERS DE DADOS (Data e UUID) ===

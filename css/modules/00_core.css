@@ -18,6 +18,7 @@
   /* --- CORES DE FUNCIONALIDADE --- */
   --color-bg-body: #f0f2f5;
   --color-bg-card: #ffffff;
+  --color-white: #ffffff; /* Adicionado para consistência */
   --color-text-main: #1a202c;
   --color-text-muted: #718096;
   --color-border: #e2e8f0;
@@ -26,6 +27,10 @@
   --risk-high: #d32f2f;
   --risk-medium: #f57c00;
   --risk-low: #388e3c;
+
+  /* Cores RGB para opacidade */
+  --color-tech-rgb: 2, 119, 189; /* Componentes RGB de --color-tech */
+  --color-forest-rgb: 0, 121, 107; /* Componentes RGB de --color-forest */
 
   /* --- UI --- */
   --header-height: 70px; /* Aumentado levemente para acomodar logo */
@@ -57,7 +62,7 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--color-bg-body);
   color: var(--color-text-main);
   line-height: 1.5;
@@ -176,5 +181,5 @@ img { max-width: 100%; display: block; }
 
 .button-icon {
     height: 1.2em;
-    filter: invert(1);
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Adiciona uma sombra para fazer o ícone "saltar" */
 }

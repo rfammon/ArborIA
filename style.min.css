@@ -1,0 +1,3503 @@
+/* Concatenated CSS */
+
+/* css/modules/00_global.css */
+
+body.fullscreen-active #page-top,
+body.fullscreen-active #app-content {
+  display: none !important;
+}
+
+/* css/modules/00_core.css */
+/**
+ * ARBORIA 2.0 - CORE STYLES (v2.1 - Header Full Width Fix)
+ * Módulo Base: Variáveis, Reset, Tipografia e Layout Mestre
+ */
+
+:root {
+  /* --- PALETA DE CORES (Identidade Visual) --- */
+  --color-forest: #00796b;       /* Verde Floresta Principal (IA/Natureza) */
+  --color-tech: #0277BD;         /* Azul Tecnológico Secundário (Arbor/Tech) */
+  --color-accent: #00bfa5;       /* Destaque (Teal Vibrante) */
+  
+  /* Degradês */
+  --gradient-main: linear-gradient(135deg, var(--color-forest), var(--color-tech));
+  --gradient-header: linear-gradient(90deg, var(--color-tech), var(--color-forest)); /* Azul -> Verde */
+  --gradient-hover: linear-gradient(135deg, #00695c, #01579b);
+  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f4f6f9 100%);
+  
+  /* --- CORES DE FUNCIONALIDADE --- */
+  --color-bg-body: #f0f2f5;
+  --color-bg-card: #ffffff;
+  --color-white: #ffffff; /* Adicionado para consistência */
+  --color-text-main: #1a202c;
+  --color-text-muted: #718096;
+  --color-border: #e2e8f0;
+
+  /* Cores de Risco */
+  --risk-high: #d32f2f;
+  --risk-medium: #f57c00;
+  --risk-low: #388e3c;
+
+  /* Cores RGB para opacidade */
+  --color-tech-rgb: 2, 119, 189; /* Componentes RGB de --color-tech */
+  --color-forest-rgb: 0, 121, 107; /* Componentes RGB de --color-forest */
+
+  /* --- UI --- */
+  --header-height: 70px; /* Aumentado levemente para acomodar logo */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 50px;
+
+  /* Profundidade */
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-floating: 0 8px 30px rgba(0, 121, 107, 0.20); 
+  
+  /* Animações */
+  --transition-fast: 0.2s ease;
+  --transition-smooth: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* --- RESET BÁSICO --- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-bg-body);
+  color: var(--color-text-main);
+  line-height: 1.5;
+  overscroll-behavior-y: none;
+  font-size: 16px;
+  overflow-x: hidden; /* Previne scroll horizontal indesejado na página */
+}
+
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+.text-center { text-align: center; }
+.hidden { display: none !important; }
+
+/* --- HEADER (Identidade Visual Restaurada e Fixada) --- */
+.header-main {
+  background-color: #fff;
+  height: var(--header-height);
+  width: 100%; /* [CORREÇÃO] Força largura total */
+  
+  /* Layout */
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Logo na esq, Descrição na dir */
+  padding: 0 1.5rem;
+  
+  /* Fixação */
+  position: sticky;
+  top: 0;
+  left: 0; /* [CORREÇÃO] Ancora na esquerda */
+  z-index: 1000;
+  
+  /* Efeito de Profundidade */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  
+  /* LINHA GRADIENTE (Azul para Verde) */
+  border-bottom: 4px solid;
+  border-image: var(--gradient-header) 1;
+}
+
+/* Container da Logo + Título */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Logotipo */
+.header-logo {
+  height: 38px;
+  width: auto;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+/* Tipografia da Marca (ArborIA) */
+.arboria-text {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.arboria-text .blue { color: var(--color-tech); }   /* Arbor */
+.arboria-text .green { color: var(--color-forest); } /* IA */
+
+/* Subtítulo */
+.app-description {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  border-left: 1px solid var(--color-border);
+  padding-left: 15px;
+  margin-left: 15px;
+  display: none; /* Oculto no mobile por padrão */
+}
+
+/* --- LAYOUT MESTRE (GRID DESKTOP) --- */
+@media (min-width: 769px) {
+  /* Exibe a descrição apenas no Desktop */
+  .app-description {
+    display: block;
+  }
+
+  #app-content {
+    display: grid;
+    /* Grid: Menu (280px) | Conteúdo (Auto) */
+    grid-template-columns: 280px 1fr; 
+    gap: 30px;
+    max-width: 1400px;
+    margin: 30px auto;
+    padding: 0 20px;
+    align-items: start;
+  }
+
+  /* Menu Lateral Fixo */
+  .mapa-navegacao {
+    position: sticky;
+    top: 100px; /* Abaixo do header + margem */
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    z-index: 10;
+  }
+  
+  /* Ajuste fino no header desktop */
+  .header-main {
+    padding: 0 2rem;
+  }
+}
+
+/* --- Ícones --- */
+.section-title-icon {
+    width: 1.5em;
+    height: 1.5em;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.button-icon {
+    height: 1.2em;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Adiciona uma sombra para fazer o ícone "saltar" */
+}
+
+/* css/modules/00_feature.welcome.css */
+/**
+ * ARBORIA 2.0 - WELCOME SCREEN
+ * Estilo para o cartão de boas-vindas na tela inicial, inspirado nos tooltips.
+ */
+
+#welcome-screen.modal-overlay {
+    z-index: 3998; /* Abaixo do tooltip, mas acima de outros modais */
+    pointer-events: all; /* Permite interações */
+}
+
+/* Removendo a animação de entrada padrão de modal para o welcome screen */
+#welcome-screen.modal-overlay.active {
+    opacity: 1;
+}
+
+/* Estilo do cartão de boas-vindas, inspirado no tooltip-card */
+.welcome-card {
+    background: var(--color-bg-card);
+    padding: 24px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-floating);
+    width: 90%;
+    max-width: 400px; /* Mesma largura máxima do tooltip-card */
+    position: relative; /* Para posicionar o botão de fechar */
+    border: 1px solid rgba(255, 255, 255, 0.5); /* Borda do tooltip-card */
+
+    /* Centralização usando transform, similar ao tooltip, mas para o centro da tela */
+    /* Remove a animação de subida do tooltip, centraliza o card */
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+    position: absolute; /* Para que o transform funcione corretamente no centro */
+}
+
+/* Adaptação dos títulos e parágrafos do tooltip-card */
+.welcome-card h3 {
+    margin-top: 0;
+    color: var(--color-forest);
+    font-size: 1.1rem; /* Similar ao h4 do tooltip */
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.welcome-card h3::before {
+    content: '👋'; /* Emoji de boas-vindas */
+    font-size: 1.2rem;
+}
+
+.welcome-card p {
+    margin: 0;
+    color: var(--color-text-main);
+    line-height: 1.6;
+    font-size: 0.95rem;
+    margin-bottom: 20px; /* Espaço antes do botão */
+}
+
+/* Estilo do botão de fechar */
+.welcome-card #close-welcome-btn {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-pill); /* Alterado para pill-shaped */
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.welcome-card #close-welcome-btn:hover {
+    background-color: var(--color-primary-dark);
+}
+/* css/modules/01_components.buttons.css */
+/**
+ * ARBORIA 2.0 - BUTTON COMPONENTS
+ * Estilo: Pill Shape, Gradient Background, Tactile Feedback
+ */
+
+/* --- ESTILO BASE PARA TODOS OS BOTÕES --- */
+button {
+  font-family: inherit;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+button:active {
+  transform: scale(0.96); /* Efeito tátil de clique */
+}
+
+/* --- BOTÕES DE AÇÃO PRIMÁRIA (Gradient Pills) --- */
+/* Usado em: Iniciar Medição, Salvar, Adicionar Árvore */
+.action-btn, 
+.hud-action-btn, 
+.send-btn, 
+#add-tree-btn, 
+#get-gps-btn {
+  background: var(--gradient-main);
+  color: white;
+  border-radius: var(--radius-pill);
+  padding: 12px 24px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-floating);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  width: 100%; /* Mobile First: ocupa largura total por padrão em containers pequenos */
+}
+
+/* Inverter ícones em botões de fundo escuro para ficarem brancos */
+.action-btn .button-icon,
+.hud-action-btn .button-icon,
+.send-btn .button-icon,
+#add-tree-btn .button-icon,
+#get-gps-btn .button-icon,
+.btn-danger-filled .button-icon {
+    filter: invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Inverte e mantém a sombra */
+}
+
+
+/* Hover apenas em desktop para não atrapalhar touch */
+@media (hover: hover) {
+  .action-btn:hover, 
+  .hud-action-btn:hover, 
+  .send-btn:hover, 
+  #add-tree-btn:hover, 
+  #get-gps-btn:hover {
+    background: var(--gradient-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 121, 107, 0.4);
+  }
+}
+
+/* --- BOTÕES SECUNDÁRIOS / OUTLINE --- */
+/* Usado em: Exportar, Cancelar, Filtros */
+.export-btn, 
+.btn-secondary {
+  background: transparent; /* Revertido para transparente */
+  border: 2px solid var(--color-forest); /* Borda com a cor Forest */
+  color: var(--color-forest); /* Texto com a cor Forest */
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.export-btn:hover {
+  background-color: rgba(var(--color-forest-rgb), 0.08); /* Tint verde bem suave */
+}
+
+/* Botão de Alerta/Perigo (ex: Limpar Tudo) */
+.btn-danger {
+  border-color: var(--risk-high);
+  color: var(--risk-high);
+}
+
+.btn-danger:hover {
+  background-color: rgba(211, 47, 47, 0.08);
+}
+
+.btn-danger-filled {
+  background: linear-gradient(135deg, #ef5350, var(--risk-high));
+  color: white;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-danger-filled:hover {
+  background: linear-gradient(135deg, var(--risk-high), #b71c1c);
+}
+
+.btn-clear {
+  background: linear-gradient(135deg, var(--color-medium-gray), var(--color-dark-gray)); /* Usar gradiente */
+  color: var(--color-white); /* Corrigido para branco para contraste */
+  border-radius: var(--radius-pill); /* Corrigido para pill-shaped */
+  padding: 12px 24px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-floating);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  border: none;
+}
+
+.btn-clear:hover {
+  background: linear-gradient(135deg, var(--color-dark-gray), #555); /* Gradiente mais escuro no hover */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* --- BOTÕES DE CÂMERA (HUD) --- */
+/* Botão de Disparo/Captura */
+.hud-capture-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: transparent;
+  border: 4px solid white;
+  position: relative;
+  padding: 0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.hud-capture-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 54px; height: 54px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.hud-capture-btn:active::after {
+  transform: translate(-50%, -50%) scale(0.9);
+  background: var(--color-accent);
+}
+
+/* Botão Fechar HUD */
+.hud-close-btn {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  backdrop-filter: blur(4px);
+}
+
+.hud-close-btn .button-icon {
+    filter: invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Inverte e mantém a sombra */
+}
+
+/* --- BOTÃO VOLTAR (Navegação) --- */
+.btn-back {
+  background: transparent;
+  color: var(--color-tech); /* Azul Tecnológico */
+  font-weight: 700;
+  padding: 8px 0;
+  justify-content: flex-start;
+}
+
+.btn-back:hover {
+  text-decoration: underline;
+}
+
+/* --- BOTÃO DE UPLOAD DE FOTO (Estilo de botão secundário) --- */
+.photo-btn {
+    background: var(--gradient-main); /* Alterado para gradiente */
+    border: none; /* Remove a borda, pois o gradiente já preenche */
+    color: white; /* Cor do texto para contraste com o gradiente */
+    border-radius: var(--radius-pill);
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.photo-btn:hover {
+    background: var(--gradient-hover); /* Efeito de hover com gradiente */
+}
+
+/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	background-image: url(images/marker-icon.png);
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+/* Formulário Base */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* Espaçamento entre fieldsets ou grupos */
+}
+
+fieldset {
+    border: 1px solid var(--color-light-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin: 0; /* Override default margin */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* Espaçamento interno entre elementos do fieldset */
+}
+
+legend {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--color-primary-dark);
+    padding: 0 0.5rem;
+    margin-left: -0.5rem; /* Alinha o texto da legend com o padding do fieldset */
+}
+
+/* Estrutura de grid para labels e inputs */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem; /* Espaçamento entre itens no grid */
+}
+
+@media (min-width: 768px) {
+    .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+    /* Permite que o último item ocupe a largura total se necessário */
+    .form-grid > *:last-child:nth-child(odd) {
+        grid-column: span 2;
+    }
+}
+
+.form-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+label {
+    font-weight: 600;
+    color: var(--color-text-dark);
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+textarea,
+select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    color: var(--color-text-dark);
+    background-color: var(--color-white);
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    vertical-align: middle;
+    text-align: left;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--color-accent);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--color-accent-rgb), 0.2);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Estilo para campos obrigatórios */
+input:required:not(:placeholder-shown) + label::after,
+select:required:not(:placeholder-shown) + label::after {
+    content: ' *';
+    color: var(--color-danger);
+    margin-left: 0.25rem;
+}
+
+/* Checkboxes e Radios */
+.checkbox-group, .radio-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid var(--color-primary-dark);
+    border-radius: 4px;
+    display: grid;
+    place-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+input[type="radio"] {
+    border-radius: 50%;
+}
+
+input[type="checkbox"]::before,
+input[type="radio"]::before {
+    content: "";
+    width: 0.75rem;
+    height: 0.75rem;
+    transform: scale(0);
+    transition: transform 0.2s ease-in-out;
+    box-shadow: inset 1em 1em var(--color-primary);
+    background-color: CanvasText; /* Fallback for older browsers */
+}
+
+input[type="checkbox"]:checked::before {
+    transform: scale(1);
+    background-color: var(--color-primary);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+input[type="radio"]:checked::before {
+    transform: scale(1);
+    border-radius: 50%;
+}
+
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+input[type="checkbox"]:focus,
+input[type="radio"]:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+/* Estilos para validação de erro */
+.input-error {
+    border-color: var(--color-danger) !important;
+    box-shadow: 0 0 0 2px rgba(var(--color-danger-rgb), 0.2) !important;
+}
+
+.input-error-message {
+    color: var(--color-danger);
+    font-size: 0.85rem;
+    margin-top: -0.5rem; /* Ajusta a mensagem para ficar mais próxima do input */
+    margin-bottom: 0.5rem;
+    padding-left: 0.2rem;
+}
+
+/* Readonly fields */
+input[readonly], textarea[readonly] {
+    background-color: var(--color-light-gray);
+    cursor: not-allowed;
+}
+
+/* Estilos específicos para a calculadora */
+.risk-fieldset {
+    background-color: var(--color-white);
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-md); /* Adicionado aqui também */
+}
+
+.table-filter-container {
+    text-align: left; /* Garante que o conteúdo não seja centralizado */
+    margin-bottom: 1rem; /* Adiciona um pouco de espaço abaixo do filtro */
+}
+
+.risk-buttons-area {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+/* Checklist mobile - Flashcard */
+.mobile-checklist-wrapper-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-background-dark);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.mobile-checklist-card {
+    background-color: var(--color-primary-dark);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--radius-md); /* Corrigido */
+    text-align: center;
+    max-width: 90%;
+    min-width: 300px;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 1rem;
+}
+
+.mobile-checklist-card h4 {
+    margin-top: 0;
+    color: var(--color-white);
+    opacity: 0.7;
+    font-size: 0.9rem;
+}
+
+.mobile-checklist-card .checklist-card-question {
+    font-size: 1.4rem;
+    margin: 1rem 0;
+    display: block;
+}
+
+.mobile-checklist-card .checklist-card-peso {
+    font-size: 1rem;
+    opacity: 0.8;
+    display: block;
+    margin-bottom: 1.5rem;
+}
+
+.flashcard-toggle-area {
+    margin-top: 2rem;
+}
+
+.mobile-checklist-nav {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.mobile-checklist-nav button {
+    padding: 0.8rem 1.5rem;
+    background-color: var(--color-accent);
+    color: var(--color-dark);
+    border: none;
+    border-radius: var(--radius-md); /* Corrigido */
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.mobile-checklist-nav button:disabled {
+    background-color: var(--color-light-gray);
+    color: var(--color-text-light);
+    cursor: not-allowed;
+}
+
+/* Custom Toggle Switch para o Flashcard */
+.mobile-checklist-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--color-danger); /* Cor para 'Não' */
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--color-success); /* Cor para 'Sim' */
+}
+
+input:focus + .toggle-slider {
+    box-shadow: 0 0 1px var(--color-success);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+/* Estilos para a tabela de risco */
+.risk-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.risk-table th, .risk-table td {
+    border: 1px solid var(--color-border);
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.risk-table th {
+    background-color: var(--color-light-gray);
+    font-weight: bold;
+    color: var(--color-text-dark);
+}
+
+.risk-table td:first-child, .risk-table td:nth-child(3) {
+    text-align: center;
+}
+
+.risk-table td:last-child {
+    text-align: center;
+    width: 60px; /* Para o checkbox */
+}
+
+.risk-table input[type="checkbox"] {
+    margin: 0 auto;
+    display: block;
+}
+
+/* Estilos para botões */
+.action-btn {
+    background-color: var(--color-primary);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-pill); /* Corrigido para pill-shaped */
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.action-btn:hover {
+    background-color: var(--color-primary-dark);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-clear {
+    background: linear-gradient(135deg, var(--color-medium-gray), var(--color-dark-gray)); /* Usar gradiente */
+    color: var(--color-white); /* Corrigido para branco para contraste */
+    border-radius: var(--radius-pill); /* Corrigido para pill-shaped */
+    padding: 12px 24px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: var(--shadow-floating);
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    border: none;
+}
+
+.btn-clear:hover {
+    background: linear-gradient(135deg, var(--color-dark-gray), #555); /* Gradiente mais escuro no hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+
+.export-btn {
+    background-color: var(--color-secondary);
+    color: var(--color-dark);
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-pill); /* Corrigido para pill-shaped */
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.export-btn:hover {
+    background-color: var(--color-secondary-dark);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-danger-filled {
+    background-color: var(--color-danger);
+    color: var(--color-white);
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-pill); /* Corrigido para pill-shaped */
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.btn-danger-filled:hover {
+    background-color: var(--color-danger-dark);
+    box-shadow: var(--shadow-md);
+}
+
+.button-icon {
+    height: 1.2em;
+    width: 1.2em;
+}
+
+/* GPS Button */
+.gps-button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    grid-column: span 2; /* Ocupa duas colunas no grid */
+    padding-top: 1rem;
+}
+
+.gps-button-container button {
+    width: auto;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--color-accent);
+    color: var(--color-dark);
+    border: none;
+    border-radius: var(--radius-pill); /* Corrigido para pill-shaped */
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.gps-button-container button:hover {
+    background-color: var(--color-accent-dark);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: var(--color-text-light);
+}
+/**
+ * ARBORIA 2.0 - HELPER COMPONENTS
+ * Badges, Toasts, Spinners e Utilitários Visuais
+ */
+
+/* --- BADGES (Etiquetas de Risco/Status) --- */
+/* Usado na Tabela de Resumo e no Mapa */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: white;
+  background-color: var(--color-text-muted); /* Default cinza */
+  white-space: nowrap;
+  vertical-align: middle;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Variações Semânticas de Risco (Baseado nas variáveis Core) */
+.badge-high, 
+.risk-high { 
+  background-color: var(--risk-high); 
+}
+
+.badge-medium, 
+.risk-medium { 
+  background-color: var(--risk-medium); 
+}
+
+.badge-low, 
+.risk-low { 
+  background-color: var(--risk-low); 
+}
+
+/* --- TOAST NOTIFICATION (Feedback Flutuante) --- */
+/* O balãozinho preto que aparece e some com mensagens */
+#toast-notification {
+  visibility: hidden;
+  min-width: 280px;
+  max-width: 90vw;
+  background-color: #1a202c; /* Dark mode suave */
+  color: #fff;
+  text-align: center;
+  border-radius: var(--radius-pill);
+  padding: 14px 24px;
+  
+  /* Posicionamento */
+  position: fixed;
+  z-index: 9999;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  
+  /* Estilo */
+  box-shadow: var(--shadow-float);
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Efeito bounce suave */
+}
+
+#toast-notification.show {
+  visibility: visible;
+  opacity: 1;
+  bottom: 80px; /* Sobe levemente ao aparecer */
+}
+
+/* Variações de Cor do Toast */
+.toast-success { border-left: 6px solid var(--color-forest); }
+.toast-error { border-left: 6px solid var(--risk-high); }
+.toast-info { border-left: 6px solid var(--color-tech); }
+
+/* --- LOADING SPINNER (Indicador de Progresso) --- */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--color-forest);
+  animation: spin 1s linear infinite;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Container de Status de Processamento (Ex: Importando ZIP...) */
+#zip-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: #e0f2f1;
+  border-radius: var(--radius-sm);
+  color: var(--color-forest);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* --- UTILITÁRIOS DE TEXTO E LAYOUT --- */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.hidden {
+  display: none !important;
+}
+
+/* Legenda de Pontos (Mapa) */
+.legend-dot {
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* Texto de Instrução (Ex: embaixo de inputs complexos) */
+.instruction-text {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+/**
+ * ARBORIA 2.0 - MODAL COMPONENTS
+ * Diálogos de Ação e Visualizador de Fotos
+ */
+
+/* --- OVERLAY (Fundo Escuro) --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.95); /* Fundo escuro quase opaco */
+  z-index: 2000; /* Acima de tudo, exceto Tooltips */
+  
+  /* Centralização Flexbox */
+  display: none; /* Controlado via JS */
+  justify-content: center; /* Centraliza horizontalmente */
+  align-items: center; /* Centraliza verticalmente */
+  padding: 20px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+/* Classe para ativar o modal com animação */
+.modal-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+/* --- DIÁLOGO (Caixa Branca) --- */
+.modal-dialog {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-floating);
+  width: 100%;
+  max-width: 400px; /* Largura ideal para leitura */
+  padding: 24px;
+  position: relative;
+  
+  /* Animação de Entrada (Zoom In Sutil) */
+  transform: scale(0.95) translateY(10px);
+  transition: transform var(--transition-smooth);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-overlay.active .modal-dialog {
+  transform: scale(1) translateY(0);
+}
+
+/* Títulos e Textos do Modal */
+.modal-dialog h3 {
+  margin-top: 0;
+  color: var(--color-forest);
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+.modal-dialog p {
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* [NOVO] Estilos para o modal de detalhes de risco */
+.modal-dialog.risk-high { background: linear-gradient(135deg, #ffebee, #ffcdd2); }
+.modal-dialog.risk-high h3 { color: var(--risk-high); }
+
+.modal-dialog.risk-medium { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
+.modal-dialog.risk-medium h3 { color: var(--risk-medium); }
+
+.modal-dialog.risk-low { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
+.modal-dialog.risk-low h3 { color: var(--risk-low); }
+
+.details-modal-grid {
+  font-size: 0.9rem;
+}
+
+.details-modal-grid p {
+  margin-bottom: 8px;
+}
+
+.details-risk-list {
+  font-size: 0.85rem;
+}
+
+/* [NOVO] Grid para métricas dendrométricas */
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+  margin: 8px 0;
+}
+
+/* --- AÇÕES (Botões do Modal) --- */
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end; /* Alinha à direita no Desktop */
+}
+
+/* No Mobile, botões ocupam largura total e empilham */
+@media (max-width: 480px) {
+  .modal-actions {
+    flex-direction: column-reverse; /* "Cancelar" embaixo de "Confirmar" */
+  }
+  
+  .modal-actions button {
+    width: 100%;
+  }
+}
+
+/* --- VISUALIZADOR DE FOTOS (Photo Viewer) --- */
+/* Variação do modal para exibir imagens grandes */
+.photo-viewer-dialog {
+  padding: 0;
+  /* background: transparent; REMOVED to inherit dark background from .modal-overlay */
+  box-shadow: none;
+  z-index: 2001; /* Ensure photo viewer is always on top of other regular modals (z-index 2000) */
+}
+
+.photo-viewer-content {
+  /* Agora o conteúdo preenche o diálogo e centraliza a imagem */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100vw; /* Garante que o conteúdo não exceda o viewport */
+  max-height: 100vh; /* Garante que o conteúdo não exceda o viewport */
+}
+
+.photo-viewer-content img {
+  /* A imagem se ajusta ao contêiner, mantendo a proporção e centralizada */
+  max-width: 100%;
+  max-height: 100%;
+  width: auto; /* Permite que a largura se ajuste à proporção */
+  height: auto; /* Permite que a altura se ajuste à proporção */
+  object-fit: contain; /* Garante que a imagem seja totalmente visível dentro do contêiner */
+  border-radius: var(--radius-sm);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5); /* Mantém a sombra para destaque */
+}
+
+.photo-viewer-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 10px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+/**
+ * ARBORIA 2.0 - TOOLTIP COMPONENTS (Glossário Inteligente)
+ * UX: Transforma definições técnicas em Cards de Leitura Focada.
+ */
+
+/* --- GATILHO DO TOOLTIP (O Texto Clicável) --- */
+/* Usado em termos como "DAP", "Galhos Mortos", etc. */
+.checklist-term,
+.tooltip-trigger {
+  color: var(--color-tech);
+  border-bottom: 1px dashed var(--color-tech); /* Tracejado indica "clique para saber mais" */
+  cursor: pointer; /* Alterado para pointer para indicar interatividade */
+  position: relative;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  font-weight: 500;
+  outline: none; /* Reset para controlar o estilo de foco */
+}
+
+.checklist-term:hover,
+.tooltip-trigger:hover {
+  background-color: rgba(2, 119, 189, 0.1); /* Highlight suave ao passar o mouse */
+  border-bottom-style: solid;
+}
+
+.checklist-term:focus,
+.tooltip-trigger:focus {
+    box-shadow: 0 0 0 2px var(--color-accent); /* Anel de foco acessível */
+    border-radius: 2px;
+}
+
+
+/* --- BACKDROP (Fundo Escuro) --- */
+/* Garante foco na leitura da definição */
+.tooltip-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 3999; /* [CORREÇÃO] Acima do checklist mobile (z-index: 3000) */
+  
+  /* Estados de Visibilidade */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast);
+}
+
+.tooltip-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* --- CARD DO GLOSSÁRIO (O Tooltip em si) --- */
+.tooltip-card {
+  position: fixed;
+  z-index: 4000; /* [CORREÇÃO] O elemento mais alto da interface */
+  background: var(--color-bg-card);
+  padding: 24px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-floating);
+  
+  /* Posicionamento Mobile (Centralizado ou Bottom Sheet) */
+  left: 50%;
+  bottom: 30px; /* Começa de baixo para cima no mobile */
+  transform: translateX(-50%) translateY(20px);
+  width: 90%; /* Ocupa quase toda a largura no celular */
+  max-width: 400px;
+  
+  /* Estados de Animação */
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-smooth);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  cursor: pointer; /* Indica que o card é clicável para fechar */
+}
+
+.tooltip-card.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0); /* Sobe para posição final */
+}
+
+/* Botão de fechar do Tooltip */
+.tooltip-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 5px;
+    z-index: 4001; /* Garante que esteja acima do conteúdo do tooltip */
+    transition: color 0.2s ease;
+}
+
+.tooltip-close-btn:hover {
+    color: var(--color-text-main);
+}
+
+/* Conteúdo Interno */
+#tooltip-image-container {
+  margin-bottom: 15px;
+}
+#tooltip-image-container:empty {
+  display: none;
+}
+#tooltip-image-container img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+
+.tooltip-card h4 {
+  margin-top: 0;
+  color: var(--color-forest);
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Ícone decorativo antes do título (injetado via CSS) */
+.tooltip-card h4::before {
+  content: '💡'; /* Emoji como ícone leve ou use url() */
+  font-size: 1.2rem;
+}
+
+.tooltip-card p {
+  margin: 0;
+  color: var(--color-text-main);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Pequena seta/indicador (Opcional, estilo balão) */
+/* No mobile centralizado não é necessário, mas adiciona charme */
+.tooltip-card::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0;
+  border-style: solid;
+  border-color: var(--color-bg-card) transparent transparent transparent;
+  display: none; /* Oculto no mobile float */
+}
+/**
+ * ARBORIA 2.0 - CALCULATOR & SUMMARY TABLE (v31.0 - Overflow & Toggle Fix)
+ * Layout: Abas, Formulários e Tabela com Scroll Interno
+ */
+
+/* --- HEADER DA CALCULADORA --- */
+#calculadora-view h3 {
+  color: var(--color-forest);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#calculadora-view > p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+/* --- SUB-NAVEGAÇÃO (Abas) --- */
+.sub-nav {
+  display: flex;
+  background-color: #e2e8f0;
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  gap: 4px;
+  overflow-x: auto; 
+  scrollbar-width: none;
+}
+.sub-nav::-webkit-scrollbar { display: none; }
+
+.sub-nav-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.sub-nav-btn.active {
+  background-color: #ffffff;
+  color: var(--color-forest);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-weight: 700;
+}
+
+.sub-nav-btn .badge {
+  font-size: 0.7em;
+  padding: 2px 6px;
+  margin-left: 4px;
+  vertical-align: top;
+}
+
+/* --- CONTEÚDO DAS ABAS --- */
+.sub-tab-content { animation: fadeInTab 0.3s ease-out; }
+@keyframes fadeInTab { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- CONTROLES DA TABELA --- */
+.table-controls-wrapper {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.table-filter-container {
+  flex-grow: 1;
+  min-width: 200px;
+}
+
+/* Novo wrapper para o input com ícone */
+.filter-input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background-color: var(--color-white);
+  padding-right: 12px; /* Padding geral para o lado direito */
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); /* Sombra interna sutil */
+}
+
+.filter-input-wrapper:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(var(--color-accent-rgb), 0.2);
+  outline: none; /* Remove o outline padrão se o input estiver focado */
+}
+
+/* Estilo para o ícone de lupa */
+.filter-icon {
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  padding: 0 10px; /* Espaço ao redor do ícone */
+  flex-shrink: 0; /* Impede o ícone de encolher */
+}
+
+.table-filter-container input {
+  width: 100%;
+  padding: 10px 0; /* Padding vertical, padding-left/right é controlado pelo wrapper/ícone */
+  border: none; /* Remove a borda do input interno */
+  background-color: transparent; /* Fundo transparente para o input interno */
+  font-size: 1rem;
+  color: var(--color-text-dark);
+  line-height: normal; /* Garante line-height padrão para o texto */
+  flex-grow: 1; /* Permite que o input preencha o espaço restante */
+  
+  /* Reset dos estilos de background-image anteriores */
+  background-image: none;
+  background-repeat: initial;
+  background-position: initial;
+  background-size: initial;
+}
+
+/* Remove o focus outline padrão do input, pois o wrapper já tem */
+.table-filter-container input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+#toggle-cols-btn {
+  background: #fff;
+  border: 1px solid var(--color-forest);
+  color: var(--color-forest);
+  border-radius: 12px;
+  padding: 10px 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#toggle-cols-btn:active { background: #e0f2f1; }
+
+/* --- CONTAINER DA TABELA (SCROLL FIX) --- */
+#summary-table-container {
+  display: block;
+  width: 100%;
+  max-width: 100%; 
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+#summary-table-container::-webkit-scrollbar { height: 8px; }
+#summary-table-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+#summary-table-container::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+#summary-table-container::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
+/* --- TABELA DE RESUMO --- */
+.summary-table {
+  width: 100%;
+  border-collapse: separate; 
+  border-spacing: 0; 
+  font-size: 0.9rem;
+  min-width: 100%; 
+}
+
+/* --- CÉLULAS (NO-WRAP) --- */
+.summary-table th, 
+.summary-table td {
+  white-space: nowrap;
+  padding: 14px 12px;
+  vertical-align: middle;
+}
+
+/* --- CABEÇALHO STICKY --- */
+.summary-table th {
+  background: var(--gradient-main);
+  color: white;
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+.summary-table th:first-child { border-top-left-radius: 10px; }
+.summary-table th:last-child { border-top-right-radius: 10px; border-right: none; }
+
+.summary-table td {
+  border-bottom: 1px solid #eee;
+  color: var(--color-text-main);
+  background-color: #fff;
+}
+
+.summary-table tbody tr:nth-child(even) td { background-color: #f8fafc; }
+.summary-table tbody tr:hover td { background-color: #f1f5f9; }
+.summary-table td.col-id { font-weight: 700; color: var(--color-tech); }
+
+/* --- LÓGICA DE COLUNAS (GLOBAL - Mobile e Desktop) --- */
+/* [CORREÇÃO] Regras movidas para fora do @media query */
+
+/* 1. Estado COMPACTO (Esconde colunas) */
+.summary-table.compact-mode .col-secondary {
+  display: none;
+}
+
+/* 2. Estado EXPANDIDO (Mostra colunas) */
+.summary-table:not(.compact-mode) .col-secondary {
+  display: table-cell;
+}
+
+/* Subtexto que aparece apenas no modo compacto */
+.col-mobile-summary {
+  display: none;
+}
+.summary-table.compact-mode .col-mobile-summary {
+  display: block;
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 4px;
+  white-space: normal; /* Permite quebra de linha */
+}
+
+/* --- RESPONSIVIDADE --- */
+@media (max-width: 768px) {
+  #summary-table-container {
+    border-radius: 0; 
+    border-left: none;
+    border-right: none;
+  }
+
+  .summary-table td, .summary-table th {
+    padding: 12px 8px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Desktop Checklist Table (Mantido) */
+.risk-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+.risk-table th { background: var(--gradient-main); color: white; padding: 12px; text-align: left; }
+.risk-table td { padding: 10px; border-bottom: 1px solid var(--color-border); }
+.risk-table input[type="checkbox"] { margin: 0 auto; display: block; }
+
+/* --- LÓGICA DE VISIBILIDADE DO CHECKLIST (Desktop vs Mobile) --- */
+
+/* Por padrão (Mobile-first), a tabela de checklist fica oculta */
+#checklist-data-table-fieldset {
+  display: none;
+}
+
+/* Em telas maiores (Desktop), a tabela aparece e o botão de flashcard some */
+@media (min-width: 769px) {
+  #checklist-data-table-fieldset {
+    display: block;
+  }
+  #open-flashcard-btn {
+    display: none !important; /* Oculta o botão de "Avaliar Fatores de Risco" */
+  }
+}
+
+/* Botões */
+#import-export-controls { display: flex; flex-wrap: wrap; gap: 10px; }
+#import-export-controls button { flex: 1 1 auto; }
+
+/* --- [NOVO] LISTA DE RESUMO MOBILE --- */
+.summary-list-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summary-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  padding: 12px 15px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border-left: 5px solid var(--color-forest);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.summary-list-item:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-md);
+}
+
+.item-main-info .item-id {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-tech);
+  display: block;
+}
+
+.item-main-info .item-species {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 2px 0;
+}
+
+.item-main-info .item-location {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.item-risk-info .badge {
+  font-size: 0.7rem;
+}
+/**
+ * ARBORIA 2.0 - MOBILE CHECKLIST (v81.0 - Flash Card UI)
+ * Estilo para o Checklist em Modo "Flash Card" (Tela Cheia).
+ */
+
+/* --- 1. CONTAINER TELA CHEIA --- */
+#checklist-flashcard-view {
+  position: fixed; /* Chave para o overlay */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 23, 42, 0.95); /* Fundo escuro profundo */
+  backdrop-filter: blur(8px);
+  z-index: 3000; /* Acima de tudo */
+  padding: 20px;
+  
+  /* Layout Flex para centralizar */
+  display: none; /* JS controla o display: flex */
+  pointer-events: none; /* Não intercepta cliques quando oculto */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Quando ativo, volta a ser clicável */
+#checklist-flashcard-view:not([style*="display:none"]):not([style*="display: none"]) {
+    display: flex !important;
+    pointer-events: auto;
+}
+
+/* Wrapper interno */
+.mobile-checklist-wrapper-fullscreen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* --- 2. O FLASH CARD (Cartão de Pergunta) --- */
+.mobile-checklist-card {
+  width: 100%;
+  /* Gradiente Inicial: Verde Floresta -> Azul Tech (Neutro/Seguro) */
+  background: linear-gradient(135deg, var(--color-forest), var(--color-tech)); 
+  border-radius: 24px;
+  padding: 2.5rem 1.5rem;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  color: white;
+  
+  /* Efeito de "Pop" ao aparecer */
+  animation: swipeInFromRight 0.4s ease-out;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.5s ease, box-shadow 0.3s ease;
+  /* Garante espaço para o conteúdo */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@keyframes cardPopIn {
+  from { opacity: 0; transform: scale(0.8) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Estado de RISCO DETECTADO (Laranja -> Vermelho) */
+.mobile-checklist-card.answered-yes {
+  background: linear-gradient(135deg, #f57c00, #d32f2f);
+  box-shadow: 0 15px 35px rgba(211, 47, 47, 0.4);
+}
+
+/* Indicador visual de alerta (Ícone de fundo) */
+.mobile-checklist-card.answered-yes::before {
+  content: '⚠️';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 8rem;
+  opacity: 0.1;
+  pointer-events: none;
+  transform: rotate(15deg);
+}
+
+/* --- TIPOGRAFIA DO CARD --- */
+#flashcard-counter {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  font-weight: 700;
+}
+
+#flashcard-question-text {
+  font-size: 1.3rem;
+  line-height: 1.4;
+  font-weight: 700;
+  color: #ffffff;
+  min-height: 3em; /* Altura mínima para evitar pulos */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Termos técnicos dentro da pergunta */
+#flashcard-question-text .checklist-term {
+  color: #A7FFEB; /* Verde água neon */
+  border-bottom: 2px dashed rgba(167, 255, 235, 0.5);
+  cursor: help;
+  margin: 0 4px;
+}
+
+/* --- 3. TOGGLE SWITCH (INTERRUPTOR) --- */
+.flashcard-toggle-area {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.mobile-checklist-toggle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 10px 25px;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* O Input Checkbox invisível */
+.mobile-checklist-toggle input {
+  display: none;
+}
+
+/* O Trilho do Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  margin: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.3);
+  transition: background-color .4s; /* [MELHORIA] Anima a cor do trilho */
+  border-radius: 34px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+/* A Bolinha do Switch */
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: transform .4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* [MELHORIA] Anima o movimento da bolinha */
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Estado LIGADO (Sim) */
+.mobile-checklist-toggle input:checked + .toggle-slider {
+  background-color: #00E676; /* Verde Neon */
+  border-color: #00E676;
+}
+
+/* [MELHORIA] Move a bolinha para a direita quando ligado */
+.mobile-checklist-toggle input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+/* --- 4. NAVEGAÇÃO INFERIOR --- */
+.mobile-checklist-nav {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding: 0 10px;
+}
+
+.mobile-checklist-nav button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  backdrop-filter: blur(5px);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.mobile-checklist-nav button:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.mobile-checklist-nav button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+  border-color: transparent;
+}
+
+/* Botão Fechar no Topo */
+.mobile-checklist-wrapper-fullscreen .hud-close-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  font-size: 1.2rem;
+  padding: 10px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+/**
+ * ARBORIA 2.0 - MANUAL CONTENT STYLES
+ * Foco: Leitura Confortável (Typography) e Animações de Transição (SPA Feel)
+ */
+
+/* --- CONTAINER DE CONTEÚDO GENÉRICO --- */
+/* Classe base para todas as seções que não são o Menu */
+.content-section {
+  display: none; /* Oculto por padrão (JS controla) */
+  background: var(--color-bg-card);
+  
+  /* Mobile: Preenche a tela abaixo do header */
+  min-height: calc(100vh - var(--header-height) - 50px);
+  padding: 1.5rem;
+  padding-bottom: 80px; /* Espaço extra no fundo para scroll confortável */
+  
+  /* Animação de Entrada Estilo App (Slide Up) */
+  animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Animação definida */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Quando ativo (JS adiciona esta classe para display) */
+.content-section.active {
+  display: block;
+}
+
+/* --- TIPOGRAFIA DE CONTEÚDO --- */
+.conteudo-detalhe h1 {
+  color: var(--color-forest);
+  font-size: 2.5rem; /* Larger than h3 */
+  margin-top: 2rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 3px solid var(--color-forest); /* More prominent border */
+  padding-bottom: 15px;
+  letter-spacing: -1px;
+}
+
+.conteudo-detalhe h2 {
+  color: var(--color-tech);
+  font-size: 2rem; /* Larger than h3 */
+  margin-top: 1.8rem;
+  margin-bottom: 1.2rem;
+  border-bottom: 2px solid var(--color-tech);
+  padding-bottom: 10px;
+  letter-spacing: -0.7px;
+}
+
+.conteudo-detalhe h3 {
+  color: var(--color-forest);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--color-border); /* Usando variável de borda ou um cinza mais escuro */
+  padding-bottom: 10px;
+  letter-spacing: -0.5px;
+}
+
+.conteudo-detalhe h4 {
+  color: var(--color-tech);
+  font-size: 1.1rem;
+  margin-top: 1.8rem; /* Aumentado */
+  margin-bottom: 0.9rem; /* Aumentado */
+  font-weight: 700;
+}
+
+.conteudo-detalhe h5 {
+  color: var(--color-forest);
+  font-size: 1rem;
+  margin-top: 1.6rem;
+  margin-bottom: 0.7rem;
+  font-weight: 700;
+}
+
+.conteudo-detalhe h6 {
+  color: var(--color-text-main);
+  font-size: 0.95rem;
+  margin-top: 1.4rem;
+  margin-bottom: 0.6rem;
+  font-weight: 700;
+}
+
+.conteudo-detalhe p {
+  color: var(--color-text-main);
+  line-height: 1.7; /* Altura de linha aumentada para leitura mobile */
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  text-align: left; /* Opcional: ou left para mais modernidade */
+}
+
+/* Listas dentro do texto */
+.conteudo-detalhe ul, 
+.conteudo-detalhe ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.conteudo-detalhe li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+  color: var(--color-text-main);
+}
+
+/* Destaques no texto */
+.conteudo-detalhe strong {
+  color: var(--color-forest);
+  font-weight: 700;
+}
+
+/* --- IMAGENS DENTRO DO CONTEÚDO --- */
+.conteudo-detalhe img {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  margin: 1.5rem auto;
+  max-width: 100%;
+  display: block;
+}
+
+/* Legendas de Imagem (Figure/Figcaption se houver) */
+.conteudo-detalhe figcaption {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-top: -10px;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+/* --- TABELAS DE TEXTO (Não a de Risco) --- */
+/* Ex: Tabelas de normas ou dados simples */
+.content-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+.content-table th {
+  background: #f0f2f5;
+  text-align: left;
+  padding: 10px;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.content-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 10px;
+}
+
+/* --- DESKTOP ADJUSTMENTS --- */
+@media (min-width: 769px) {
+  .content-section {
+    /* Desktop: Vira um Card ao lado do menu */
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    min-height: auto; /* Altura definida pelo conteúdo */
+    margin-bottom: 0;
+    animation: fadeIn 0.4s ease-out; /* Animação mais suave no desktop */
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .conteudo-detalhe h3 {
+    font-size: 1.75rem;
+  }
+}
+/**
+ * ARBORIA 2.0 - NAVIGATION FEATURE
+ * Design: App Launcher Grid (Mobile) -> Sidebar (Desktop)
+ */
+
+/* --- CONTAINER PRINCIPAL DO MENU --- */
+.mapa-navegacao {
+  padding: 10px;
+  /* No mobile, o menu é a "Home Page" */
+}
+
+.mapa-navegacao h2 {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
+}
+
+/* --- GRID DE ÍCONES (Mobile "Launcher") --- */
+.topicos-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 Colunas exatas */
+  gap: 15px; /* Espaçamento entre ícones */
+  padding-bottom: 20px;
+}
+
+/* --- BOTÕES DO MENU (Estilo Card/Ícone) --- */
+.topico-btn {
+  background: var(--color-bg-card);
+  border: none;
+  border-radius: 24px; /* Mais arredondado, estilo iOS */
+  padding: 15px 5px;
+  
+  /* Layout Flex Vertical (Ícone em cima, Texto embaixo) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  
+  /* Visual */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Sombra mais suave */
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  min-height: 110px; /* Altura fixa para uniformidade */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Estado Ativo/Toque */
+.topico-btn:active {
+  transform: scale(0.95);
+  background-color: #f0f2f5; /* Feedback de toque mais sutil */
+}
+
+/* Ícones (PNG) */
+.topico-btn img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); /* Sombra no ícone para "pop" */
+  margin-bottom: 2px;
+}
+
+/* Texto do Botão */
+.topico-btn span,
+.topico-btn {
+  font-size: 0.75rem; /* Texto pequeno estilo App */
+  font-weight: 600;
+  color: var(--color-text-main);
+  text-align: center;
+  line-height: 1.2;
+  word-wrap: break-word; /* Quebra palavras longas se necessário */
+}
+
+/* Separador Visual (Linha) */
+.nav-separator {
+  grid-column: 1 / -1; /* Ocupa toda a largura */
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+  margin: 10px 0;
+}
+
+/* --- BOTÃO VOLTAR (Header de Navegação) --- */
+/* Aparece apenas quando entramos em uma seção no Mobile */
+#back-btn-container {
+  display: none; /* JS controla o display: flex */
+  align-items: center;
+  padding: 10px 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-border);
+  
+  position: sticky;
+  top: var(--header-height); /* Logo abaixo do Header Principal */
+  z-index: 900;
+}
+
+#btn-back-dashboard {
+  background: none;
+  border: none;
+  color: var(--color-tech);
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 5px 0;
+}
+
+/* --- DESKTOP (Sidebar Layout) --- */
+@media (min-width: 769px) {
+  /* Sidebar Fixa */
+  .mapa-navegacao {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    height: fit-content;
+    position: sticky;
+    top: 90px; /* Espaço do header */
+    max-height: calc(100vh - 100px);
+    overflow-y: auto; /* Scroll interno se a tela for pequena verticalmente */
+  }
+
+  .mapa-navegacao h2 {
+    text-align: left;
+    margin-bottom: 1rem;
+    padding-left: 10px;
+  }
+
+  /* Lista Vertical */
+  .topicos-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 0;
+  }
+
+  /* Botão Estilo Lista (Horizontal) */
+  .topico-btn {
+    flex-direction: row; /* Ícone ao lado do texto */
+    align-items: center;
+    justify-content: flex-start;
+    min-height: auto; /* Altura automática */
+    padding: 10px 12px;
+    background: transparent; /* Fundo transparente até hover */
+    box-shadow: none;
+    border-radius: 8px;
+    gap: 12px;
+  }
+
+  .topico-btn:hover {
+    background-color: #e0f2f1; /* Verde bem claro */
+  }
+
+  /* Estado Ativo (Desktop precisa de indicador de "onde estou") */
+  .topico-btn.active {
+    background-color: #b2dfdb;
+    color: var(--color-forest);
+  }
+
+  .topico-btn.active span {
+    color: var(--color-forest);
+    font-weight: 800;
+  }
+
+  .topico-btn img {
+    width: 24px; /* Ícone menor no desktop */
+    height: 24px;
+    filter: none; /* Remove sombra pesada */
+    margin-bottom: 0;
+  }
+
+  .topico-btn span {
+    font-size: 0.95rem;
+    text-align: left;
+  }
+
+  .nav-separator {
+    background: var(--color-border);
+    margin: 10px 0;
+  }
+  
+  /* Oculta container de voltar no Desktop (sempre visível) */
+  #back-btn-container {
+    display: none !important;
+  }
+}
+/**
+ * ARBORIA 2.0 - MAP UI FEATURE
+ * Customização do Leaflet.js e Controles de GIS
+ */
+
+/* --- CONTAINER DO MAPA --- */
+#map-container {
+  height: 60vh; /* Altura base */
+  width: 100%;
+  background-color: #e5e7eb; /* Cor de fundo enquanto carrega tiles */
+  border-radius: var(--radius-md); /* Arredondamento crucial para o visual App */
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); /* Sombra interna para profundidade */
+  overflow: hidden; /* Garante que o mapa não vaze das bordas arredondadas */
+  position: relative;
+  z-index: 1; /* Base */
+  margin-bottom: 1rem;
+}
+
+/* No Mobile, o mapa deve ser mais alto para exploração */
+@media (max-width: 768px) {
+  #map-container {
+    height: 65vh;
+    border-radius: var(--radius-md); /* Mantém arredondado mesmo no mobile */
+  }
+}
+
+/* --- LEGENDA E FILTROS (Acima do Mapa) --- */
+#map-legend-filter {
+  background: #fff;
+  padding: 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+#map-legend-filter h4 {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.legend-filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.legend-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-main);
+  cursor: pointer;
+}
+
+/* Pontinhos Coloridos da Legenda */
+.legend-dot {
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* --- CUSTOMIZAÇÃO DO LEAFLET (Overrides) --- */
+/* Removemos o visual "padrão web" do Leaflet */
+
+/* Controles de Zoom (Botões +/-) */
+.leaflet-bar {
+  box-shadow: var(--shadow-float) !important;
+  border: none !important;
+}
+
+.leaflet-bar a {
+  background-color: #fff !important;
+  color: var(--color-tech) !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-weight: bold !important;
+  transition: background 0.2s;
+}
+
+.leaflet-bar a:hover {
+  background-color: #f0f9ff !important; /* Azul bem claro */
+}
+
+.leaflet-bar a:first-child {
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
+}
+
+.leaflet-bar a:last-child {
+  border-bottom-left-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+  border-bottom: none !important;
+}
+
+/* Popups (Baloẽs de Info ao Clicar na Árvore) */
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-float) !important;
+  padding: 0 !important; /* Remove padding padrão para controlarmos */
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: 280px !important; /* Largura fixa boa para mobile */
+}
+
+/* Estilo interno do Popup (Injetado via JS, mas estilizado aqui) */
+.popup-header {
+  background: var(--gradient-main);
+  color: white;
+  padding: 10px 15px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.popup-body {
+  padding: 15px;
+  font-size: 0.9rem;
+  color: var(--color-text-main);
+  line-height: 1.4;
+}
+
+.popup-body b {
+  color: var(--color-forest);
+}
+
+.popup-actions {
+  padding: 10px 15px;
+  background: #f9fafb;
+  border-top: 1px solid #eee;
+  text-align: right;
+}
+
+/* Remove a ponta do balão (opcional, para visual mais "clean") */
+.leaflet-popup-tip {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* --- INFO BOX FLUTUANTE (Se houver) --- */
+#map-info-box {
+  position: absolute;
+  bottom: 20px;
+  left: 10px;
+  background: white;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-float);
+  z-index: 1000; /* Acima do mapa */
+  font-size: 0.8rem;
+  max-width: 200px;
+}
+
+/* --- BOTÕES ESPECÍFICOS DO MAPA (Abaixo do container) --- */
+#zoom-to-extent-btn,
+#show-my-location-btn {
+  background-color: var(--color-white) !important;
+  border: 2px solid var(--color-tech) !important;
+  color: var(--color-tech) !important;
+}
+
+#zoom-to-extent-btn:hover,
+#show-my-location-btn:hover {
+  background-color: rgba(var(--color-tech-rgb), 0.1) !important;
+}
+
+.map-geolocation-btn {
+  /* Destaque para o botão de "Minha Posição" */
+  /* Reaplicado aqui para garantir que a especificidade funcione */
+  background-color: var(--color-white) !important;
+  color: var(--color-tech) !important;
+  border-color: var(--color-tech) !important;
+}
+
+/* --- Rótulo Limpo para Círculos --- */
+.map-label-clean {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: white !important;
+  font-weight: 800 !important;
+  font-size: 1rem !important;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  /* Remove a setinha do tooltip */
+}
+.map-label-clean::before {
+  display: none;
+}
+/**
+ * ARBORIA 2.1 - CLINOMETER & DAP ESTIMATOR UI REFACTOR
+ * Refined Usability and Modern Visual Style Update
+ */
+
+/* --- CONTAINER TELA CHEIA (Fullscreen App) --- */
+#clinometer-view,
+#dap-estimator-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #0a0a0a; /* Slightly lighter black for less harsh */
+  z-index: 2000;
+  
+  /* Layout Flex Vertical */
+  display: flex;
+  flex-direction: column;
+  
+  display: none;
+}
+
+/* Containers de Vídeo */
+#camera-container,
+#dap-camera-container {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Elemento de Vídeo (Feed da Câmera) */
+#camera-feed,
+#dap-camera-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* --- MIRA CENTRAL (Crosshair) --- */
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;       /* increased size */
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(0,0,0,0.6);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.crosshair::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -15px;
+  right: -15px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.75);
+  transform: translateY(-50%);
+}
+
+/* --- HUD TOP (Barra Superior) --- */
+.hud-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px 25px;
+  background: linear-gradient(to bottom, rgba(10,10,10,0.9), transparent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Leitura do Ângulo em Tempo Real */
+#clinometer-angle,
+#dap-current-angle {
+  font-family: monospace;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #00e676;
+  text-shadow: 0 3px 8px rgba(0,230,118,0.9);
+}
+
+/* --- HUD CONTROLS (Painel Inferior) --- */
+.hud-overlay {
+  position: absolute;
+  bottom: 25px;
+  left: 20px;
+  right: 20px;
+  background: rgba(20, 29, 51, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 28px;
+  padding: 25px;
+  color: white;
+  box-shadow: 0 14px 35px rgba(0,0,0,0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.4s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- STEPS --- */
+.hud-step {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  animation: fadeInHud 0.4s ease-out forwards;
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+.hud-step.active {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+@keyframes fadeInHud {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tipografia do HUD */
+.hud-step p {
+  font-size: 1.15rem;
+  margin: 0;
+  color: #cbd5e1;
+}
+
+.hud-step strong {
+  color: white;
+  font-weight: 800;
+  font-size: 1.25rem;
+}
+
+.hud-step label {
+  color: #a0b0d0;
+  font-size: 1rem;
+}
+
+/* Input number estilo modernizado */
+.hud-step input[type="number"] {
+  background: rgba(40, 50, 80, 0.55);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  color: #e0e8ff;
+  text-align: center;
+  font-size: 1.8rem;
+  padding: 14px 16px;
+  border-radius: 20px;
+  width: 140px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hud-step input[type="number"]:focus {
+  border-color: #00e676;
+  box-shadow: 0 0 10px #00e676aa;
+  outline: none;
+}
+
+/* --- RESULTADOS --- */
+#tree-height-result,
+#dap-estimated-result {
+  font-size: 3.8rem;
+  font-weight: 900;
+  color: #00e676;
+  margin: 10px 0;
+  text-shadow: 0 6px 16px rgba(0,230,118,0.8);
+  padding-bottom: 6px;
+  border-bottom: 2px solid rgba(0,230,118,0.5);
+  font-family: "Segoe UI Black", "Arial Black", sans-serif;
+}
+
+/* Ação dos botões de resultado */
+.result-actions {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  margin-top: 18px;
+}
+
+.result-actions button {
+  flex: 1;
+  font-size: 1.05rem;
+  padding: 12px 14px;
+  border-radius: 24px;
+  font-weight: 700;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.result-actions button:hover,
+.result-actions button:focus {
+  box-shadow: 0 0 18px #00e676cc;
+  outline: none;
+}
+
+/* Salvar botão */
+.hud-action-btn.save {
+  background: #00e676;
+  color: #003300;
+  box-shadow: 0 6px 18px #00e676aa;
+}
+
+/* Botões - unificação e aumento de tamanho */
+.hud-action-btn,
+.hud-capture-btn,
+.export-btn {
+  font-size: 1.1rem;
+  padding: 14px 26px;
+  border-radius: 28px;
+  font-weight: 700;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.hud-action-btn:hover,
+.hud-action-btn:focus,
+.hud-capture-btn:hover,
+.hud-capture-btn:focus,
+.export-btn:hover,
+.export-btn:focus {
+  box-shadow: 0 0 22px #00e676cc;
+  outline: none;
+}
+
+/* --- MOBILE FULLSCREEN AND HUD ANGLE TEXT FIXES --- */
+
+
+@media (max-width: 768px) {
+  #clinometer-view, #dap-estimator-view {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100vh !important;
+    max-width: 100vw !important;
+    z-index: 3000 !important;
+    overflow: hidden !important;
+  }
+
+  .hud-top {
+    padding: 10px 15px; /* Reduced padding */
+    height: 60px; /* Fixed height for consistency */
+    background: linear-gradient(to bottom, rgba(10,10,10,0.9), transparent); /* Ensure gradient covers reduced padding */
+    font-size: 1rem; /* Adjusted font size for mobile */
+  }
+
+  #clinometer-angle, #dap-current-angle {
+    font-size: 1.2rem; /* Adjusted font size for mobile readability */
+    /* Removed white-space: nowrap and padding to prevent overflow */
+    position: relative; /* Ensure z-index control if needed */
+  }
+  
+  .hud-close-btn {
+    font-size: 0.9rem; /* Smaller close button text */
+    padding: 8px 12px; /* Smaller padding for close button */
+  }
+
+  .hud-overlay {
+    bottom: 15px; /* Adjust bottom spacing */
+    left: 15px; /* Adjust left spacing */
+    right: 15px; /* Adjust right spacing */
+    max-height: 40vh; /* Allow scrolling if content is too tall */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 20px; /* Adjust inner padding */
+  }
+
+  .hud-step p {
+    font-size: 1rem; /* Smaller paragraph text */
+  }
+
+  .hud-step strong {
+    font-size: 1.1rem; /* Smaller strong text */
+  }
+
+  .hud-step input[type="number"] {
+    width: 100%; /* Make input full width */
+    max-width: 180px; /* Limit max width for better aesthetic */
+    font-size: 1.5rem; /* Adjusted font size for input */
+    padding: 10px 12px; /* Adjusted padding for input */
+  }
+  
+  .hud-action-btn,
+  .hud-capture-btn,
+  .export-btn {
+    width: 100%; /* Make buttons full width */
+    display: block; /* Ensure buttons stack vertically */
+    margin-top: 10px; /* Add vertical spacing between buttons */
+    font-size: 1rem; /* Adjusted font size for buttons */
+    padding: 12px 20px; /* Adjusted padding for buttons */
+  }
+
+  .result-actions {
+    flex-direction: column; /* Stack result action buttons vertically */
+    gap: 10px; /* Adjust gap between stacked buttons */
+  }
+
+  #tree-height-result,
+  #dap-estimated-result {
+    font-size: 3rem; /* Adjusted font size for results */
+  }
+}
