@@ -81,6 +81,10 @@ export function exportActionZip() {
     }
 }
 
+import { calculateRiskFromFactors } from './tree.service.js';
+
+// ... (rest of the file)
+
 export async function handleImportZip(event) {
     if (typeof JSZip === 'undefined') return;
     const file = event.target.files[0]; if (!file) return;
@@ -100,20 +104,24 @@ export async function handleImportZip(event) {
             const row = lines[i].split(';');
             if (row.length < 5) continue;
 
+            const riskFactors = (row[15] || '').split(',').map(Number);
+            const riskCalculation = calculateRiskFromFactors(riskFactors);
+
             const newId = ++maxId;
             const tree = {
                 id: newId, data: row[1], especie: row[2], coordX: row[3], coordY: row[4],
                 utmZoneNum: parseInt(row[5]), utmZoneLetter: row[6],
                 dap: row[7], altura: row[8], distancia: row[9],
-                local: row[10], avaliador: row[11], pontuacao: parseInt(row[12]),
-                risco: row[13], observacoes: row[14],
-                riskFactors: (row[15] || '').split(',').map(Number),
-                hasPhoto: (row[16] && row[16].trim() === 'Sim')
+                local: row[10], avaliador: row[11],
+                observacoes: row[14],
+                riskFactors: riskFactors,
+                hasPhoto: (row[16] && row[16].trim().toLowerCase() === 'sim'),
+                
+                // Recalculated values
+                pontuacao: riskCalculation.pontuacao,
+                risco: riskCalculation.risco,
+                riscoClass: riskCalculation.riscoClass
             };
-
-            if (tree.pontuacao >= 20) tree.riscoClass = 'risk-high';
-            else if (tree.pontuacao >= 10) tree.riscoClass = 'risk-medium';
-            else tree.riscoClass = 'risk-low';
 
             if (tree.hasPhoto) {
                 const oldId = row[0];
@@ -121,6 +129,9 @@ export async function handleImportZip(event) {
                 if (imgFile) {
                     const blob = await imgFile.async("blob");
                     db.saveImageToDB(newId, blob);
+                } else {
+                    console.warn(`Foto para a árvore com ID antigo ${oldId} não encontrada no ZIP.`);
+                    tree.hasPhoto = false; // Corrige o estado se a foto não for encontrada
                 }
             }
             newTrees.push(tree);
@@ -138,3 +149,4 @@ export async function handleImportZip(event) {
         event.target.value = null;
     }
 }
+

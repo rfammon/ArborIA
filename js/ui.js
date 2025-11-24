@@ -59,25 +59,8 @@ export const UI = {
      */
     bindEvents() {
         // 1. Cliques no Menu Principal
-        if (this.elements.navButtons) {
-            this.elements.navButtons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    // Se for link externo (sem data-target), deixa passar
-                    if (!btn.hasAttribute('data-target')) return;
-                    
-                    e.preventDefault();
-                    
-                    const targetId = btn.getAttribute('data-target');
-                    if (targetId) {
-                        this.navigateTo(targetId);
-                        
-                        // Estado Visual Ativo
-                        this.elements.navButtons.forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                    }
-                });
-            });
-        }
+        // A lógica de clique agora é gerenciada pelo handleMainNavigation no main.js
+        // para permitir o gerenciamento do ciclo de vida dos componentes (câmera, etc).
 
         // 2. Botão Voltar (Apenas Mobile)
         if (this.elements.backBtn) {

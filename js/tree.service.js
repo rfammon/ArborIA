@@ -33,6 +33,40 @@ export function clearPhotoPreview() {
     TableUI.render();
 }
 
+/**
+ * Calculates risk score and classification from a risk factors array.
+ * @param {Array<number>} riskFactors - Array of 1s and 0s representing active risk factors.
+ * @returns {{pontuacao: number, risco: string, riscoClass: string}}
+ */
+export function calculateRiskFromFactors(riskFactors) {
+    const weights = [3, 5, 5, 4, 2, 2, 5, 5, 5, 4, 3, 3, 3, 5, 3, 5];
+    let totalScore = 0;
+
+    if (riskFactors && riskFactors.length === weights.length) {
+        riskFactors.forEach((factor, index) => {
+            if (factor === 1) {
+                totalScore += weights[index];
+            }
+        });
+    }
+
+    let classificationText = 'Baixo Risco';
+    let classificationClass = 'risk-low';
+    if (totalScore >= 20) {
+        classificationText = 'Alto Risco';
+        classificationClass = 'risk-high';
+    } else if (totalScore >= 10) {
+        classificationText = 'Médio Risco';
+        classificationClass = 'risk-medium';
+    }
+
+    return {
+        pontuacao: totalScore,
+        risco: classificationText,
+        riscoClass: classificationClass,
+    };
+}
+
 export function handleAddTreeSubmit(event) {
     event.preventDefault();
     const form = event.target;
