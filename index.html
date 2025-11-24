@@ -11,7 +11,13 @@
     <link rel="apple-touch-icon" href="img/icons/icon-192x192.png">
     <link rel="icon" type="image/png" href="img/icons/favicon.png">
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="style.css?v=3.0"> 
+    <link rel="stylesheet" href="css/modules/01_components.forms.css?v=1.0">
+    <link rel="stylesheet" href="css/modules/01_components.helpers.css?v=1.0">
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     
@@ -254,15 +260,15 @@
                                     </div>
                                 </div>
 
-                                <div><label for="risk-coord-x">Longitude / X:</label><input type="text" id="risk-coord-x" name="risk-coord-x"></div>
-                                <div><label for="risk-coord-y">Latitude / Y:</label><input type="text" id="risk-coord-y" name="risk-coord-y"></div>
+                                <div><label for="risk-coord-x">Longitude / X:</label><input type="text" id="risk-coord-x" name="risk-coord-x" placeholder="Ex: -47.88"></div>
+                                <div><label for="risk-coord-y">Latitude / Y:</label><input type="text" id="risk-coord-y" name="risk-coord-y" placeholder="Ex: -15.78"></div>
                                 
                                 <div class="gps-button-container">
                                     <button type="button" id="get-gps-btn">Capturar GPS Preciso</button>
                                     <span id="gps-status" class="instruction-text text-center" style="display:block; margin-top:5px;"></span>
                                 </div>
                                 
-                                <div><label for="risk-avaliador">Avaliador:</label><input type="text" id="risk-avaliador" name="risk-avaliador"></div>
+                                <div><label for="risk-avaliador">Avaliador:</label><input type="text" id="risk-avaliador" name="risk-avaliador" placeholder="Seu Nome"></div>
                             </div>
                             
                             <div style="margin-top: 1rem;">
@@ -330,10 +336,10 @@
                         
                         <div id="import-export-controls" class="risk-buttons-area">
                             <input type="file" id="zip-importer" style="display: none;"><input type="file" id="csv-importer" style="display: none;">
-                            <button type="button" id="import-data-btn" class="export-btn">Importar</button>
-                            <button type="button" id="export-data-btn" class="export-btn">Exportar</button>
+                            <button type="button" id="import-data-btn" class="action-btn">Importar</button>
+                            <button type="button" id="export-data-btn" class="action-btn">Exportar</button>
                             <button type="button" id="generate-pdf-btn" class="action-btn">Gerar Laudo PDF</button>
-                            <button type="button" id="send-email-btn" class="export-btn">Enviar Laudo</button>
+                            <button type="button" id="send-email-btn" class="action-btn">Enviar Laudo</button>
                             <button type="button" id="clear-all-btn" class="btn-danger-filled">Excluir Tudo</button>
                         </div>
                         <div id="zip-status" style="display: none;"><span class="spinner"></span><span id="zip-status-text">Processando...</span></div>
@@ -354,6 +360,8 @@
                         </div>
                         
                         <div id="map-container"></div>
+                        
+                        <div id="map-info-box" class="hidden"></div>
                         
                         <div class="form-grid" style="margin-top: 15px;">
                             <div>

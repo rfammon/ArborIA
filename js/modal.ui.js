@@ -3,6 +3,9 @@
  * Gerencia visualizadores de fotos e diálogos de confirmação
  */
 
+// Module-level variable to store the previously active modal
+let _previousActiveModal = null; // New variable
+
 // Função helper não exportada para fechar o visualizador de fotos.
 function closePhotoViewer() {
     const dialog = document.getElementById('photo-viewer-dialog');
@@ -14,7 +17,21 @@ function closePhotoViewer() {
     setTimeout(() => {
         dialog.style.display = 'none';
         const content = document.getElementById('photo-viewer-content');
-        if (content) content.innerHTML = ''; // Limpa a imagem para economizar memória
+        if (content) {
+            const img = content.querySelector('img');
+            if (img && img.src.startsWith('blob:')) {
+                URL.revokeObjectURL(img.src);
+            }
+            content.innerHTML = ''; // Limpa a imagem para economizar memória
+        }
+
+        // Check if there was a previously active modal and re-activate it
+        if (_previousActiveModal) { // New logic
+            _previousActiveModal.style.display = 'flex';
+            _previousActiveModal.classList.add('active');
+            _previousActiveModal = null; // Clear the reference
+        }
+
     }, 300);
 }
 
@@ -26,15 +43,22 @@ export function initPhotoViewer() {
     const dialog = document.getElementById('photo-viewer-dialog');
     const closeBtn = document.getElementById('photo-viewer-close');
     
-    if (!dialog || !closeBtn) return;
+    if (!dialog) return; // Add this check first
+
+    // Ensure it's hidden on initialization
+    dialog.style.display = 'none';
+
+    if (!closeBtn) return;
 
     // Evento: Botão X
     closeBtn.addEventListener('click', closePhotoViewer);
 
-    // Evento: Clique no fundo escuro (Backdrop)
+    // Event: Click anywhere inside the dialog (including image or content area)
     dialog.addEventListener('click', (e) => {
-        // Garante que clicou no fundo, não na imagem ou no botão X
-        if (e.target === dialog) {
+        const closeBtn = document.getElementById('photo-viewer-close');
+        // Fecha se o clique não foi no botão de fechar (X)
+        // Isso cobre cliques na imagem, no conteúdo ou no próprio dialog (backdrop)
+        if (e.target !== closeBtn) {
             closePhotoViewer();
         }
     });
@@ -47,10 +71,18 @@ export function initPhotoViewer() {
 export function openPhotoViewer(imageSrc) {
     const dialog = document.getElementById('photo-viewer-dialog');
     const content = document.getElementById('photo-viewer-content');
+    const actionModal = document.getElementById('action-modal'); // Get reference to action-modal
     
     if (!dialog || !content) {
         console.warn("Elementos do Photo Viewer não encontrados.");
         return;
+    }
+
+    // Store the active action-modal if it exists and is active
+    if (actionModal && actionModal.classList.contains('active')) { // New logic
+        _previousActiveModal = actionModal;
+        // Optionally, you might want to hide the previous modal here if it causes visual issues,
+        // but typically modals are just overlaid. For now, we'll let photo viewer cover it.
     }
 
     // Injeta a imagem sem estilos inline, para usar a classe do CSS

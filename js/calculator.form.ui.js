@@ -5,7 +5,7 @@
 import * as state from './state.js';
 import * as features from './features.js';
 import { getImageFromDB } from './database.js';
-import { showToast, optimizeImage } from './utils.js?v=26.3';
+import { showToast, optimizeImage, showInputError, clearInputError } from './utils.js?v=26.3';
 // [NOVO] Importa funções da tabela para atualizar a UI no submit
 import { appendTreeRow, renderSummaryTable } from './table.ui.js';
 
@@ -25,12 +25,72 @@ const mobileChecklist = {
 // === 3. LÓGICA DO FORMULÁRIO (Privado) ===
 
 /**
+ * Valida um único campo do formulário e exibe/limpa mensagens de erro.
+ * @param {HTMLInputElement|HTMLTextAreaElement} input O elemento de input a ser validado.
+ * @returns {boolean} True se o campo é válido, False caso contrário.
+ */
+function _validateField(input) {
+  clearInputError(input);
+  let isValid = true;
+  let errorMessage = '';
+
+  // Validação de campos obrigatórios
+  if (input.required && input.value.trim() === '') {
+    isValid = false;
+    errorMessage = 'Este campo é obrigatório.';
+  }
+
+  // Validação para campos numéricos
+  if (input.type === 'number') {
+    const value = parseFloat(input.value);
+    if (isNaN(value) && input.value.trim() !== '') { // Permite campo vazio se não for required
+      isValid = false;
+      errorMessage = 'Por favor, insira um número válido.';
+    } else if (value < parseFloat(input.min)) {
+      isValid = false;
+      errorMessage = `O valor mínimo é ${input.min}.`;
+    } else if (input.max && value > parseFloat(input.max)) {
+      isValid = false;
+      errorMessage = `O valor máximo é ${input.max}.`;
+    }
+  }
+
+  // Validação específica para coordenadas (garante que são números, mesmo sendo type="text")
+  if (input.id === 'risk-coord-x' || input.id === 'risk-coord-y') {
+    if (input.value.trim() !== '' && isNaN(parseFloat(input.value))) {
+      isValid = false;
+      errorMessage = 'Coordenada inválida. Insira um valor numérico.';
+    }
+  }
+
+  // Validação de data (não pode ser no futuro)
+  if (input.id === 'risk-data' && input.value) {
+    const selectedDate = new Date(input.value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Zera horas para comparar apenas a data
+    if (selectedDate > today) {
+      isValid = false;
+      errorMessage = 'A data não pode ser no futuro.';
+    }
+  }
+
+  if (!isValid) {
+    showInputError(input, errorMessage);
+  }
+  return isValid;
+}
+
+/**
  * Alterna o modo do formulário entre Adicionar e Editar.
  * @param {'add' | 'edit'} mode O modo para o qual o formulário deve ir.
  */
 export function setFormMode(mode) {
   const btn = document.getElementById('add-tree-btn');
   if (!btn) return;
+
+  // Limpa quaisquer erros de validação ao mudar o modo do formulário
+  const form = document.getElementById('risk-calculator-form');
+  if (form) _clearAllValidationErrors(form);
 
   if (mode === 'edit') {
     btn.textContent = '💾 Salvar Alterações';
@@ -55,6 +115,7 @@ export function populateFormForEdit(tree) {
 
   form.reset();
   features.clearPhotoPreview();
+  _clearAllValidationErrors(form); // Limpa erros ao preencher o formulário para edição
 
   // Preenche os campos de texto
   document.getElementById('risk-data').value = tree.data;
@@ -98,6 +159,15 @@ export function populateFormForEdit(tree) {
 }
 
 /**
+ * Limpa todos os erros de validação do formulário.
+ * @param {HTMLFormElement} form O formulário a ser limpo.
+ */
+function _clearAllValidationErrors(form) {
+  const allInputs = form.querySelectorAll('input, textarea');
+  allInputs.forEach(input => clearInputError(input));
+}
+
+/**
  * Anexa listeners ao formulário principal (submit, reset, gps).
  * @param {HTMLFormElement} form O elemento do formulário.
  * @param {boolean} isTouchDevice Indica se é um dispositivo de toque.
@@ -109,6 +179,18 @@ function _setupFormListeners(form, isTouchDevice) {
   const resetBtn = document.getElementById('reset-risk-form-btn');
   const gpsStatus = document.getElementById('gps-status');
 
+  // Adiciona listeners para validação em tempo real
+  const inputsToValidate = form.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea');
+  inputsToValidate.forEach(input => {
+    input.addEventListener('blur', () => _validateField(input));
+    input.addEventListener('input', () => {
+      // Limpa o erro ao digitar, mas revalida no blur
+      if (input.classList.contains('input-error')) {
+        clearInputError(input);
+      }
+    });
+  });
+
   // Esconde o botão de GPS em desktop
   if (getGpsBtn && !isTouchDevice) {
     getGpsBtn.closest('.gps-button-container')?.setAttribute('style', 'display:none');
@@ -119,6 +201,29 @@ function _setupFormListeners(form, isTouchDevice) {
 
   // Listener de SUBMIT
   form.addEventListener('submit', (event) => {
+    event.preventDefault(); // Previne o submit padrão para fazer validação manual
+    
+    let isFormValid = true;
+    let firstInvalidInput = null;
+
+    // Valida todos os campos ao submeter
+    inputsToValidate.forEach(input => {
+      if (!_validateField(input)) {
+        isFormValid = false;
+        if (!firstInvalidInput) {
+          firstInvalidInput = input;
+        }
+      }
+    });
+
+    if (!isFormValid) {
+      showToast('Por favor, corrija os erros no formulário.', 'error');
+      firstInvalidInput?.focus(); // Foca no primeiro campo inválido
+      firstInvalidInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return; // Impede o submit se o formulário não for válido
+    }
+
+    // Se o formulário é válido, prossegue com o submit
     const result = features.handleAddTreeSubmit(event);
     if (!result || !result.success) return;
 
@@ -132,6 +237,7 @@ function _setupFormListeners(form, isTouchDevice) {
     if (isTouchDevice) setupMobileChecklist();
     if (gpsStatus) { gpsStatus.textContent = ''; gpsStatus.className = ''; }
     setFormMode('add'); // Reseta o formulário para o modo 'add'
+    _clearAllValidationErrors(form); // Limpa erros após submit bem-sucedido
   });
 
   // Listener de RESET
@@ -143,6 +249,7 @@ function _setupFormListeners(form, isTouchDevice) {
       
       form.reset();
       features.clearPhotoPreview();
+      _clearAllValidationErrors(form); // Limpa erros ao resetar o formulário
 
       // Preenche data e avaliador
       try {

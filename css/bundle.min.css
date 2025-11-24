@@ -1,0 +1,484 @@
+/* Concatenated CSS */
+
+/* css/modules/00_global.css */
+
+body.fullscreen-active #page-top,
+body.fullscreen-active #app-content {
+  display: none !important;
+}
+
+/* css/modules/00_core.css */
+/**
+ * ARBORIA 2.0 - CORE STYLES (v2.1 - Header Full Width Fix)
+ * Módulo Base: Variáveis, Reset, Tipografia e Layout Mestre
+ */
+
+:root {
+  /* --- PALETA DE CORES (Identidade Visual) --- */
+  --color-forest: #00796b;       /* Verde Floresta Principal (IA/Natureza) */
+  --color-tech: #0277BD;         /* Azul Tecnológico Secundário (Arbor/Tech) */
+  --color-accent: #00bfa5;       /* Destaque (Teal Vibrante) */
+  
+  /* Degradês */
+  --gradient-main: linear-gradient(135deg, var(--color-forest), var(--color-tech));
+  --gradient-header: linear-gradient(90deg, var(--color-tech), var(--color-forest)); /* Azul -> Verde */
+  --gradient-hover: linear-gradient(135deg, #00695c, #01579b);
+  --gradient-surface: linear-gradient(180deg, #ffffff 0%, #f4f6f9 100%);
+  
+  /* --- CORES DE FUNCIONALIDADE --- */
+  --color-bg-body: #f0f2f5;
+  --color-bg-card: #ffffff;
+  --color-white: #ffffff; /* Adicionado para consistência */
+  --color-text-main: #1a202c;
+  --color-text-muted: #718096;
+  --color-border: #e2e8f0;
+
+  /* Cores de Risco */
+  --risk-high: #d32f2f;
+  --risk-medium: #f57c00;
+  --risk-low: #388e3c;
+
+  /* Cores RGB para opacidade */
+  --color-tech-rgb: 2, 119, 189; /* Componentes RGB de --color-tech */
+  --color-forest-rgb: 0, 121, 107; /* Componentes RGB de --color-forest */
+
+  /* --- UI --- */
+  --header-height: 70px; /* Aumentado levemente para acomodar logo */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 50px;
+
+  /* Profundidade */
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-floating: 0 8px 30px rgba(0, 121, 107, 0.20); 
+  
+  /* Animações */
+  --transition-fast: 0.2s ease;
+  --transition-smooth: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* --- RESET BÁSICO --- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-bg-body);
+  color: var(--color-text-main);
+  line-height: 1.5;
+  overscroll-behavior-y: none;
+  font-size: 16px;
+  overflow-x: hidden; /* Previne scroll horizontal indesejado na página */
+}
+
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+.text-center { text-align: center; }
+.hidden { display: none !important; }
+
+/* --- HEADER (Identidade Visual Restaurada e Fixada) --- */
+.header-main {
+  background-color: #fff;
+  height: var(--header-height);
+  width: 100%; /* [CORREÇÃO] Força largura total */
+  
+  /* Layout */
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Logo na esq, Descrição na dir */
+  padding: 0 1.5rem;
+  
+  /* Fixação */
+  position: sticky;
+  top: 0;
+  left: 0; /* [CORREÇÃO] Ancora na esquerda */
+  z-index: 1000;
+  
+  /* Efeito de Profundidade */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  
+  /* LINHA GRADIENTE (Azul para Verde) */
+  border-bottom: 4px solid;
+  border-image: var(--gradient-header) 1;
+}
+
+/* Container da Logo + Título */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Logotipo */
+.header-logo {
+  height: 38px;
+  width: auto;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+/* Tipografia da Marca (ArborIA) */
+.arboria-text {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.arboria-text .blue { color: var(--color-tech); }   /* Arbor */
+.arboria-text .green { color: var(--color-forest); } /* IA */
+
+/* Subtítulo */
+.app-description {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  border-left: 1px solid var(--color-border);
+  padding-left: 15px;
+  margin-left: 15px;
+  display: none; /* Oculto no mobile por padrão */
+}
+
+/* --- LAYOUT MESTRE (GRID DESKTOP) --- */
+@media (min-width: 769px) {
+  /* Exibe a descrição apenas no Desktop */
+  .app-description {
+    display: block;
+  }
+
+  #app-content {
+    display: grid;
+    /* Grid: Menu (280px) | Conteúdo (Auto) */
+    grid-template-columns: 280px 1fr; 
+    gap: 30px;
+    max-width: 1400px;
+    margin: 30px auto;
+    padding: 0 20px;
+    align-items: start;
+  }
+
+  /* Menu Lateral Fixo */
+  .mapa-navegacao {
+    position: sticky;
+    top: 100px; /* Abaixo do header + margem */
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    z-index: 10;
+  }
+  
+  /* Ajuste fino no header desktop */
+  .header-main {
+    padding: 0 2rem;
+  }
+}
+
+/* --- Ícones --- */
+.section-title-icon {
+    width: 1.5em;
+    height: 1.5em;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.button-icon {
+    height: 1.2em;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Adiciona uma sombra para fazer o ícone "saltar" */
+}
+
+/* css/modules/00_feature.welcome.css */
+/**
+ * ARBORIA 2.0 - WELCOME SCREEN
+ * Estilo para o cartão de boas-vindas na tela inicial, inspirado nos tooltips.
+ */
+
+#welcome-screen.modal-overlay {
+    z-index: 3998; /* Abaixo do tooltip, mas acima de outros modais */
+    pointer-events: all; /* Permite interações */
+}
+
+/* Removendo a animação de entrada padrão de modal para o welcome screen */
+#welcome-screen.modal-overlay.active {
+    opacity: 1;
+}
+
+/* Estilo do cartão de boas-vindas, inspirado no tooltip-card */
+.welcome-card {
+    background: var(--color-bg-card);
+    padding: 24px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-floating);
+    width: 90%;
+    max-width: 400px; /* Mesma largura máxima do tooltip-card */
+    position: relative; /* Para posicionar o botão de fechar */
+    border: 1px solid rgba(255, 255, 255, 0.5); /* Borda do tooltip-card */
+
+    /* Centralização usando transform, similar ao tooltip, mas para o centro da tela */
+    /* Remove a animação de subida do tooltip, centraliza o card */
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+    position: absolute; /* Para que o transform funcione corretamente no centro */
+}
+
+/* Adaptação dos títulos e parágrafos do tooltip-card */
+.welcome-card h3 {
+    margin-top: 0;
+    color: var(--color-forest);
+    font-size: 1.1rem; /* Similar ao h4 do tooltip */
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.welcome-card h3::before {
+    content: '👋'; /* Emoji de boas-vindas */
+    font-size: 1.2rem;
+}
+
+.welcome-card p {
+    margin: 0;
+    color: var(--color-text-main);
+    line-height: 1.6;
+    font-size: 0.95rem;
+    margin-bottom: 20px; /* Espaço antes do botão */
+}
+
+/* Estilo do botão de fechar */
+.welcome-card #close-welcome-btn {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-pill); /* Alterado para pill-shaped */
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.welcome-card #close-welcome-btn:hover {
+    background-color: var(--color-primary-dark);
+}
+/* css/modules/01_components.buttons.css */
+/**
+ * ARBORIA 2.0 - BUTTON COMPONENTS
+ * Estilo: Pill Shape, Gradient Background, Tactile Feedback
+ */
+
+/* --- ESTILO BASE PARA TODOS OS BOTÕES --- */
+button {
+  font-family: inherit;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+button:active {
+  transform: scale(0.96); /* Efeito tátil de clique */
+}
+
+/* --- BOTÕES DE AÇÃO PRIMÁRIA (Gradient Pills) --- */
+/* Usado em: Iniciar Medição, Salvar, Adicionar Árvore */
+.action-btn, 
+.hud-action-btn, 
+.send-btn, 
+#add-tree-btn, 
+#get-gps-btn {
+  background: var(--gradient-main);
+  color: white;
+  border-radius: var(--radius-pill);
+  padding: 12px 24px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-floating);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  width: 100%; /* Mobile First: ocupa largura total por padrão em containers pequenos */
+}
+
+/* Inverter ícones em botões de fundo escuro para ficarem brancos */
+.action-btn .button-icon,
+.hud-action-btn .button-icon,
+.send-btn .button-icon,
+#add-tree-btn .button-icon,
+#get-gps-btn .button-icon,
+.btn-danger-filled .button-icon {
+    filter: invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Inverte e mantém a sombra */
+}
+
+
+/* Hover apenas em desktop para não atrapalhar touch */
+@media (hover: hover) {
+  .action-btn:hover, 
+  .hud-action-btn:hover, 
+  .send-btn:hover, 
+  #add-tree-btn:hover, 
+  #get-gps-btn:hover {
+    background: var(--gradient-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 121, 107, 0.4);
+  }
+}
+
+/* --- BOTÕES SECUNDÁRIOS / OUTLINE --- */
+/* Usado em: Exportar, Cancelar, Filtros */
+.export-btn, 
+.btn-secondary {
+  background: transparent; /* Revertido para transparente */
+  border: 2px solid var(--color-forest); /* Borda com a cor Forest */
+  color: var(--color-forest); /* Texto com a cor Forest */
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.export-btn:hover {
+  background-color: rgba(var(--color-forest-rgb), 0.08); /* Tint verde bem suave */
+}
+
+/* Botão de Alerta/Perigo (ex: Limpar Tudo) */
+.btn-danger {
+  border-color: var(--risk-high);
+  color: var(--risk-high);
+}
+
+.btn-danger:hover {
+  background-color: rgba(211, 47, 47, 0.08);
+}
+
+.btn-danger-filled {
+  background: linear-gradient(135deg, #ef5350, var(--risk-high));
+  color: white;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-danger-filled:hover {
+  background: linear-gradient(135deg, var(--risk-high), #b71c1c);
+}
+
+.btn-clear {
+  background: linear-gradient(135deg, var(--color-medium-gray), var(--color-dark-gray)); /* Usar gradiente */
+  color: var(--color-white); /* Corrigido para branco para contraste */
+  border-radius: var(--radius-pill); /* Corrigido para pill-shaped */
+  padding: 12px 24px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-floating);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  border: none;
+}
+
+.btn-clear:hover {
+  background: linear-gradient(135deg, var(--color-dark-gray), #555); /* Gradiente mais escuro no hover */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* --- BOTÕES DE CÂMERA (HUD) --- */
+/* Botão de Disparo/Captura */
+.hud-capture-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: transparent;
+  border: 4px solid white;
+  position: relative;
+  padding: 0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.hud-capture-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 54px; height: 54px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.hud-capture-btn:active::after {
+  transform: translate(-50%, -50%) scale(0.9);
+  background: var(--color-accent);
+}
+
+/* Botão Fechar HUD */
+.hud-close-btn {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  backdrop-filter: blur(4px);
+}
+
+.hud-close-btn .button-icon {
+    filter: invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Inverte e mantém a sombra */
+}
+
+/* --- BOTÃO VOLTAR (Navegação) --- */
+.btn-back {
+  background: transparent;
+  color: var(--color-tech); /* Azul Tecnológico */
+  font-weight: 700;
+  padding: 8px 0;
+  justify-content: flex-start;
+}
+
+.btn-back:hover {
+  text-decoration: underline;
+}
+
+/* --- BOTÃO DE UPLOAD DE FOTO (Estilo de botão secundário) --- */
+.photo-btn {
+    background: var(--gradient-main); /* Alterado para gradiente */
+    border: none; /* Remove a borda, pois o gradiente já preenche */
+    color: white; /* Cor do texto para contraste com o gradiente */
+    border-radius: var(--radius-pill);
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.photo-btn:hover {
+    background: var(--gradient-hover); /* Efeito de hover com gradiente */
+}

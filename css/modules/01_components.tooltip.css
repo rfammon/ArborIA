@@ -9,11 +9,12 @@
 .tooltip-trigger {
   color: var(--color-tech);
   border-bottom: 1px dashed var(--color-tech); /* Tracejado indica "clique para saber mais" */
-  cursor: help;
+  cursor: pointer; /* Alterado para pointer para indicar interatividade */
   position: relative;
   transition: all var(--transition-fast);
   white-space: nowrap;
   font-weight: 500;
+  outline: none; /* Reset para controlar o estilo de foco */
 }
 
 .checklist-term:hover,
@@ -21,6 +22,13 @@
   background-color: rgba(2, 119, 189, 0.1); /* Highlight suave ao passar o mouse */
   border-bottom-style: solid;
 }
+
+.checklist-term:focus,
+.tooltip-trigger:focus {
+    box-shadow: 0 0 0 2px var(--color-accent); /* Anel de foco acessível */
+    border-radius: 2px;
+}
+
 
 /* --- BACKDROP (Fundo Escuro) --- */
 /* Garante foco na leitura da definição */
@@ -66,12 +74,33 @@
   visibility: hidden;
   transition: all var(--transition-smooth);
   border: 1px solid rgba(255, 255, 255, 0.5);
+  cursor: pointer; /* Indica que o card é clicável para fechar */
 }
 
 .tooltip-card.active {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0); /* Sobe para posição final */
+}
+
+/* Botão de fechar do Tooltip */
+.tooltip-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 5px;
+    z-index: 4001; /* Garante que esteja acima do conteúdo do tooltip */
+    transition: color 0.2s ease;
+}
+
+.tooltip-close-btn:hover {
+    color: var(--color-text-main);
 }
 
 /* Conteúdo Interno */

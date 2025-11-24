@@ -264,51 +264,54 @@ export function setupMapListeners() {
   if (locBtn) locBtn.addEventListener('click', toggleUserLocation);
 }
 
-export function initializeMap() {
-  const mapContainer = document.getElementById('map-container');
-  if (!mapContainer || typeof L === 'undefined') return;
+// [REATORADO] Deve ser chamado uma vez na inicialização do aplicativo
+export function setupMap() {
+    const mapContainer = document.getElementById('map-container');
+    if (!mapContainer || typeof L === 'undefined' || state.mapInstance) return; // Executa apenas uma vez
 
-  let map = state.mapInstance;
-
-  if (!map) {
-    map = L.map('map-container', { tap: false, preferCanvas: true }).setView([-15.78, -47.92], 4);
+    const map = L.map('map-container', { tap: false, preferCanvas: true }).setView([-15.78, -47.92], 4);
     state.setMapInstance(map);
     state.setMapMarkerGroup(L.featureGroup().addTo(map));
     map.on('click', hideMapInfoBox);
-  }
-  
-  setTimeout(() => map.invalidateSize(), 100);
 
-  if (!osmLayer || !satelliteLayer) {
-      osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22, maxNativeZoom: 19, attribution: '© OpenStreetMap' });
-      satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 22, maxNativeZoom: 19, attribution: 'Tiles &copy; Esri' });
-  }
-
-  if (!map.hasLayer(osmLayer) && !map.hasLayer(satelliteLayer)) {
-      satelliteLayer.addTo(map);
-      currentLayerType = 'satellite';
-      const btn = document.getElementById('toggle-map-layer-btn');
-      if(btn) { btn.innerHTML = '🗺️ Ruas'; btn.style.borderColor = '#0277BD'; btn.style.color = '#0277BD'; }
-  }
-
-  const bounds = renderMapMarkers();
-
-  if (state.zoomTargetCoords) {
-    // Zoom muito próximo para ver a copa da árvore no satélite
-    map.setView(state.zoomTargetCoords, 20); 
-    state.setZoomTargetCoords(null);
+    osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22, maxNativeZoom: 19, attribution: '© OpenStreetMap' });
+    satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 22, maxNativeZoom: 19, attribution: 'Tiles &copy; Esri' });
     
-    if (state.openInfoBoxId !== null) {
-       const t = state.registeredTrees.find(x => x.id === state.openInfoBoxId);
-       if(t) setTimeout(() => showMapInfoBox(t), 500);
-       state.setOpenInfoBoxId(null);
-    }
-  } else if (bounds && bounds.isValid() && state.registeredTrees.length > 0) {
-      if (map.getZoom() <= 5) {
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 19 });
-      }
-  }
+    satelliteLayer.addTo(map);
+    currentLayerType = 'satellite';
+    const btn = document.getElementById('toggle-map-layer-btn');
+    if(btn) { btn.innerHTML = '🗺️ Ruas'; btn.style.borderColor = '#0277BD'; btn.style.color = '#0277BD'; }
+
+    updateMapData(true); // Carga inicial de dados e ajuste de zoom
 }
+
+// [NOVO] Chamado para atualizar os marcadores quando os dados mudam
+export function updateMapData(fitBounds = false) {
+    const map = state.mapInstance;
+    if (!map) return;
+
+    const bounds = renderMapMarkers();
+
+    if (state.zoomTargetCoords) {
+        map.setView(state.zoomTargetCoords, 20);
+        if (state.openInfoBoxId !== null) {
+            const t = state.registeredTrees.find(x => x.id === state.openInfoBoxId);
+            if(t) setTimeout(() => showMapInfoBox(t), 500);
+        }
+        setTimeout(() => {
+            state.setZoomTargetCoords(null);
+            state.setOpenInfoBoxId(null);
+        }, 1000);
+    } else if (fitBounds && bounds && bounds.isValid() && state.registeredTrees.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 19 });
+    }
+
+    setTimeout(() => map.invalidateSize(), 100);
+}
+
+// Mantido para compatibilidade com chamadas antigas
+export const initializeMap = () => updateMapData(true);
+
 
 // === GPS ===
 function stopLocationWatch() {

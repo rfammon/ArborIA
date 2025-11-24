@@ -7,11 +7,15 @@ import * as State from './state.js';
 import * as features from './features.js'; // Importação correta
 import { showConfirmModal, openPhotoViewer, showDetailsModal } from './modal.ui.js'; // Adiciona showDetailsModal
 import { getImageFromDB } from './database.js';
+import { debounce } from './utils.js'; // Importa a função debounce
 
 export const TableUI = {
     
     container: null,
     badgeElement: null,
+    filterInput: null, // Adiciona referência ao input de filtro
+    _containerClickHandler: null, // Armazena o handler de clique para remoção
+    _currentFilterHandler: null, // Armazena o handler do filtro para remoção
     
     // [MUDANÇA] isCompactMode agora é apenas para desktop. Mobile terá sua própria renderização.
     isCompactMode: window.innerWidth <= 768,
@@ -19,8 +23,9 @@ export const TableUI = {
     render() {
         this.container = document.getElementById('summary-table-container');
         this.badgeElement = document.getElementById('summary-badge');
+        this.filterInput = document.getElementById('table-filter-input'); // Obtém o input de filtro
 
-        if (!this.container || !this.badgeElement) return;
+        if (!this.container || !this.badgeElement || !this.filterInput) return;
 
         const trees = State.registeredTrees || [];
         this.updateBadge(trees.length);
@@ -50,6 +55,9 @@ export const TableUI = {
         } else {
             this.renderDesktopTable(trees);
         }
+        
+        this.setupFilterListener(); // Configura o listener do filtro após a renderização
+        this.bindContainerEvents(); // Otimizado com delegação de eventos
     },
 
     /**
@@ -82,7 +90,8 @@ export const TableUI = {
                 <tbody>
         `;
 
-        sortedTrees.forEach(tree => {
+        // Utiliza um array para construir o HTML e junta no final para melhor performance
+        const rowsHtml = sortedTrees.map(tree => {
             let badgeClass = 'badge-low'; 
             if (tree.riscoClass === 'risk-high' || tree.risco === 'Alto Risco') badgeClass = 'badge-high';
             else if (tree.riscoClass === 'risk-medium' || tree.risco === 'Médio Risco') badgeClass = 'badge-medium';
@@ -90,7 +99,7 @@ export const TableUI = {
             const photoIcon = tree.hasPhoto ? '📷' : '';
             const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
 
-            html += `
+            return `
                 <tr id="row-${tree.id}">
                     <td class="col-id"><strong>${tree.id}</strong></td>
                     <td>
@@ -134,9 +143,8 @@ export const TableUI = {
             `;
         });
 
-        html += `</tbody></table></div>`;
+        html += rowsHtml.join('') + `</tbody></table></div>`;
         this.container.innerHTML = html;
-        this.bindEvents();
     },
 
     /**
@@ -144,16 +152,15 @@ export const TableUI = {
      */
     renderMobileList(trees) {
         const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
-        let html = `<div class="summary-list-mobile">`;
-
-        sortedTrees.forEach(tree => {
+        
+        const listItemsHtml = sortedTrees.map(tree => {
             let badgeClass = 'badge-low';
             if (tree.risco === 'Alto Risco') badgeClass = 'badge-high';
             else if (tree.risco === 'Médio Risco') badgeClass = 'badge-medium';
 
             const photoIcon = tree.hasPhoto ? '📷' : '';
 
-            html += `
+            return `
                 <div class="summary-list-item" data-tree-id="${tree.id}">
                     <div class="item-main-info">
                         <span class="item-id">ID: ${tree.id}</span>
@@ -167,21 +174,96 @@ export const TableUI = {
             `;
         });
 
-        html += `</div>`;
-        this.container.innerHTML = html;
-        this.bindMobileListEvents();
+        this.container.innerHTML = `<div class="summary-list-mobile">${listItemsHtml.join('')}</div>`;
     },
 
     /**
-     * [NOVO] Anexa eventos de clique para a lista mobile.
+     * Configura o listener para o campo de filtro da tabela.
      */
-    bindMobileListEvents() {
-        this.container.querySelectorAll('.summary-list-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const treeId = parseInt(item.dataset.treeId, 10);
-                this.showTreeDetailsModal(treeId);
-            });
+    setupFilterListener() {
+        if (!this.filterInput) return;
+
+        // Debounce a função de filtro para otimizar performance
+        const debouncedFilter = debounce((event) => {
+            const filterText = event.target.value.toLowerCase();
+            this.filterTable(filterText);
+        }, 300); // 300ms de atraso
+
+        this.filterInput.removeEventListener('input', this._currentFilterHandler); // Remove handler antigo
+        this._currentFilterHandler = debouncedFilter; // Armazena o handler atual
+        this.filterInput.addEventListener('input', this._currentFilterHandler);
+        
+        // Aplica o filtro imediatamente se já houver texto (ex: ao voltar para a aba)
+        this.filterTable(this.filterInput.value.toLowerCase());
+    },
+
+    /**
+     * Filtra as linhas da tabela ou itens da lista com base no texto.
+     * @param {string} filterText O texto a ser usado como filtro.
+     */
+    filterTable(filterText) {
+        const isMobile = window.innerWidth <= 768;
+        const items = isMobile 
+            ? this.container.querySelectorAll('.summary-list-item')
+            : this.container.querySelectorAll('tbody tr');
+
+        items.forEach(item => {
+            const itemText = item.textContent.toLowerCase();
+            const shouldShow = itemText.includes(filterText);
+            
+            if (isMobile) {
+                item.style.display = shouldShow ? 'flex' : 'none';
+            } else {
+                item.style.display = shouldShow ? 'table-row' : 'none';
+            }
         });
+    },
+
+    /**
+     * [OTIMIZADO] Anexa um único listener de eventos ao container para lidar com todas as ações.
+     */
+    bindContainerEvents() {
+        if (!this.container) return;
+
+        // Remove listener antigo para evitar duplicação
+        if (this._containerClickHandler) {
+            this.container.removeEventListener('click', this._containerClickHandler);
+        }
+
+        this._containerClickHandler = (event) => {
+            const target = event.target;
+            
+            // Ações da tabela de desktop
+            const actionBtn = target.closest('.action-btn-icon');
+            if (actionBtn) {
+                const id = parseInt(actionBtn.dataset.id, 10);
+                if (isNaN(id)) return;
+
+                if (actionBtn.classList.contains('btn-map')) {
+                    features.handleZoomToPoint(id);
+                } else if (actionBtn.classList.contains('btn-edit')) {
+                    features.handleEditTree(id);
+                } else if (actionBtn.classList.contains('btn-delete')) {
+                    showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${id}?`, () => features.handleDeleteTree(id));
+                } else if (actionBtn.classList.contains('btn-photo')) {
+                    getImageFromDB(id, blob => {
+                        if (blob) openPhotoViewer(URL.createObjectURL(blob));
+                    });
+                }
+                return;
+            }
+
+            // Clique na lista de mobile
+            const listItem = target.closest('.summary-list-item');
+            if (listItem) {
+                const treeId = parseInt(listItem.dataset.treeId, 10);
+                if (!isNaN(treeId)) {
+                    this.showTreeDetailsModal(treeId);
+                }
+            }
+        };
+
+        this.container.addEventListener('click', this._containerClickHandler);
     },
 
     /**
@@ -200,7 +282,7 @@ export const TableUI = {
             "Risco sobre Alvos", "Interferência em Redes", "Espécie com Falhas", "Brotação Epicórmica", 
             "Calçadas Rachadas", "Perda de Raízes", "Compactação do Solo", "Apodrecimento em Raízes"
         ];
-        const riskFactors = (tree.riskFactors || []).map((val, idx) => val === 1 ? `<li>${riskLabels[idx]}</li>` : null).filter(v => v).join('');
+        const riskFactors = (tree.riskFactors || []).map((val, idx) => val === 1 ? `<li>${riskLabels[idx]}</li>` : null).filter(Boolean).join('');
 
         const content = `
             <div class="details-modal-grid">
@@ -216,6 +298,7 @@ export const TableUI = {
         `;
 
         const actions = [
+            { text: '📍 Ver no Mapa', className: 'action-btn', onClick: () => features.handleZoomToPoint(tree.id) },
             { text: '✏️ Editar', className: 'action-btn', onClick: () => features.handleEditTree(tree.id) },
             { text: '🗑️ Excluir', className: 'btn-danger-filled', closesModal: false, onClick: () => {
                 showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${tree.id}?`, () => features.handleDeleteTree(tree.id));
@@ -233,44 +316,59 @@ export const TableUI = {
     },
 
     renderControls() {
-        const wrapper = document.querySelector('.table-filter-container');
-        if (!wrapper) return; // Sai se o container não existir
+        const wrapper = document.querySelector('.table-controls-wrapper');
+        if (!wrapper) return;
 
         // Se o botão já existe, apenas atualiza o texto
-        const existingBtn = document.getElementById('toggle-cols-btn');
-        if (existingBtn) {
-            existingBtn.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
-            return;
+        const existingBtnToggle = document.getElementById('toggle-cols-btn');
+        if (existingBtnToggle) {
+            existingBtnToggle.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
         }
 
-        // Cria o layout de controles pela primeira vez
-        wrapper.className = 'table-controls-wrapper';
-        const input = document.getElementById('table-filter-input');
+        // Encontra ou cria o container do input
+        let inputOuterContainer = wrapper.querySelector('.table-filter-container');
+        if (!inputOuterContainer) {
+            inputOuterContainer = document.createElement('div');
+            inputOuterContainer.className = 'table-filter-container';
+            wrapper.prepend(inputOuterContainer); // Adiciona antes do botão toggle se não existir
+        }
+
+        // Cria o novo wrapper para o input com ícone
+        let filterInputWrapper = inputOuterContainer.querySelector('.filter-input-wrapper');
+        if (!filterInputWrapper) {
+            filterInputWrapper = document.createElement('div');
+            filterInputWrapper.className = 'filter-input-wrapper';
+            
+            const searchIcon = document.createElement('span');
+            searchIcon.className = 'filter-icon';
+            searchIcon.textContent = '🔍'; // Ícone de lupa
+
+            filterInputWrapper.appendChild(searchIcon);
+            filterInputWrapper.appendChild(this.filterInput); // Adiciona o input existente
+            
+            inputOuterContainer.innerHTML = ''; // Limpa o container externo
+            inputOuterContainer.appendChild(filterInputWrapper); // Adiciona o novo wrapper
+        }
         
-        const btnToggle = document.createElement('button');
-        btnToggle.id = 'toggle-cols-btn';
-        btnToggle.type = 'button';
+        // Cria ou atualiza o botão toggle
+        let btnToggle = document.getElementById('toggle-cols-btn');
+        if (!btnToggle) {
+            btnToggle = document.createElement('button');
+            btnToggle.id = 'toggle-cols-btn';
+            btnToggle.type = 'button';
+            btnToggle.className = 'export-btn';
+            wrapper.appendChild(btnToggle);
+        }
         btnToggle.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
-        
         btnToggle.onclick = () => {
             this.isCompactMode = !this.isCompactMode;
             btnToggle.innerHTML = this.isCompactMode ? '👁️ + Colunas' : '➖ Compactar';
-            
-            // Alterna a classe na tabela para o CSS reagir
             const table = this.container.querySelector('table');
             if (table) {
                 if (this.isCompactMode) table.classList.add('compact-mode');
                 else table.classList.remove('compact-mode');
             }
         };
-
-        wrapper.innerHTML = ''; // Limpa o container
-        const divInput = document.createElement('div');
-        divInput.className = 'table-filter-container';
-        divInput.appendChild(input); 
-
-        wrapper.appendChild(divInput);
-        wrapper.appendChild(btnToggle);
     },
 
     updateBadge(count) {
@@ -289,47 +387,4 @@ export const TableUI = {
             btn.style.display = show ? 'inline-flex' : 'none';
         });
     },
-
-    bindEvents() {
-        // Ver Mapa
-        this.container.querySelectorAll('.btn-map').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.dataset.id);
-                features.handleZoomToPoint(id);
-            });
-        });
-
-        // Editar
-        this.container.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.dataset.id);
-                features.handleEditTree(id);
-            });
-        });
-
-        // Excluir
-        this.container.querySelectorAll('.btn-delete').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.dataset.id);
-                showConfirmModal(
-                    "Excluir Registro?", 
-                    `Deseja apagar a árvore ID ${id}?`, 
-                    () => features.handleDeleteTree(id)
-                );
-            });
-        });
-
-        // Ver Foto
-        this.container.querySelectorAll('.btn-photo').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.dataset.id);
-                getImageFromDB(id, (blob) => {
-                    if (blob) {
-                        const url = URL.createObjectURL(blob);
-                        openPhotoViewer(url);
-                    }
-                });
-            });
-        });
-    }
 };

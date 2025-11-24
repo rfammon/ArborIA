@@ -1,132 +1,18 @@
-/**
- * ARBORIA 2.0 - HELPER COMPONENTS
- * Badges, Toasts, Spinners e Utilitários Visuais
- */
-
-/* --- BADGES (Etiquetas de Risco/Status) --- */
-/* Usado na Tabela de Resumo e no Mapa */
-.badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: white;
-  background-color: var(--color-text-muted); /* Default cinza */
-  white-space: nowrap;
-  vertical-align: middle;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+@keyframes glow {
+  0% {
+    background-color: #fff9c4;
+    box-shadow: 0 0 5px #fff9c4;
+  }
+  50% {
+    background-color: #fffde7;
+    box-shadow: 0 0 20px #fffde7;
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
 }
 
-/* Variações Semânticas de Risco (Baseado nas variáveis Core) */
-.badge-high, 
-.risk-high { 
-  background-color: var(--risk-high); 
-}
-
-.badge-medium, 
-.risk-medium { 
-  background-color: var(--risk-medium); 
-}
-
-.badge-low, 
-.risk-low { 
-  background-color: var(--risk-low); 
-}
-
-/* --- TOAST NOTIFICATION (Feedback Flutuante) --- */
-/* O balãozinho preto que aparece e some com mensagens */
-#toast-notification {
-  visibility: hidden;
-  min-width: 280px;
-  max-width: 90vw;
-  background-color: #1a202c; /* Dark mode suave */
-  color: #fff;
-  text-align: center;
-  border-radius: var(--radius-pill);
-  padding: 14px 24px;
-  
-  /* Posicionamento */
-  position: fixed;
-  z-index: 9999;
-  left: 50%;
-  bottom: 30px;
-  transform: translateX(-50%);
-  
-  /* Estilo */
-  box-shadow: var(--shadow-float);
-  font-size: 0.95rem;
-  font-weight: 500;
-  opacity: 0;
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Efeito bounce suave */
-}
-
-#toast-notification.show {
-  visibility: visible;
-  opacity: 1;
-  bottom: 80px; /* Sobe levemente ao aparecer */
-}
-
-/* Variações de Cor do Toast */
-.toast-success { border-left: 6px solid var(--color-forest); }
-.toast-error { border-left: 6px solid var(--risk-high); }
-.toast-info { border-left: 6px solid var(--color-tech); }
-
-/* --- LOADING SPINNER (Indicador de Progresso) --- */
-.spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top-color: var(--color-forest);
-  animation: spin 1s linear infinite;
-  vertical-align: middle;
-  margin-right: 10px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Container de Status de Processamento (Ex: Importando ZIP...) */
-#zip-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  background: #e0f2f1;
-  border-radius: var(--radius-sm);
-  color: var(--color-forest);
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-top: 10px;
-}
-
-/* --- UTILITÁRIOS DE TEXTO E LAYOUT --- */
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-
-.hidden {
-  display: none !important;
-}
-
-/* Legenda de Pontos (Mapa) */
-.legend-dot {
-  height: 10px;
-  width: 10px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 6px;
-}
-
-/* Texto de Instrução (Ex: embaixo de inputs complexos) */
-.instruction-text {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-  margin-top: 4px;
-  margin-bottom: 8px;
-  line-height: 1.4;
+.glow-effect {
+  animation: glow 1.5s ease-out;
 }

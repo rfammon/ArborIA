@@ -89,7 +89,7 @@ function setupActionButtons() {
             const result = features.handleAddTreeSubmit(e); 
             if (result && result.success) {
                 TableUI.render(); 
-                mapUI.initializeMap(); 
+                mapUI.updateMapData(true); 
                 
                 const summaryTab = document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]');
                 if (summaryTab) summaryTab.click();
@@ -140,7 +140,7 @@ function setupActionButtons() {
         inputZip.addEventListener('change', async (e) => {
             await features.handleImportZip(e);
             TableUI.render(); 
-            mapUI.initializeMap(); 
+            mapUI.updateMapData(true); 
         });
     }
 
@@ -176,7 +176,7 @@ function setupActionButtons() {
                 () => {
                     features.handleClearAll();
                     TableUI.render();
-                    mapUI.initializeMap(); 
+                    mapUI.updateMapData(true); 
                 }
             );
         });
@@ -261,14 +261,17 @@ function setupWelcomeScreen() {
     if (!welcomeScreen || !closeBtn) return;
 
     const closeWelcome = () => {
+        console.log("Welcome screen close button clicked.");
         welcomeScreen.classList.remove('active');
         setTimeout(() => {
             welcomeScreen.style.display = 'none';
+            console.log("Welcome screen hidden.");
             localStorage.setItem('arboriaWelcomeShown', 'true');
         }, 300);
     };
 
     closeBtn.addEventListener('click', closeWelcome);
+    console.log("Welcome screen close button event listener attached.");
 
     if (!localStorage.getItem('arboriaWelcomeShown')) {
         setTimeout(() => welcomeScreen.classList.add('active'), 500);
@@ -313,7 +316,7 @@ async function initApp() {
     initFormDefaults();
     
     // 4. Inicializa Componentes Complexos
-    mapUI.initializeMap();
+    mapUI.setupMap();
     mapUI.setupMapListeners();
     
     clinometer.initClinometerListeners();
@@ -329,7 +332,7 @@ async function initApp() {
     window.addEventListener('resize', () => {
         const mapContainer = document.getElementById('map-container');
         if (mapContainer && mapContainer.offsetParent !== null) {
-            mapUI.initializeMap(); 
+            mapUI.updateMapData(false); 
             if (state.mapInstance) state.mapInstance.invalidateSize();
         }
     });

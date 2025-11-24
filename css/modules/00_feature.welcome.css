@@ -1,57 +1,74 @@
 /**
  * ARBORIA 2.0 - WELCOME SCREEN
- * Estilo para o modal de boas-vindas.
+ * Estilo para o cartão de boas-vindas na tela inicial, inspirado nos tooltips.
  */
 
-.welcome-card {
-  background: linear-gradient(135deg, var(--color-forest), var(--color-tech));
-  color: white;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-  width: 100%;
-  max-width: 500px;
-  text-align: center;
-
-  /* Animação de entrada */
-  transform: scale(0.95);
-  opacity: 0;
-  transition: all var(--transition-smooth);
+#welcome-screen.modal-overlay {
+    z-index: 3998; /* Abaixo do tooltip, mas acima de outros modais */
+    pointer-events: all; /* Permite interações */
 }
 
-.modal-overlay.active .welcome-card {
-    transform: scale(1);
+/* Removendo a animação de entrada padrão de modal para o welcome screen */
+#welcome-screen.modal-overlay.active {
     opacity: 1;
 }
 
+/* Estilo do cartão de boas-vindas, inspirado no tooltip-card */
+.welcome-card {
+    background: var(--color-bg-card);
+    padding: 24px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-floating);
+    width: 90%;
+    max-width: 400px; /* Mesma largura máxima do tooltip-card */
+    position: relative; /* Para posicionar o botão de fechar */
+    border: 1px solid rgba(255, 255, 255, 0.5); /* Borda do tooltip-card */
+
+    /* Centralização usando transform, similar ao tooltip, mas para o centro da tela */
+    /* Remove a animação de subida do tooltip, centraliza o card */
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+    position: absolute; /* Para que o transform funcione corretamente no centro */
+}
+
+/* Adaptação dos títulos e parágrafos do tooltip-card */
 .welcome-card h3 {
-  color: white;
-  margin-bottom: 1rem;
-  font-size: 1.3rem;
+    margin-top: 0;
+    color: var(--color-forest);
+    font-size: 1.1rem; /* Similar ao h4 do tooltip */
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.welcome-card h3::before {
+    content: '👋'; /* Emoji de boas-vindas */
+    font-size: 1.2rem;
 }
 
 .welcome-card p {
-  color: rgba(255, 255, 255, 0.85);
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
-  font-size: 0.95rem;
+    margin: 0;
+    color: var(--color-text-main);
+    line-height: 1.6;
+    font-size: 0.95rem;
+    margin-bottom: 20px; /* Espaço antes do botão */
 }
 
-#welcome-screen .action-btn {
-  width: 100%;
-  max-width: 250px;
-  margin-top: 1.5rem; /* Espaçamento entre o card e o botão */
-  background: var(--color-accent);
-  color: white;
+/* Estilo do botão de fechar */
+.welcome-card #close-welcome-btn {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-pill); /* Alterado para pill-shaped */
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
 }
 
-/* Ajuste para Desktop */
-@media (min-width: 769px) {
-    .welcome-card {
-        padding: 2.5rem;
-    }
-}
-
-/* [NOVO] Ajuste no padding do card */
-.welcome-card {
-    padding: 2rem 1.5rem;
+.welcome-card #close-welcome-btn:hover {
+    background-color: var(--color-primary-dark);
 }

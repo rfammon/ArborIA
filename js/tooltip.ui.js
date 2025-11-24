@@ -24,7 +24,8 @@ export const TooltipUI = {
         title: null,
         text: null,
         backdrop: null,
-        imageContainer: null
+        imageContainer: null,
+        closeButton: null // Adicionado botão de fechar
     },
 
     // Helper para normalizar chaves para o formato "lowercase-hyphenated"
@@ -38,6 +39,19 @@ export const TooltipUI = {
         this.elements.text = document.getElementById('tooltip-text');
         this.elements.backdrop = document.getElementById('tooltip-backdrop');
         this.elements.imageContainer = document.getElementById('tooltip-image-container');
+        
+        // Adiciona um botão de fechar diretamente no card do tooltip
+        const existingCloseBtn = this.elements.card?.querySelector('.tooltip-close-btn');
+        if (!existingCloseBtn) {
+            this.elements.closeButton = document.createElement('button');
+            this.elements.closeButton.className = 'tooltip-close-btn';
+            this.elements.closeButton.innerHTML = '&times;';
+            this.elements.closeButton.setAttribute('aria-label', 'Fechar');
+            this.elements.card.prepend(this.elements.closeButton);
+        } else {
+            this.elements.closeButton = existingCloseBtn;
+        }
+
 
         if (!this.elements.card) {
             console.warn("TooltipUI: Elementos do DOM não encontrados (tooltip-card).");
@@ -97,26 +111,85 @@ export const TooltipUI = {
         addNormalizedTerms(checklistData, true);
         addNormalizedTerms(podaPurposeData, true);
 
-        // Fecha ao clicar no backdrop
+        // --- LISTENERS DE DISMISSAL ---
+        // Fecha ao clicar no backdrop ou no botão de fechar
         this.elements.backdrop.addEventListener('click', () => this.hideTooltip());
-        this.elements.card.addEventListener('click', () => this.hideTooltip());
-
-        // Delegação de eventos para performance
-        document.body.addEventListener('click', (e) => {
-            if (e.target.classList.contains('checklist-term') || e.target.classList.contains('tooltip-trigger')) {
-                const termKey = e.target.getAttribute('data-term-key'); // Já vem normalizado
-                const termText = e.target.textContent;
-                
-                if (termKey && this.definitions[termKey]) {
-                    this.showTooltip(termText, this.definitions[termKey]);
-                } else {
-                    const nativeTitle = e.target.getAttribute('title');
-                    if (nativeTitle) this.showTooltip(termText, nativeTitle);
-                }
+        this.elements.closeButton.addEventListener('click', () => this.hideTooltip());
+        
+        // Fecha com a tecla ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.elements.card.classList.contains('active')) {
+                this.hideTooltip();
             }
         });
-        
+
+        // --- LISTENERS DE TRIGGER ---
+        // Delegação de eventos para performance para hover/focus/click
+        document.body.addEventListener('mouseover', this._handleTooltipEvent.bind(this));
+        document.body.addEventListener('mouseout', this._handleTooltipEvent.bind(this));
+        document.body.addEventListener('focusin', this._handleTooltipEvent.bind(this));
+        document.body.addEventListener('focusout', this._handleTooltipEvent.bind(this));
+        document.body.addEventListener('click', this._handleTooltipEvent.bind(this)); // Mantém click para compatibilidade touch
+
         console.log("✅ TooltipUI Initialized");
+    },
+
+    _handleTooltipEvent(e) {
+        const target = e.target.closest('.checklist-term, .tooltip-trigger');
+        if (!target) {
+            if (e.type === 'mouseout' || e.type === 'focusout') {
+                // Se o mouse saiu de um trigger e não entrou em outro, esconde
+                // Ou se o foco saiu de um trigger
+                // Previne fechar se o mouse entrar no próprio tooltip
+                if (!this.elements.card.contains(e.relatedTarget) && !target) {
+                    this.hideTooltip();
+                }
+            }
+            return;
+        }
+
+        const termKey = target.getAttribute('data-term-key') || this.normalizeKey(target.textContent);
+        const termText = target.textContent;
+        
+        if (termKey && this.definitions[termKey]) {
+            // Evita re-mostrar se já está visível para o mesmo termo
+            if (this.elements.card.classList.contains('active') && this.elements.title.textContent === termText) {
+                return;
+            }
+
+            // Atraso para hover para evitar flashes acidentais
+            if (e.type === 'mouseover') {
+                this._hoverTimer = setTimeout(() => {
+                    this.showTooltip(termText, this.definitions[termKey]);
+                }, 300); // 300ms delay for hover
+            } else if (e.type === 'mouseout') {
+                clearTimeout(this._hoverTimer);
+                // Permite que o tooltip permaneça visível se o foco estiver nele ou mouse entrar nele
+                if (!this.elements.card.contains(e.relatedTarget)) {
+                    this.hideTooltip();
+                }
+            } else if (e.type === 'focusin' || e.type === 'click') {
+                clearTimeout(this._hoverTimer); // Cancela hover se clicou/focou
+                this.showTooltip(termText, this.definitions[termKey]);
+            }
+        } else {
+            const nativeTitle = target.getAttribute('title');
+            if (nativeTitle) {
+                if (e.type === 'mouseover') {
+                    this._hoverTimer = setTimeout(() => {
+                        this.showTooltip(termText, nativeTitle);
+                    }, 300);
+                } else if (e.type === 'mouseout') {
+                    clearTimeout(this._hoverTimer);
+                    if (!this.elements.card.contains(e.relatedTarget)) {
+                        this.hideTooltip();
+                    }
+                } else if (e.type === 'focusin' || e.type === 'click') {
+                    clearTimeout(this._hoverTimer);
+                    this.showTooltip(termText, nativeTitle);
+                }
+            }
+        }
     },
 
     showTooltip(title, definition) {
@@ -143,12 +216,20 @@ export const TooltipUI = {
         }
         
         if(this.elements.backdrop) this.elements.backdrop.classList.add('active');
-        if(this.elements.card) this.elements.card.classList.add('active');
+        if(this.elements.card) {
+            this.elements.card.classList.add('active');
+            this.elements.card.setAttribute('aria-hidden', 'false'); // Acessibilidade
+            this.elements.card.focus(); // Tenta focar no tooltip para leitura
+        }
     },
 
     hideTooltip() {
         if(this.elements.backdrop) this.elements.backdrop.classList.remove('active');
-        if(this.elements.card) this.elements.card.classList.remove('active');
+        if(this.elements.card) {
+            this.elements.card.classList.remove('active');
+            this.elements.card.setAttribute('aria-hidden', 'true'); // Acessibilidade
+            // Não remove o foco do elemento que ativou o tooltip
+        }
         
         // Limpa a imagem ao fechar para não aparecer em tooltips sem imagem
         if (this.elements.imageContainer) {

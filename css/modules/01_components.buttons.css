@@ -48,6 +48,17 @@ button:active {
   width: 100%; /* Mobile First: ocupa largura total por padrão em containers pequenos */
 }
 
+/* Inverter ícones em botões de fundo escuro para ficarem brancos */
+.action-btn .button-icon,
+.hud-action-btn .button-icon,
+.send-btn .button-icon,
+#add-tree-btn .button-icon,
+#get-gps-btn .button-icon,
+.btn-danger-filled .button-icon {
+    filter: invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Inverte e mantém a sombra */
+}
+
+
 /* Hover apenas em desktop para não atrapalhar touch */
 @media (hover: hover) {
   .action-btn:hover, 
@@ -65,9 +76,9 @@ button:active {
 /* Usado em: Exportar, Cancelar, Filtros */
 .export-btn, 
 .btn-secondary {
-  background: transparent;
-  border: 2px solid var(--color-forest);
-  color: var(--color-forest);
+  background: transparent; /* Revertido para transparente */
+  border: 2px solid var(--color-forest); /* Borda com a cor Forest */
+  color: var(--color-forest); /* Texto com a cor Forest */
   border-radius: var(--radius-pill);
   padding: 10px 20px;
   font-weight: 600;
@@ -75,7 +86,7 @@ button:active {
 }
 
 .export-btn:hover {
-  background-color: rgba(0, 121, 107, 0.08); /* Tint verde bem suave */
+  background-color: rgba(var(--color-forest-rgb), 0.08); /* Tint verde bem suave */
 }
 
 /* Botão de Alerta/Perigo (ex: Limpar Tudo) */
@@ -104,9 +115,9 @@ button:active {
 }
 
 .btn-clear {
-  background: linear-gradient(135deg, #ef5350, #d32f2f);
-  color: white;
-  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--color-medium-gray), var(--color-dark-gray)); /* Usar gradiente */
+  color: var(--color-white); /* Corrigido para branco para contraste */
+  border-radius: var(--radius-pill); /* Corrigido para pill-shaped */
   padding: 12px 24px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -115,10 +126,11 @@ button:active {
   font-size: 0.9rem;
   border: none;
 }
+
 .btn-clear:hover {
-  background: linear-gradient(135deg, #d32f2f, #b71c1c);
+  background: linear-gradient(135deg, var(--color-dark-gray), #555); /* Gradiente mais escuro no hover */
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(211, 47, 47, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* --- BOTÕES DE CÂMERA (HUD) --- */
@@ -161,6 +173,10 @@ button:active {
   backdrop-filter: blur(4px);
 }
 
+.hud-close-btn .button-icon {
+    filter: invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Inverte e mantém a sombra */
+}
+
 /* --- BOTÃO VOLTAR (Navegação) --- */
 .btn-back {
   background: transparent;
@@ -172,6 +188,27 @@ button:active {
 
 .btn-back:hover {
   text-decoration: underline;
+}
+
+/* --- BOTÃO DE UPLOAD DE FOTO (Estilo de botão secundário) --- */
+.photo-btn {
+    background: var(--gradient-main); /* Alterado para gradiente */
+    border: none; /* Remove a borda, pois o gradiente já preenche */
+    color: white; /* Cor do texto para contraste com o gradiente */
+    border-radius: var(--radius-pill);
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.photo-btn:hover {
+    background: var(--gradient-hover); /* Efeito de hover com gradiente */
 }
 
 

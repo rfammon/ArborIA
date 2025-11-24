@@ -162,11 +162,24 @@
 }
 
 /* --- BOTÕES ESPECÍFICOS DO MAPA (Abaixo do container) --- */
+#zoom-to-extent-btn,
+#show-my-location-btn {
+  background-color: var(--color-white) !important;
+  border: 2px solid var(--color-tech) !important;
+  color: var(--color-tech) !important;
+}
+
+#zoom-to-extent-btn:hover,
+#show-my-location-btn:hover {
+  background-color: rgba(var(--color-tech-rgb), 0.1) !important;
+}
+
 .map-geolocation-btn {
   /* Destaque para o botão de "Minha Posição" */
-  background-color: white;
-  color: var(--color-tech);
-  border-color: var(--color-tech);
+  /* Reaplicado aqui para garantir que a especificidade funcione */
+  background-color: var(--color-white) !important;
+  color: var(--color-tech) !important;
+  border-color: var(--color-tech) !important;
 }
 
 /* --- Rótulo Limpo para Círculos --- */
