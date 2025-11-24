@@ -12,21 +12,19 @@
   height: 100%;
   background-color: rgba(15, 23, 42, 0.95); /* Fundo escuro profundo */
   backdrop-filter: blur(8px);
-  z-index: 3000; /* Acima de tudo */
+  z-index: 9999 !important; /* Acima de tudo, força a ordem */
   padding: 20px;
   
-  /* Layout Flex para centralizar */
-  display: none; /* JS controla o display: flex */
-  pointer-events: none; /* Não intercepta cliques quando oculto */
+  /* Layout Flex para centralizar e permitir interação quando visível */
+  pointer-events: auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-/* Quando ativo, volta a ser clicável */
-#checklist-flashcard-view:not([style*="display:none"]):not([style*="display: none"]) {
-    display: flex !important;
-    pointer-events: auto;
+/* Garante que o checklist sobrescreva o display:none !important de .modal-overlay */
+#checklist-flashcard-view.modal-overlay.active {
+  display: flex !important;
 }
 
 /* Wrapper interno */
@@ -53,8 +51,8 @@
   text-align: center;
   color: white;
   
-  /* Efeito de "Pop" ao aparecer */
-  animation: swipeInFromRight 0.4s ease-out;
+  /* Efeito de "Pop" ao aparecer - será substituído por swipe */
+  /* animation: cardPopIn 0.4s ease-out; */ /* REMOVED to avoid conflict with swipe animations */
   position: relative;
   overflow: hidden;
   transition: background 0.5s ease, box-shadow 0.3s ease;
@@ -230,4 +228,217 @@
   padding: 10px 15px;
   border-radius: 20px;
   cursor: pointer;
+}
+
+/* --- ESTILOS DE COR PARA ITENS DA LISTA MOBILE BASEADO NO RISCO --- */
+.summary-list-item.badge-low {
+    background-color: rgba(144, 238, 144, 0.1); /* LightGreen (transparente) */
+    border-left: 5px solid var(--risk-low);
+}
+
+.summary-list-item.badge-medium {
+    background-color: rgba(255, 165, 0, 0.1); /* Orange (transparente) */
+    border-left: 5px solid var(--risk-medium);
+}
+
+.summary-list-item.badge-high {
+    background-color: rgba(255, 99, 71, 0.1); /* Tomato (transparente) */
+    border-left: 5px solid var(--risk-high);
+}
+
+.summary-list-item {
+    border-radius: 8px;
+    margin-bottom: 10px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: background-color 0.3s ease;
+    display: flex; /* Ensure flex behavior */
+    justify-content: space-between; /* Space out main info and risk info */
+    align-items: center; /* Vertically align items */
+    width: 100%; /* Ensure it takes full width */
+    box-sizing: border-box; /* Include padding in width calculation */
+    overflow: hidden; /* Hide any overflow within the item */
+}
+
+/* New styles to address overflow in the mobile list container */
+.summary-list-mobile {
+    width: 100%; /* Ensure it takes full width */
+    overflow-x: hidden; /* Hide horizontal overflow */
+    box-sizing: border-box; /* Include padding in width calculation */
+    padding: 0 10px; /* Add some horizontal padding to the list itself */
+}
+
+.summary-list-item .item-main-info {
+    flex-grow: 1; /* Allow main info to take available space */
+    min-width: 0; /* Allow content to shrink if needed */
+    overflow: hidden; /* Hide content overflow within main info */
+    white-space: nowrap; /* Prevent text wrapping for now, will handle specific elements */
+    text-overflow: ellipsis; /* Add ellipsis for overflowing text */
+    padding-right: 10px; /* Space between main info and risk info */
+}
+
+.summary-list-item .item-main-info strong.item-species,
+.summary-list-item .item-main-info p.item-location {
+    overflow: hidden; /* Hide content overflow */
+    white-space: nowrap; /* Keep text on single line */
+    text-overflow: ellipsis; /* Add ellipsis for overflowing text */
+    display: block; /* Ensure it respects width for ellipsis */
+}
+
+.summary-list-item .item-risk-info {
+    flex-shrink: 0; /* Prevent risk info from shrinking */
+    margin-left: auto; /* Push risk info to the right */
+}
+
+
+/* --- ANIMAÇÕES DE TRANSIÇÃO DO FLASH CARD --- */
+/* Base para todas as animações de entrada/saída */
+.mobile-checklist-card.is-animating {
+    pointer-events: none; /* Desabilita cliques durante a animação */
+}
+
+@keyframes swipeInFromRight {
+    from { opacity: 0 !important; transform: translateX(100%) !important; }
+    to { opacity: 1 !important; transform: translateX(0) !important; }
+}
+
+@keyframes swipeOutToLeft {
+    from { opacity: 1 !important; transform: translateX(0) !important; }
+    to { opacity: 0 !important; transform: translateX(-100%) !important; }
+}
+
+@keyframes swipeInFromLeft {
+    from { opacity: 0 !important; transform: translateX(-100%) !important; }
+    to { opacity: 1 !important; transform: translateX(0) !important; }
+}
+
+@keyframes swipeOutToRight {
+    from { opacity: 1 !important; transform: translateX(0) !important; }
+    to { opacity: 0 !important; transform: translateX(100%) !important; }
+}
+
+.mobile-checklist-card.swipe-in-from-right {
+    animation: swipeInFromRight 0.3s ease-out forwards !important;
+}
+
+.mobile-checklist-card.swipe-out-to-left {
+    animation: swipeOutToLeft 0.3s ease-in forwards !important;
+}
+
+.mobile-checklist-card.swipe-in-from-left {
+    animation: swipeInFromLeft 0.3s ease-out forwards !important;
+}
+
+.mobile-checklist-card.swipe-out-to-right {
+    animation: swipeOutToRight 0.3s ease-in forwards !important;
+}
+
+/* REFACTOR GRÁFICO PARA OS ELEMENTOS DO FLASH CARD */
+
+/* Ajustes para o Container Principal */
+#checklist-flashcard-view {
+    padding: 10px; /* Reduz o padding geral para melhor aproveitamento do espaço */
+    /* display: none; */ /* REMOVED: Visibility controlled by .modal-overlay and active class */
+}
+
+/* Ajustes para o Wrapper Interno */
+.mobile-checklist-wrapper-fullscreen {
+    max-width: 90%; /* Limita a largura para mobile */
+    height: auto; /* Altura flexível */
+    min-height: 80%; /* Garante altura mínima */
+    justify-content: space-between; /* Espaço entre card e navegação */
+    padding: 20px 0; /* Padding vertical para o conteúdo */
+}
+
+/* Card Principal */
+.mobile-checklist-card {
+    padding: 2rem 1.5rem; /* Padding interno */
+    margin-bottom: 20px; /* Espaço entre o card e a navegação */
+    flex-grow: 1; /* Permite que o card ocupe o espaço disponível */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centraliza verticalmente o conteúdo do card */
+    align-items: center; /* Centraliza horizontalmente o conteúdo do card */
+}
+
+/* Counter do Flashcard */
+#flashcard-counter {
+    font-size: 0.9rem;
+    margin-bottom: 15px; /* Espaço abaixo do contador */
+}
+
+/* Texto da Pergunta */
+#flashcard-question-text {
+    font-size: 1.2rem;
+    margin-bottom: 30px; /* Espaço abaixo da pergunta */
+    flex-grow: 0; /* Não permite que a pergunta cresça muito */
+    min-height: 4em; /* Aumenta a altura mínima para melhor alinhamento */
+}
+
+/* Área do Toggle */
+.flashcard-toggle-area {
+    margin-top: 20px; /* Aumenta o espaço acima do toggle */
+    gap: 20px; /* Aumenta o espaçamento entre o "SIM", "NÃO" e o switch */
+}
+
+/* Navegação Inferior */
+.mobile-checklist-nav {
+    margin-top: 20px; /* Aumenta o espaço acima da navegação */
+    gap: 15px; /* Espaçamento entre os botões */
+    justify-content: space-around; /* Distribui os botões uniformemente */
+}
+
+.mobile-checklist-nav .btn {
+    flex: 1; /* Botões ocupam largura igual */
+    max-width: 48%; /* Limita a largura para não ficarem muito grandes */
+    font-size: 0.9rem; /* Ajusta o tamanho da fonte */
+    padding: 12px 10px; /* Ajusta o padding */
+}
+
+/* Botão Fechar (HUD) dentro do Flashcard View */
+#checklist-flashcard-view .hud-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1rem;
+    padding: 8px 12px;
+    border-radius: 50%; /* Botão redondo */
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 3001; /* Garante que esteja acima do card */
+}
+
+#checklist-flashcard-view .hud-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Ajustes finos de proporção para telas pequenas (mobile) */
+@media (max-width: 480px) {
+  .mobile-checklist-wrapper-fullscreen {
+    max-width: 100%;
+    padding: 10px 0;
+  }
+
+  .mobile-checklist-card {
+    padding: 1.5rem 1rem;
+    max-height: 75vh;
+    overflow-y: auto;
+    gap: 16px;
+  }
+
+  #flashcard-question-text {
+    font-size: 1.1rem;
+  }
+
+  .mobile-checklist-nav {
+    margin-top: 16px;
+    gap: 12px;
+  }
 }

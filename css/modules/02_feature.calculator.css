@@ -167,6 +167,11 @@
   min-width: 100%; 
 }
 
+.summary-table thead tr,
+.risk-table thead tr {
+  background: var(--gradient-main);
+}
+
 /* --- CÉLULAS (NO-WRAP) --- */
 .summary-table th, 
 .summary-table td {
@@ -177,7 +182,7 @@
 
 /* --- CABEÇALHO STICKY --- */
 .summary-table th {
-  background: var(--gradient-main);
+  background: transparent;
   color: white;
   text-align: left;
   font-weight: 600;
@@ -241,7 +246,7 @@
 
 /* Desktop Checklist Table (Mantido) */
 .risk-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-.risk-table th { background: var(--gradient-main); color: white; padding: 12px; text-align: left; }
+.risk-table th { background: transparent; color: white; padding: 12px; text-align: left; }
 .risk-table td { padding: 10px; border-bottom: 1px solid var(--color-border); }
 .risk-table input[type="checkbox"] { margin: 0 auto; display: block; }
 

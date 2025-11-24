@@ -28,6 +28,9 @@ export const TooltipUI = {
         closeButton: null // Adicionado botão de fechar
     },
 
+    _hoverTimer: null,
+    _hideTimer: null,
+
     // Helper para normalizar chaves para o formato "lowercase-hyphenated"
     normalizeKey(key) {
         return key.toLowerCase().replace(/\s+/g, '-');
@@ -40,8 +43,14 @@ export const TooltipUI = {
         this.elements.backdrop = document.getElementById('tooltip-backdrop');
         this.elements.imageContainer = document.getElementById('tooltip-image-container');
         
+        // Garante que o card existe antes de tentar adicionar o botão de fechar
+        if (!this.elements.card) {
+            console.warn("TooltipUI: Elementos do DOM não encontrados (tooltip-card).");
+            return; 
+        }
+
         // Adiciona um botão de fechar diretamente no card do tooltip
-        const existingCloseBtn = this.elements.card?.querySelector('.tooltip-close-btn');
+        const existingCloseBtn = this.elements.card.querySelector('.tooltip-close-btn');
         if (!existingCloseBtn) {
             this.elements.closeButton = document.createElement('button');
             this.elements.closeButton.className = 'tooltip-close-btn';
@@ -50,12 +59,6 @@ export const TooltipUI = {
             this.elements.card.prepend(this.elements.closeButton);
         } else {
             this.elements.closeButton = existingCloseBtn;
-        }
-
-
-        if (!this.elements.card) {
-            console.warn("TooltipUI: Elementos do DOM não encontrados (tooltip-card).");
-            return; 
         }
 
         // Normaliza as chaves de todos os termos antes de unificá-los.
@@ -116,6 +119,9 @@ export const TooltipUI = {
         this.elements.backdrop.addEventListener('click', () => this.hideTooltip());
         this.elements.closeButton.addEventListener('click', () => this.hideTooltip());
         
+        this.elements.card.addEventListener('mouseenter', () => clearTimeout(this._hideTimer));
+        this.elements.card.addEventListener('mouseleave', () => this.hideTooltip());
+
         // Fecha com a tecla ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.elements.card.classList.contains('active')) {
@@ -136,59 +142,39 @@ export const TooltipUI = {
 
     _handleTooltipEvent(e) {
         const target = e.target.closest('.checklist-term, .tooltip-trigger');
-        if (!target) {
-            if (e.type === 'mouseout' || e.type === 'focusout') {
-                // Se o mouse saiu de um trigger e não entrou em outro, esconde
-                // Ou se o foco saiu de um trigger
-                // Previne fechar se o mouse entrar no próprio tooltip
-                if (!this.elements.card.contains(e.relatedTarget) && !target) {
-                    this.hideTooltip();
-                }
-            }
-            return;
-        }
+        if (!target) return;
 
-        const termKey = target.getAttribute('data-term-key') || this.normalizeKey(target.textContent);
+        const rawKey = target.getAttribute('data-term-key') || target.textContent;
+        const termKey = this.normalizeKey(rawKey);
         const termText = target.textContent;
-        
-        if (termKey && this.definitions[termKey]) {
-            // Evita re-mostrar se já está visível para o mesmo termo
+        const definition = this.definitions[termKey] || target.getAttribute('title');
+
+        if (!definition) return;
+
+        if (e.type === 'mouseover' || e.type === 'focusin') {
+            clearTimeout(this._hideTimer);
+            
+            // Se já estiver ativo para o mesmo termo, não faz nada
             if (this.elements.card.classList.contains('active') && this.elements.title.textContent === termText) {
                 return;
             }
 
-            // Atraso para hover para evitar flashes acidentais
-            if (e.type === 'mouseover') {
-                this._hoverTimer = setTimeout(() => {
-                    this.showTooltip(termText, this.definitions[termKey]);
-                }, 300); // 300ms delay for hover
-            } else if (e.type === 'mouseout') {
-                clearTimeout(this._hoverTimer);
-                // Permite que o tooltip permaneça visível se o foco estiver nele ou mouse entrar nele
-                if (!this.elements.card.contains(e.relatedTarget)) {
-                    this.hideTooltip();
-                }
-            } else if (e.type === 'focusin' || e.type === 'click') {
-                clearTimeout(this._hoverTimer); // Cancela hover se clicou/focou
-                this.showTooltip(termText, this.definitions[termKey]);
-            }
-        } else {
-            const nativeTitle = target.getAttribute('title');
-            if (nativeTitle) {
-                if (e.type === 'mouseover') {
-                    this._hoverTimer = setTimeout(() => {
-                        this.showTooltip(termText, nativeTitle);
-                    }, 300);
-                } else if (e.type === 'mouseout') {
-                    clearTimeout(this._hoverTimer);
-                    if (!this.elements.card.contains(e.relatedTarget)) {
-                        this.hideTooltip();
-                    }
-                } else if (e.type === 'focusin' || e.type === 'click') {
-                    clearTimeout(this._hoverTimer);
-                    this.showTooltip(termText, nativeTitle);
-                }
-            }
+            // Atraso para hover, imediato para foco
+            const delay = e.type === 'mouseover' ? 300 : 0;
+            this._hoverTimer = setTimeout(() => {
+                this.showTooltip(termText, definition);
+            }, delay);
+
+        } else if (e.type === 'mouseout' || e.type === 'focusout') {
+            clearTimeout(this._hoverTimer);
+            this._hideTimer = setTimeout(() => {
+                this.hideTooltip();
+            }, 200); // Delay para permitir mover para o card
+
+        } else if (e.type === 'click') {
+            clearTimeout(this._hoverTimer);
+            clearTimeout(this._hideTimer);
+            this.showTooltip(termText, definition);
         }
     },
 

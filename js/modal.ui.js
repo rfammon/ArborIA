@@ -135,8 +135,8 @@ export function showConfirmModal(title, message, onConfirm) {
 
         // Botão Cancelar (Estilo Export/Outline)
         const btnCancel = document.createElement('button');
-        btnCancel.className = 'export-btn';
-        btnCancel.textContent = 'Cancelar';
+        btnCancel.style.cssText = 'background-color: #9E9E9E; color: white; padding: 10px 15px; border-radius: 8px; font-size: 0.9em; border: none; cursor: pointer;';
+        btnCancel.innerHTML = '<span style="font-size: 1.1em; vertical-align: middle; margin-right: 5px;">✕</span> Cancelar';
         btnCancel.onclick = () => {
             modal.classList.remove('active');
             setTimeout(() => modal.style.display = 'none', 300);
@@ -144,9 +144,8 @@ export function showConfirmModal(title, message, onConfirm) {
 
         // Botão Confirmar (Estilo HUD/Primary)
         const btnConfirm = document.createElement('button');
-        btnConfirm.className = 'hud-action-btn';
-        btnConfirm.textContent = 'Confirmar';
-        btnConfirm.style.minWidth = '120px'; // Garante tamanho bom pro toque
+        btnConfirm.style.cssText = 'background-color: #00796B; color: white; padding: 10px 15px; border-radius: 8px; font-size: 0.9em; border: none; cursor: pointer;';
+        btnConfirm.innerHTML = '<span style="font-size: 1.1em; vertical-align: middle; margin-right: 5px;">✓</span> Confirmar';
         btnConfirm.onclick = () => {
             onConfirm();
             modal.classList.remove('active');
@@ -189,8 +188,8 @@ export function showDetailsModal(title, contentHTML, actions = [], dialogClass =
 
         // Botão Cancelar/Fechar padrão
         const btnCancel = document.createElement('button');
-        btnCancel.className = 'export-btn';
-        btnCancel.textContent = 'Fechar';
+        btnCancel.className = 'export-btn'; // Use className instead of inline style
+        btnCancel.innerHTML = '<i class="icon-close"></i> Fechar'; // Replace emoji with icon tag
         btnCancel.onclick = () => {
             modal.classList.remove('active');
             setTimeout(() => modal.style.display = 'none', 300);
@@ -198,21 +197,19 @@ export function showDetailsModal(title, contentHTML, actions = [], dialogClass =
         actionsContainer.appendChild(btnCancel);
 
         // Adiciona botões de ação customizados
-        actions.forEach(action => {
-            const btn = document.createElement('button');
-            btn.textContent = action.text;
-            btn.className = action.className || 'hud-action-btn';
-            btn.onclick = () => {
-                action.onClick();
-                // A ação só fecha o modal se não for explicitamente instruída a não fazê-lo.
-                // Útil para ações que abrem outros modais.
-                if (action.closesModal !== false) {
-                    btnCancel.click(); // Fecha o modal após a ação
-                }
-            };
-            actionsContainer.appendChild(btn);
-        });
-    }
+                    actions.forEach(action => {
+                        const btn = document.createElement('button');
+                        btn.innerHTML = action.text; // Use innerHTML to render icons
+                        if (action.style) btn.style.cssText = action.style; // Apply inline styles
+                        btn.className = action.className || ''; // Clear default class, inline style takes precedence
+                        btn.onclick = () => {
+                            action.onClick();
+                            if (action.closesModal !== false) {
+                                btnCancel.click();
+                            }
+                        };
+                        actionsContainer.appendChild(btn);
+                    });    }
 
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('active'), 10);

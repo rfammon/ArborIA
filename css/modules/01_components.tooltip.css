@@ -40,7 +40,7 @@
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(2px);
-  z-index: 3999; /* [CORREÇÃO] Acima do checklist mobile (z-index: 3000) */
+  z-index: 12000; /* Mantém acima de overlays como checklist mobile/flashcards */
   
   /* Estados de Visibilidade */
   opacity: 0;
@@ -56,7 +56,7 @@
 /* --- CARD DO GLOSSÁRIO (O Tooltip em si) --- */
 .tooltip-card {
   position: fixed;
-  z-index: 4000; /* [CORREÇÃO] O elemento mais alto da interface */
+  z-index: 12001; /* Mantém o card acima do backdrop e de outros overlays */
   background: var(--color-bg-card);
   padding: 24px;
   border-radius: var(--radius-md);
@@ -95,7 +95,7 @@
     cursor: pointer;
     line-height: 1;
     padding: 5px;
-    z-index: 4001; /* Garante que esteja acima do conteúdo do tooltip */
+    z-index: 12002; /* Garante que esteja acima do conteúdo do tooltip */
     transition: color 0.2s ease;
 }
 

@@ -54,6 +54,28 @@
         return `PI-${currentYear}-${String(nextSeq).padStart(3, '0')}`;
     }
 
+    function convertToLatLon(tree) {
+        if (tree.coordX === 'N/A' || tree.coordY === 'N/A' || !tree.coordX || !tree.coordY) return null;
+        if (typeof window.proj4 === 'undefined') {
+            console.error("proj4 library not found.");
+            return null;
+        }
+
+        const e = parseFloat(tree.coordX);
+        const n = parseFloat(tree.coordY);
+        const zn = tree.utmZoneNum || 23;
+        const hemi = '+south';
+        const def = `+proj=utm +zone=${zn} ${hemi} +datum=WGS84 +units=m +no_defs`;
+
+        try {
+            const ll = window.proj4(def, "EPSG:4326", [e, n]);
+            return [ll[1], ll[0]]; // Return as [lat, lng]
+        } catch (e) {
+            console.error("Coordinate conversion failed:", e);
+            return null;
+        }
+    }
+
     // --- TEMPLATES ---
 
     function renderTreeList(trees) {
@@ -61,13 +83,13 @@
         return `
             <div style="text-align: center; padding: 2rem;">
                 <h3>Nenhuma árvore encontrada</h3>
-                <p class="text-muted">Aguardando dados da Calculadora de Risco.</p>
+                <p class="text-muted">Aguardando dados do Levantamento de Dados.</p>
             </div>
         `;
     }
 
     const cards = trees.map(tree => {
-        const riskClass = tree.riskLevel.includes('Alto') ? 'risk-high' : tree.riskLevel.includes('Médio') ? 'risk-medium' : 'risk-low';
+        const riskClass = (tree.riskLevel || '').includes('Alto') ? 'risk-high' : (tree.riskLevel || '').includes('Médio') ? 'risk-medium' : 'risk-low';
         const riskFactorsCount = tree.riskFactorsCode ? tree.riskFactorsCode.split(',').filter(x => x === '1').length : 0;
 
         return `
@@ -109,7 +131,7 @@
 }
 
     function renderForm(tree) {
-    const isHighRisk = tree.riskLevel.includes('Alto');
+    const isHighRisk = (tree.riskLevel || '').includes('Alto');
     const defaultIntervention = isHighRisk ? 'Supressão (Corte)' : 'Poda';
     const today = new Date().toISOString().split('T')[0];
 
@@ -132,10 +154,13 @@
                     Voltar à Lista
                 </button>
             </div>
-            <form id="planning-form">
-                <fieldset class="risk-fieldset">
-                    <legend>Avaliação de Risco: ${tree.species} (ID: ${tree.id})</legend>
-                    <div class="${isHighRisk ? 'risk-high' : 'risk-medium'}" style="padding: 1rem; border-radius: var(--radius-md); color: white;">
+            <form id="planning-form" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div class="planning-box">
+                    <div class="planning-box-header">
+                        <span class="icon">⚠️</span>
+                        <h3>Avaliação de Risco: ${tree.species} (ID: ${tree.id})</h3>
+                    </div>
+                    <div style="background: ${isHighRisk ? 'var(--risk-high)' : 'var(--risk-medium)'}; padding: 1rem; border-radius: var(--radius-md); color: white;">
                         <h4 style="font-weight: bold; margin: 0;">
                             Nível de Risco: ${tree.riskLevel} (Pontuação: ${tree.riskScore})
                         </h4>
@@ -143,10 +168,13 @@
                             <strong>Observações:</strong> ${tree.defects && tree.defects.length ? tree.defects.join(', ') : 'Nenhuma.'}
                         </p>
                     </div>
-                </fieldset>
+                </div>
 
-                <fieldset class="risk-fieldset">
-                    <legend>1. Definição da Intervenção</legend>
+                <div class="planning-box green">
+                    <div class="planning-box-header">
+                        <span class="icon">🎯</span>
+                        <h3>1. Definição da Intervenção</h3>
+                    </div>
                     <div class="form-grid">
                         <div>
                             <label for="interventionType">Tipo de Intervenção</label>
@@ -167,10 +195,13 @@
                         <label for="justification">Justificativa Técnica</label>
                         <textarea name="justification" id="justification" required placeholder="Descreva o motivo da intervenção..."></textarea>
                     </div>
-                </fieldset>
+                </div>
 
-                <fieldset class="risk-fieldset">
-                    <legend>2. Recursos e SMS</legend>
+                <div class="planning-box">
+                    <div class="planning-box-header">
+                        <span class="icon">👷</span>
+                        <h3>2. Recursos e SMS</h3>
+                    </div>
                     <div class="form-grid">
                         <div>
                             <label>Ferramentas</label>
@@ -187,10 +218,13 @@
                             <input type="text" name="episJustification" placeholder="Outros EPIs..." style="margin-top: 1rem;">
                         </div>
                     </div>
-                </fieldset>
+                </div>
 
-                <fieldset class="risk-fieldset">
-                    <legend>3. Equipe e Cronograma</legend>
+                <div class="planning-box">
+                    <div class="planning-box-header">
+                        <span class="icon">📅</span>
+                        <h3>3. Equipe e Cronograma</h3>
+                    </div>
                     <div class="form-grid">
                         <div>
                             <label for="foremen">Encarregados</label>
@@ -213,10 +247,13 @@
                             <input type="date" id="endDate" name="endDate" value="${today}">
                         </div>
                     </div>
-                </fieldset>
+                </div>
 
-                <fieldset class="risk-fieldset">
-                    <legend>4. Encerramento</legend>
+                <div class="planning-box">
+                    <div class="planning-box-header">
+                        <span class="icon">🏁</span>
+                        <h3>4. Encerramento</h3>
+                    </div>
                     <div>
                         <label for="wasteSelect">Destinação de Resíduos</label>
                         <select name="wasteDestination" id="wasteSelect">
@@ -238,11 +275,11 @@
                         <label for="executionInstructions">Orientações de Execução</label>
                         <textarea id="executionInstructions" name="executionInstructions" placeholder="Instruções adicionais para a equipe de campo..."></textarea>
                     </div>
-                </fieldset>
+                </div>
 
-                <div class="risk-buttons-area">
-                    <button type="button" id="btn-cancel" class="action-btn btn-clear">Cancelar</button>
-                    <button type="submit" class="action-btn">Gerar Plano de Intervenção</button>
+                <div class="risk-buttons-area" style="justify-content: flex-end; padding: 0 1rem 1rem 1rem;">
+                    <button type="button" id="btn-cancel" class="btn btn-clear">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Gerar Plano de Intervenção</button>
                 </div>
             </form>
         </div>
@@ -266,35 +303,39 @@
             steps.push('Realizar entalhe direcional (45°-70°) na direção de queda.');
             steps.push('Executar corte de abate com filete de ruptura.');
         } else {
-            steps.push(`Executar técnicas de poda: ${plan.techniques.join(', ')}.`);
+            steps.push(`Executar técnicas de poda: <strong>${plan.techniques.join(', ')}</strong>.`);
         }
-        steps.push(`Destinação: ${plan.wasteDestination}.`);
-        steps.push('Limpeza final e desmobilização.');
+        steps.push(`Destinação dos resíduos: <strong>${plan.wasteDestination}</strong>.`);
+        steps.push('Limpeza final e desmobilização da área.');
 
         return `
             <div>
                 <div class="risk-buttons-area" style="padding: 1rem; justify-content: space-between;">
-                    <button type="button" id="btn-back-edit" class="action-btn btn-clear">Voltar e Editar</button>
-                    <button type="button" id="btn-download-pdf" class="action-btn">Baixar PDF</button>
+                    <button type="button" id="btn-back-edit" class="btn btn-secondary">Voltar e Editar</button>
+                    <button type="button" id="btn-download-pdf" class="btn btn-primary">Baixar PDF</button>
                 </div>
 
                 <div style="padding: 1rem;">
-                    <div id="printable-area" style="background: white; padding: 2rem; border: 1px solid var(--color-border); border-radius: var(--radius-md);">
+                    <div id="printable-area">
                         
-                        <div style="border-bottom: 4px solid var(--color-primary); padding-bottom: 1rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="border-bottom: 4px solid var(--color-tech); padding-bottom: 1rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
                             <div>
-                                <h1 style="font-size: 2rem; font-weight: bold; color: var(--color-primary-dark); margin: 0;">
+                                <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-tech); margin: 0;">
                                     Plano de Intervenção
                                 </h1>
                             </div>
                             <div style="text-align: right;">
-                                <div style="font-size: 1rem; font-weight: bold; color: var(--color-primary-dark);">PI Nº ${plan.id}</div>
-                                <div style="font-size: 0.8rem; color: var(--color-text-muted);">Emissão: ${new Date().toLocaleDateString()}</div>
+                                <div style="font-size: 1rem; font-weight: bold; color: var(--color-text-main);">PI Nº ${plan.id}</div>
+                                <div style="font-size: 0.8rem; color: var(--color-text-muted);">Emissão: ${new Date().toLocaleDateString('pt-BR')}</div>
                             </div>
                         </div>
 
-                        <fieldset class="risk-fieldset">
-                            <legend>1. Identificação da Árvore</legend>
+                        <!-- Box 1: Identificação -->
+                        <div class="planning-box">
+                            <div class="planning-box-header">
+                                <span class="icon">🌳</span>
+                                <h3>1. Identificação da Árvore</h3>
+                            </div>
                             <div class="form-grid">
                                 <div>
                                     <p><strong>ID:</strong> ${tree.id}</p>
@@ -302,27 +343,40 @@
                                     <p><strong>Local:</strong> ${tree.location}</p>
                                 </div>
                                 <div>
-                                    <p><strong>DAP:</strong> ${tree.dap}cm</p>
-                                    <p><strong>Altura:</strong> ${tree.height}m</p>
-                                    <p><strong>Risco:</strong> ${tree.riskLevel}</p>
+                                    <p><strong>DAP:</strong> ${tree.dap} cm</p>
+                                    <p><strong>Altura:</strong> ${tree.height} m</p>
+                                    <p><strong>Nível de Risco:</strong> <span class="risk-${tree.riskLevel.toLowerCase().split(' ')[0]}">${tree.riskLevel}</span></p>
                                 </div>
-                                <div id="map-container" style="width: 100%; height: 150px; background-color: var(--color-light-gray); border-radius: var(--radius-sm); margin-top: 1rem;"></div>
                             </div>
-                        </fieldset>
+                            ${tree.image ? `
+                            <div class="report-photo-container">
+                                <img src="${tree.image}" alt="Foto da Árvore" class="report-photo">
+                            </div>
+                            ` : ''}
+                            <div id="map-container"></div>
+                        </div>
 
-                        <fieldset class="risk-fieldset">
-                            <legend>2. Escopo e Cronograma</legend>
-                            <div style="background-color: var(--color-light-gray); padding: 1rem; border-radius: var(--radius-sm);">
-                                <h4 style="font-weight: bold; color: var(--color-primary-dark); margin: 0;">${plan.interventionType}</h4>
+                        <!-- Box 2: Escopo -->
+                        <div class="planning-box green">
+                            <div class="planning-box-header">
+                                <span class="icon">📋</span>
+                                <h3>2. Escopo e Cronograma</h3>
+                            </div>
+                            <div style="background-color: var(--color-bg-body); padding: 1rem; border-radius: var(--radius-sm);">
+                                <h4 style="font-weight: bold; color: var(--color-forest); margin: 0;">${plan.interventionType}</h4>
                                 <p style="margin: 0.5rem 0; font-style: italic;">"${plan.justification}"</p>
-                                <p style="font-size: 0.9rem;"><strong>Técnicas:</strong> ${plan.techniques.join(', ')}</p>
+                                ${plan.techniques.length > 0 ? `<p style="font-size: 0.9rem;"><strong>Técnicas:</strong> ${plan.techniques.join(', ')}</p>` : ''}
                                 <p style="font-size: 0.9rem;"><strong>Equipe:</strong> ${parseInt(plan.teamComposition.foremen) + parseInt(plan.teamComposition.chainsawOperators) + parseInt(plan.teamComposition.auxiliaries)} Pessoas</p>
-                                <p style="font-size: 0.9rem;"><strong>Duração:</strong> ${diffDays} dias</p>
+                                <p style="font-size: 0.9rem;"><strong>Duração Estimada:</strong> ${diffDays} dia(s)</p>
                             </div>
-                        </fieldset>
+                        </div>
 
-                        <fieldset class="risk-fieldset">
-                            <legend>3. Recursos e Procedimentos</legend>
+                        <!-- Box 3: Recursos -->
+                        <div class="planning-box">
+                             <div class="planning-box-header">
+                                <span class="icon">🛠️</span>
+                                <h3>3. Recursos e Procedimentos</h3>
+                            </div>
                             <div class="form-grid">
                                 <div>
                                     <h4 style="font-weight: bold;">Ferramentas</h4>
@@ -335,13 +389,13 @@
                             </div>
                             <div style="margin-top: 1.5rem;">
                                 <h4 style="font-weight: bold;">Procedimento Operacional</h4>
-                                <ol style="padding-left: 1.5rem;">${steps.map(s => `<li>${s}</li>`).join('')}</ol>
+                                <ol>${steps.map(s => `<li>${s}</li>`).join('')}</ol>
                             </div>
                             ${plan.executionInstructions ? `
                                 <div style="margin-top: 1rem; padding: 1rem; background-color: #fffbe6; border: 1px solid #ffe58f; border-radius: var(--radius-sm);">
                                     <strong>Nota de Campo:</strong> ${plan.executionInstructions}
                                 </div>` : ''}
-                        </fieldset>
+                        </div>
 
                         <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--color-border); display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; text-align: center;">
                             <div>
@@ -364,7 +418,16 @@
 
     const Actions = {
         initMap: (tree) => {
-            if (!window.L || !tree.coordinates) return;
+            const coords = convertToLatLon(tree);
+            if (!window.L || !coords) {
+                console.error("Cannot initialize map: Missing Leaflet or invalid coordinates for conversion.");
+                const container = $('#map-container');
+                if (container) {
+                    container.innerHTML = '<p style="text-align:center; color: var(--color-text-muted); padding: 1rem;">Coordenadas inválidas ou não especificadas.</p>';
+                }
+                return;
+            }
+
             const container = $('#map-container');
             if (!container) return;
 
@@ -373,52 +436,111 @@
                 state.mapInstance = null;
             }
 
-            const { lat, lng } = tree.coordinates;
             const map = window.L.map(container, {
-                center: [lat, lng],
-                zoom: 19,
+                center: coords,
+                zoom: 18,
                 attributionControl: false,
                 zoomControl: false,
-                dragging: false
+                dragging: false,
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                touchZoom: false,
+                preferCanvas: true
             });
 
             window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: 'Esri',
-                maxZoom: 19
+                maxZoom: 20,
+                maxNativeZoom: 19
             }).addTo(map);
 
-            window.L.marker([lat, lng]).addTo(map);
+            let color;
+            if ((tree.riskLevel || '').includes('Alto')) {
+                color = '#d32f2f';
+            } else if ((tree.riskLevel || '').includes('Médio')) {
+                color = '#f57c00';
+            } else {
+                color = '#388e3c';
+            }
+            const treeHeight = parseFloat(tree.height);
+            const radiusInMeters = (treeHeight > 0) ? treeHeight : 5;
+
+            const circle = L.circle(coords, {
+                color: color,
+                weight: 1,
+                fillColor: color,
+                fillOpacity: 0.5,
+                radius: radiusInMeters,
+            });
+
+            circle.bindTooltip(`${tree.id}`, {
+                permanent: true,
+                direction: 'center',
+                className: 'map-label-clean'
+            });
+
+            circle.addTo(map);
             state.mapInstance = map;
+
+            if (radiusInMeters > 0) {
+                map.fitBounds(circle.getBounds(), { padding: [40, 40] });
+            }
+            
+            map.invalidateSize();
         },
 
         generatePDF: async () => {
             const btn = $('#btn-download-pdf');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = 'Gerando...';
-            btn.disabled = true;
+            if (btn) {
+                btn.originalText = btn.innerHTML;
+                btn.innerHTML = 'Gerando...';
+                btn.disabled = true;
+            }
 
             try {
-                if (state.config.onSavePlan) {
-                    state.config.onSavePlan(state.plan);
+                const content = $('#printable-area');
+                if (!content) throw new Error("Elemento #printable-area não encontrado.");
+
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const margin = 15;
+                const contentWidth = pdfWidth - (margin * 2);
+                
+                let yPos = margin;
+
+                const elementsToRender = Array.from(content.children).filter(el => el.offsetHeight > 0);
+
+                for (const element of elementsToRender) {
+                    const canvas = await window.html2canvas(element, {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff', // Set background to white
+                    });
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                    const imgHeight = (canvas.height * contentWidth) / canvas.width;
+
+                    if (yPos + imgHeight > pdfHeight - margin) {
+                        pdf.addPage();
+                        yPos = margin;
+                    }
+
+                    pdf.addImage(imgData, 'JPEG', margin, yPos, contentWidth, imgHeight);
+                    yPos += imgHeight + 5;
                 }
 
-                const element = $('#printable-area');
-                await new Promise(r => setTimeout(r, 100));
-
-                const canvas = await window.html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-                const pdfWidth = 210;
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                
-                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
                 pdf.save(`${state.plan.id}.pdf`);
+
             } catch (err) {
-                console.error("PDF Error", err);
-                alert("Erro ao gerar PDF.");
+                console.error("Erro ao gerar PDF:", err);
+                alert("Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.");
             } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                if (btn) {
+                    btn.innerHTML = btn.originalText;
+                    btn.disabled = false;
+                }
             }
         },
 
@@ -517,7 +639,19 @@
             $('#btn-back-edit').addEventListener('click', () => { state.view = 'FORM'; render(); });
             $('#btn-download-pdf').addEventListener('click', Actions.generatePDF);
             
-            setTimeout(() => Actions.initMap(state.selectedTree), 100);
+            let attempts = 0;
+            function checkAndInitMap() {
+                const container = $('#map-container');
+                if (container && container.offsetWidth > 0) {
+                    Actions.initMap(state.selectedTree);
+                } else if (attempts < 20) { // Try for 2 seconds max (20 * 100ms)
+                    attempts++;
+                    setTimeout(checkAndInitMap, 100);
+                } else {
+                    console.error("Map container not ready after 2 seconds.");
+                }
+            }
+            checkAndInitMap();
         }
     }
 

@@ -14,7 +14,7 @@
   z-index: 2000; /* Acima de tudo, exceto Tooltips */
   
   /* Centralização Flexbox */
-  display: none; /* Controlado via JS */
+  display: none; /* Controlled via JS */
   justify-content: center; /* Centraliza horizontalmente */
   align-items: center; /* Centraliza verticalmente */
   padding: 20px;
@@ -34,79 +34,128 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-floating);
   width: 100%;
-  max-width: 400px; /* Largura ideal para leitura */
-  padding: 24px;
+  max-width: 500px; /* Aumentado para acomodar o grid */
+  padding: 0; /* Removido para controle total */
   position: relative;
-  
-  /* Animação de Entrada (Zoom In Sutil) */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden; /* Para o border-top colorido */
+
+  /* Animação de Entrada */
   transform: scale(0.95) translateY(10px);
   transition: transform var(--transition-smooth);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .modal-overlay.active .modal-dialog {
   transform: scale(1) translateY(0);
 }
 
-/* Títulos e Textos do Modal */
-.modal-dialog h3 {
-  margin-top: 0;
-  color: var(--color-forest);
-  font-size: 1.25rem;
-  margin-bottom: 10px;
-}
-
-.modal-dialog p {
-  color: var(--color-text-muted);
-  margin-bottom: 20px;
-  line-height: 1.5;
-}
-
-/* [NOVO] Estilos para o modal de detalhes de risco */
+/* --- ESTILOS DE RISCO --- */
 .modal-dialog.risk-high { background: linear-gradient(135deg, #ffebee, #ffcdd2); }
-.modal-dialog.risk-high h3 { color: var(--risk-high); }
+.modal-dialog.risk-high #modal-title { color: var(--risk-high); }
 
 .modal-dialog.risk-medium { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
-.modal-dialog.risk-medium h3 { color: var(--risk-medium); }
+.modal-dialog.risk-medium #modal-title { color: var(--risk-medium); }
 
 .modal-dialog.risk-low { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
-.modal-dialog.risk-low h3 { color: var(--risk-low); }
+.modal-dialog.risk-low #modal-title { color: var(--risk-low); }
 
+
+/* --- CONTEÚDO DO MODAL --- */
+#modal-title {
+  padding: 16px 24px;
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--color-text-primary);
+  background: rgba(255,255,255,0.2);
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+#modal-description {
+  padding: 16px 24px 24px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+/* --- GRID DE DETALHES --- */
 .details-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  background-color: rgba(0,0,0,0.05);
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+.details-modal-grid p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+.details-modal-grid p strong {
+  color: var(--color-text-primary);
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+/* Seção de Observações */
+.details-section {
+  margin-bottom: 16px;
+}
+.details-section h4 {
+  margin: 0 0 8px 0;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+}
+.details-section p, .details-section ul {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  background: none;
+  padding: 0;
+}
+.details-risk-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  columns: 2; /* Fatores de risco em duas colunas */
+}
+.details-risk-list li {
+  margin-bottom: 8px;
   font-size: 0.9rem;
 }
-
-.details-modal-grid p {
-  margin-bottom: 8px;
-}
-
-.details-risk-list {
-  font-size: 0.85rem;
-}
-
-/* [NOVO] Grid para métricas dendrométricas */
-.metric-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 1rem;
-  margin: 8px 0;
-}
-
 /* --- AÇÕES (Botões do Modal) --- */
 .modal-actions {
   display: flex;
+  flex-wrap: wrap; /* Permite que os botões quebrem a linha */
   gap: 10px;
-  justify-content: flex-end; /* Alinha à direita no Desktop */
+  justify-content: flex-end;
+  padding: 16px 24px;
+  background-color: rgba(0,0,0,0.03);
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+
+
+.modal-actions .btn { /* Garante que os botões dentro do modal usem as propriedades base do .btn */
+  font-size: 0.9rem; /* Pode ser ligeiramente menor para encaixar melhor */
+  padding: 10px 20px; /* Ajuste de padding */
 }
 
 /* No Mobile, botões ocupam largura total e empilham */
 @media (max-width: 480px) {
   .modal-actions {
     flex-direction: column-reverse; /* "Cancelar" embaixo de "Confirmar" */
+    gap: 8px; /* Espaçamento reduzido entre os botões empilhados */
   }
   
-  .modal-actions button {
+  .modal-actions button { /* Regra mais específica para evitar conflitos */
     width: 100%;
+    margin-bottom: 0; /* Remove margem inferior que possa ser adicionada */
+  }
+
+  /* Para o primeiro botão, se houver, garantir que não tenha margem superior extra */
+  .modal-actions button:first-child {
+    margin-top: 0;
   }
 }
 

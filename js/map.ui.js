@@ -74,7 +74,7 @@ function showMapInfoBox(tree) {
 
   const closeBtn = document.createElement('button');
   closeBtn.innerHTML = '&times;';
-  closeBtn.style.cssText = "font-size:1.5rem; border:none; background:none; cursor:pointer; color:#999;";
+  closeBtn.className = 'tooltip-close-btn';
   closeBtn.onclick = hideMapInfoBox;
 
   headerDiv.appendChild(title);
@@ -114,9 +114,7 @@ function showMapInfoBox(tree) {
   
   const btnGoto = document.createElement('button');
   btnGoto.textContent = '📄 Ver Detalhes';
-  btnGoto.className = 'hud-action-btn'; 
-  btnGoto.style.fontSize = '0.8rem';
-  btnGoto.style.padding = '6px 12px';
+  btnGoto.className = 'btn btn-primary'; 
   btnGoto.onclick = () => features.handleMapMarkerClick(tree.id);
   
   actionDiv.appendChild(btnGoto);

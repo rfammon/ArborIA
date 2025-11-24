@@ -30,9 +30,14 @@ function handleMainNavigation(event) {
   const targetId = targetButton.dataset.target;
   state.saveActiveTab(targetId);
 
-  // 1. CICLO DE VIDA DE SENSORES
+  // 1. CICLO DE VIDA DE SENSORES E MÓDULOS
   if (targetId !== 'clinometro-view') clinometer.stopClinometer();
   if (targetId !== 'dap-estimator-view') dapEstimator.stopDAPEstimator();
+  if (targetId !== 'plano-intervencao-view') {
+    if (window.ArborIA && window.ArborIA.PlanningModule) {
+        window.ArborIA.PlanningModule.unmount();
+    }
+  }
 
   // 2. DELEGAÇÃO VISUAL (SPA)
   UI.navigateTo(targetId);
@@ -161,13 +166,19 @@ function setupActionButtons() {
     const openFlashcardBtn = document.getElementById('open-flashcard-btn');
     if (openFlashcardBtn) {
       openFlashcardBtn.addEventListener('click', () => {
+        console.log("openFlashcardBtn clicked!");
         const checklistView = document.getElementById('checklist-flashcard-view');
         if (checklistView) {
-          checklistView.style.display = 'flex';
-          // Inicia a lógica interna do card
+          console.log("checklist-flashcard-view found, adding active class.");
+          checklistView.classList.add('active'); // Use classList.add
           if (typeof features.initChecklistFlashCard === 'function') {
+            console.log("Calling features.initChecklistFlashCard()");
             features.initChecklistFlashCard();
+          } else {
+            console.error("features.initChecklistFlashCard is not a function.");
           }
+        } else {
+          console.error("checklist-flashcard-view not found.");
         }
       });
     }
@@ -177,7 +188,7 @@ function setupActionButtons() {
     if (closeChecklistBtn) {
       closeChecklistBtn.addEventListener('click', () => {
         const checklistView = document.getElementById('checklist-flashcard-view');
-        if (checklistView) checklistView.style.display = 'none';
+        if (checklistView) checklistView.classList.remove('active'); // Use classList.remove
       });
     }
 

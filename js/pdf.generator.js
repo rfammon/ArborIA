@@ -327,3 +327,132 @@ export async function generatePDF() {
     doc.save(filename);
     showToast("PDF Gerado com Sucesso!", "success");
 }
+
+/**
+ * [NOVO] Gera um laudo PDF individual para uma árvore específica.
+ */
+export async function generateSingleTreePDF(tree) {
+    if (!tree) return;
+
+    const { jsPDF } = window.jspdf;
+    if (!jsPDF) {
+        showToast("Erro: Biblioteca PDF não carregada.", "error");
+        return;
+    }
+
+    showToast(`Gerando laudo para ${tree.especie}...`, "info");
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    let cursorY = 20;
+
+    // --- CABEÇALHO ---
+    doc.setFontSize(18); doc.setTextColor(0, 77, 64); doc.setFont(undefined, 'bold');
+    doc.text("Ficha Técnica de Indivíduo Arbóreo", pageWidth / 2, cursorY, { align: 'center' });
+    cursorY += 10;
+    
+    doc.setFontSize(10); doc.setTextColor(100);
+    doc.text(`Emissão: ${new Date().toLocaleDateString('pt-BR')} • Sistema ArborIA`, pageWidth / 2, cursorY, { align: 'center' });
+    cursorY += 15;
+
+    doc.setLineWidth(0.5); doc.setDrawColor(0, 77, 64);
+    doc.line(margin, cursorY, pageWidth - margin, cursorY);
+    cursorY += 15;
+
+    // --- DADOS PRINCIPAIS ---
+    doc.setFontSize(14); doc.setTextColor(0); doc.setFont(undefined, 'bold');
+    doc.text(`ID ${tree.id}: ${tree.especie}`, margin, cursorY);
+    
+    // Badge de Risco no PDF
+    let riskColor = [46, 125, 50]; // Verde
+    if (tree.risco === 'Alto Risco') riskColor = [198, 40, 40];
+    else if (tree.risco === 'Médio Risco') riskColor = [230, 81, 0];
+    
+    doc.setTextColor(...riskColor);
+    doc.text(tree.risco.toUpperCase(), pageWidth - margin, cursorY, { align: 'right' });
+    cursorY += 15;
+
+    // --- GRID DE DADOS ---
+    doc.setFontSize(11); doc.setTextColor(50); doc.setFont(undefined, 'normal');
+    const col1 = margin;
+    const col2 = pageWidth / 2 + 10;
+    const lineHeight = 8;
+
+    const addField = (label, value, x, y) => {
+        doc.setFont(undefined, 'bold');
+        doc.text(`${label}:`, x, y);
+        doc.setFont(undefined, 'normal');
+        doc.text(`${value}`, x + doc.getTextWidth(`${label}: `), y);
+    };
+
+    addField("Data", tree.data.split('-').reverse().join('/'), col1, cursorY);
+    addField("Avaliador", tree.avaliador, col2, cursorY); cursorY += lineHeight;
+
+    addField("Local", tree.local, col1, cursorY);
+    addField("Coordenadas", `${tree.coordX} / ${tree.coordY}`, col2, cursorY); cursorY += lineHeight;
+
+    addField("Altura", `${tree.altura} m`, col1, cursorY);
+    addField("DAP", `${tree.dap} cm`, col2, cursorY); cursorY += lineHeight;
+
+    cursorY += 5;
+
+    // --- OBSERVAÇÕES ---
+    doc.setFillColor(245, 245, 245); doc.rect(margin, cursorY, pageWidth - (margin*2), 25, 'F');
+    doc.setFont(undefined, 'bold'); doc.text("Observações de Campo:", margin + 5, cursorY + 8);
+    doc.setFont(undefined, 'normal'); doc.setFontSize(10);
+    const obsLines = doc.splitTextToSize(tree.observacoes || "Sem observações.", pageWidth - (margin*2) - 10);
+    doc.text(obsLines, margin + 5, cursorY + 16);
+    cursorY += 35;
+
+    // --- FATORES DE RISCO ---
+    doc.setFontSize(12); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+    doc.text("Fatores de Risco Identificados", margin, cursorY); cursorY += 8;
+    
+    const activeRisks = (tree.riskFactors || []).map((val, idx) => val === 1 ? RISK_LABELS[idx] : null).filter(Boolean);
+    
+    if (activeRisks.length > 0) {
+        doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(50);
+        activeRisks.forEach(risk => {
+            doc.text(`• ${risk}`, margin + 5, cursorY);
+            cursorY += 6;
+        });
+    } else {
+        doc.setFont(undefined, 'italic'); doc.setTextColor(100);
+        doc.text("Nenhum fator de risco crítico assinalado.", margin + 5, cursorY);
+        cursorY += 6;
+    }
+    cursorY += 10;
+
+    // --- FOTO (SE HOUVER) ---
+    if (tree.hasPhoto) {
+        try {
+            const imageBlob = await new Promise(resolve => getImageFromDB(tree.id, resolve));
+            if (imageBlob) {
+                const imgData = await blobToDataURL(imageBlob);
+                const imgFormat = imageBlob.type === 'image/png' ? 'PNG' : 'JPEG';
+                
+                // Verifica espaço restante
+                if (cursorY + 100 > doc.internal.pageSize.getHeight()) {
+                    doc.addPage(); cursorY = 20;
+                }
+                
+                doc.setFontSize(12); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
+                doc.text("Registro Fotográfico", margin, cursorY); cursorY += 10;
+                
+                // Centraliza imagem
+                const imgW = 120;
+                const imgH = 90;
+                const imgX = (pageWidth - imgW) / 2;
+                doc.addImage(imgData, imgFormat, imgX, cursorY, imgW, imgH);
+            }
+        } catch (e) {
+            console.warn("Erro ao incluir foto no PDF individual:", e);
+        }
+    }
+
+    // Salva
+    const safeName = tree.especie.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    doc.save(`Laudo_${tree.id}_${safeName}.pdf`);
+    showToast("Laudo Individual Baixado!", "success");
+}

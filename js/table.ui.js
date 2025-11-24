@@ -8,6 +8,7 @@ import * as features from './features.js'; // Importação correta
 import { showConfirmModal, openPhotoViewer, showDetailsModal } from './modal.ui.js'; // Adiciona showDetailsModal
 import { getImageFromDB } from './database.js';
 import { debounce } from './utils.js'; // Importa a função debounce
+import { generateSingleTreePDF } from './pdf.generator.js';
 
 export const TableUI = {
     
@@ -161,7 +162,7 @@ export const TableUI = {
             const photoIcon = tree.hasPhoto ? '📷' : '';
 
             return `
-                <div class="summary-list-item" data-tree-id="${tree.id}">
+                <div class="summary-list-item ${badgeClass}" data-tree-id="${tree.id}">
                     <div class="item-main-info">
                         <span class="item-id">ID: ${tree.id}</span>
                         <strong class="item-species">${tree.especie}</strong>
@@ -175,6 +176,8 @@ export const TableUI = {
         });
 
         this.container.innerHTML = `<div class="summary-list-mobile">${listItemsHtml.join('')}</div>`;
+
+        // A delegação de eventos em bindContainerEvents cuida dos cliques na lista mobile
     },
 
     /**
@@ -273,46 +276,82 @@ export const TableUI = {
         const tree = State.registeredTrees.find(t => t.id === treeId);
         if (!tree) return;
 
-        const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
+        const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : 'N/A';
         
-        // [MELHORIA] Usa as descrições dos fatores de risco
-        const riskLabels = [
-            "Galhos Mortos > 5cm", "Rachaduras/Fendas", "Sinais de Apodrecimento", "Casca Inclusa", 
-            "Galhos Cruzados", "Copa Assimétrica", "Inclinação Anormal", "Próxima a Vias Públicas", 
-            "Risco sobre Alvos", "Interferência em Redes", "Espécie com Falhas", "Brotação Epicórmica", 
-            "Calçadas Rachadas", "Perda de Raízes", "Compactação do Solo", "Apodrecimento em Raízes"
+        // Mapeia os fatores de risco para uma lista legível
+        const riskFactorsMeta = [
+            { key: 'galhos-mortos', label: 'Galhos Mortos > 5cm' },
+            { key: 'rachaduras', label: 'Rachaduras/Fendas' },
+            { key: 'apodrecimento', label: 'Sinais de Apodrecimento' },
+            { key: 'casca-inclusa', label: 'Casca Inclusa' },
+            { key: 'galhos-cruzados', label: 'Galhos Cruzados' },
+            { key: 'copa-assimetrica', label: 'Copa Assimétrica' },
+            { key: 'inclinacao', label: 'Inclinação Anormal' },
+            { key: null, label: 'Próxima a Vias Públicas' },
+            { key: null, label: 'Risco sobre Alvos' },
+            { key: null, label: 'Interferência em Redes' },
+            { key: null, label: 'Espécie com Falhas' },
+            { key: 'brotacao-intensa', label: 'Brotação Epicórmica' },
+            { key: null, label: 'Calçadas Rachadas' },
+            { key: 'perda-raizes', label: 'Perda de Raízes' },
+            { key: 'compactacao', label: 'Compactação do Solo' },
+            { key: 'apodrecimento', label: 'Apodrecimento em Raízes' }
         ];
-        const riskFactors = (tree.riskFactors || []).map((val, idx) => val === 1 ? `<li>${riskLabels[idx]}</li>` : null).filter(Boolean).join('');
+
+        const riskFactorsList = (tree.riskFactors || [])
+            .map((val, idx) => (val === 1 && riskFactorsMeta[idx]) ? `<li>${riskFactorsMeta[idx].label}</li>` : null)
+            .filter(Boolean)
+            .join('');
 
         const content = `
             <div class="details-modal-grid">
                 <p><strong>Data:</strong> ${dateSimple}</p>
-                <p><strong>Local:</strong> ${tree.local}</p>
-                <p><strong>Avaliador:</strong> ${tree.avaliador}</p>
-                <p><strong>DAP:</strong> ${tree.dap} cm</p>
-                <p><strong>Altura:</strong> ${tree.altura} m</p>
-                <p><strong>Coordenadas:</strong> ${tree.coordX} / ${tree.coordY} (Zona ${tree.utmZoneNum}${tree.utmZoneLetter})</p>
-                <p><strong>Observações:</strong> ${tree.observacoes || 'Nenhuma.'}</p>
+                <p><strong>Local:</strong> ${tree.local || 'N/A'}</p>
+                <p><strong>DAP:</strong> ${tree.dap || 'N/A'} cm</p>
+                <p><strong>Altura:</strong> ${tree.altura || 'N/A'} m</p>
             </div>
-            ${riskFactors ? `<h4>Fatores de Risco Ativos:</h4><ul class="details-risk-list">${riskFactors}</ul>` : ''}
+
+            <div class="details-section">
+                <h4>Observações de Campo</h4>
+                <p>${tree.observacoes || 'Nenhuma observação registrada.'}</p>
+            </div>
+
+            ${riskFactorsList ? `
+            <div class="details-section">
+                <h4>Fatores de Risco Ativos</h4>
+                <ul class="details-risk-list">${riskFactorsList}</ul>
+            </div>` : ''}
         `;
 
         const actions = [
-            { text: '📍 Ver no Mapa', className: 'action-btn', onClick: () => features.handleZoomToPoint(tree.id) },
-            { text: '✏️ Editar', className: 'action-btn', onClick: () => features.handleEditTree(tree.id) },
-            { text: '🗑️ Excluir', className: 'btn-danger-filled', closesModal: false, onClick: () => {
-                showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${tree.id}?`, () => features.handleDeleteTree(tree.id));
-            }}
+            {
+                text: '📍 Mapa',
+                className: 'export-btn',
+                onClick: () => features.handleZoomToPoint(tree.id)
+            },
+            {
+                text: '✏️ Editar',
+                className: 'export-btn',
+                onClick: () => features.handleEditTree(tree.id)
+            },
+            {
+                text: '📄 Laudo',
+                className: 'action-btn',
+                onClick: () => generateSingleTreePDF(tree)
+            }
         ];
 
         if (tree.hasPhoto) {
-            actions.unshift({ text: '📷 Ver Foto', className: 'action-btn', onClick: () => getImageFromDB(tree.id, blob => blob && openPhotoViewer(URL.createObjectURL(blob))) });
+            actions.unshift({
+                text: '📷 Foto',
+                className: 'export-btn',
+                onClick: () => getImageFromDB(tree.id, blob => blob && openPhotoViewer(URL.createObjectURL(blob)))
+            });
         }
-
-        // [MELHORIA] Passa a classe de risco para o modal
+        
         const riskClass = tree.risco === 'Alto Risco' ? 'risk-high' : tree.risco === 'Médio Risco' ? 'risk-medium' : 'risk-low';
 
-        showDetailsModal(`Detalhes: ${tree.especie} (ID: ${tree.id})`, content, actions, riskClass);
+        showDetailsModal(`${tree.especie} (ID: ${tree.id})`, content, actions, riskClass);
     },
 
     renderControls() {

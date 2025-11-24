@@ -1,149 +1,156 @@
 /**
- * ARBORIA 2.0 - BUTTON COMPONENTS
- * Estilo: Pill Shape, Gradient Background, Tactile Feedback
+ * ARBORIA 2.1 - UNIFIED BUTTON SYSTEM
+ * Estilo: Pill Shape, Suave, Consistente e Acessível.
  */
 
-/* --- ESTILO BASE PARA TODOS OS BOTÕES --- */
-button {
+/* --- BOTÃO BASE (.btn) --- */
+.btn {
   font-family: inherit;
-  font-size: 1rem;
-  border: none;
+  font-size: 0.95rem; /* Tamanho de fonte padrão */
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  padding: 12px 24px; /* Padding generoso para toque */
+  border: 2px solid transparent; /* Borda para todos, mas transparente por padrão */
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   transition: all var(--transition-fast);
-  -webkit-tap-highlight-color: transparent;
+  text-transform: none; /* Remove uppercase for better readability */
+  letter-spacing: normal;
   position: relative;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
-button:disabled {
+.btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  filter: grayscale(1);
+  filter: grayscale(0.8);
 }
 
-button:active {
-  transform: scale(0.96); /* Efeito tátil de clique */
+@media (hover: hover) {
+  .btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
 }
 
-/* --- BOTÕES DE AÇÃO PRIMÁRIA (Gradient Pills) --- */
-/* Usado em: Iniciar Medição, Salvar, Adicionar Árvore */
-.action-btn, 
-.hud-action-btn, 
-.send-btn, 
-#add-tree-btn, 
-#get-gps-btn {
+.btn:active {
+  transform: scale(0.97); /* Efeito tátil de clique */
+  box-shadow: none;
+}
+
+/* --- MODIFICADORES DE ESTILO --- */
+
+/* 1. Botão Primário (Ações Principais) */
+.btn-primary {
   background: var(--gradient-main);
   color: white;
-  border-radius: var(--radius-pill);
-  padding: 12px 24px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
   box-shadow: var(--shadow-floating);
-  text-transform: uppercase;
-  font-size: 0.9rem;
-  width: 100%; /* Mobile First: ocupa largura total por padrão em containers pequenos */
 }
 
-/* Inverter ícones em botões de fundo escuro para ficarem brancos */
-.action-btn .button-icon,
-.hud-action-btn .button-icon,
-.send-btn .button-icon,
-#add-tree-btn .button-icon,
-#get-gps-btn .button-icon,
-.btn-danger-filled .button-icon {
-    filter: invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Inverte e mantém a sombra */
-}
-
-
-/* Hover apenas em desktop para não atrapalhar touch */
 @media (hover: hover) {
-  .action-btn:hover, 
-  .hud-action-btn:hover, 
-  .send-btn:hover, 
-  #add-tree-btn:hover, 
-  #get-gps-btn:hover {
+  .btn-primary:hover {
     background: var(--gradient-hover);
-    transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 121, 107, 0.4);
   }
 }
 
-/* --- BOTÕES SECUNDÁRIOS / OUTLINE --- */
-/* Usado em: Exportar, Cancelar, Filtros */
-.export-btn, 
+/* 2. Botão Secundário (Outline) */
 .btn-secondary {
-  background: transparent; /* Revertido para transparente */
-  border: 2px solid var(--color-forest); /* Borda com a cor Forest */
-  color: var(--color-forest); /* Texto com a cor Forest */
-  border-radius: var(--radius-pill);
-  padding: 10px 20px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  background-color: transparent;
+  border-color: var(--color-forest);
+  color: var(--color-forest);
 }
 
-.export-btn:hover {
-  background-color: rgba(var(--color-forest-rgb), 0.08); /* Tint verde bem suave */
+@media (hover: hover) {
+  .btn-secondary:hover {
+    background-color: rgba(var(--color-forest-rgb), 0.08); /* Suave ao passar o mouse */
+    border-color: var(--color-forest);
+  }
 }
 
-/* Botão de Alerta/Perigo (ex: Limpar Tudo) */
+/* 3. Botão de Perigo (Ações Destrutivas) */
 .btn-danger {
+  background-color: transparent;
   border-color: var(--risk-high);
   color: var(--risk-high);
 }
 
-.btn-danger:hover {
-  background-color: rgba(211, 47, 47, 0.08);
+@media (hover: hover) {
+  .btn-danger:hover {
+    background-color: rgba(211, 47, 47, 0.08);
+  }
 }
 
 .btn-danger-filled {
-  background: linear-gradient(135deg, #ef5350, var(--risk-high));
-  color: white;
-  border: none;
-  border-radius: var(--radius-pill);
-  padding: 10px 20px;
+  /* Herda as propriedades do .btn */
+  font-family: inherit;
+  font-size: 0.9em; /* Ajustado para modal */
   font-weight: 600;
-  font-size: 0.9rem;
+  border-radius: var(--radius-pill);
+  padding: 10px 20px; /* Ajustado para modal */
+  border: none; /* Remove a borda para ser um botão "preenchido" */
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+  text-transform: none;
+  letter-spacing: normal;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+
+  background: var(--risk-high);
+  color: white;
   box-shadow: var(--shadow-sm);
 }
 
-.btn-danger-filled:hover {
-  background: linear-gradient(135deg, var(--risk-high), #b71c1c);
+@media (hover: hover) {
+  .btn-danger-filled:hover {
+    background: #b71c1c; /* Mais escuro */
+  }
 }
 
+/* 4. Botão "Clear" ou "Ghost" */
 .btn-clear {
-  background: linear-gradient(135deg, var(--color-medium-gray), var(--color-dark-gray)); /* Usar gradiente */
-  color: var(--color-white); /* Corrigido para branco para contraste */
-  border-radius: var(--radius-pill); /* Corrigido para pill-shaped */
-  padding: 12px 24px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  box-shadow: var(--shadow-floating);
-  text-transform: uppercase;
-  font-size: 0.9rem;
-  border: none;
+  background-color: var(--color-text-muted);
+  color: white;
 }
 
-.btn-clear:hover {
-  background: linear-gradient(135deg, var(--color-dark-gray), #555); /* Gradiente mais escuro no hover */
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+@media (hover: hover) {
+  .btn-clear:hover {
+    background-color: #5a687d;
+  }
 }
 
-/* --- BOTÕES DE CÂMERA (HUD) --- */
-/* Botão de Disparo/Captura */
+/* --- Ícones dentro de botões --- */
+.btn .button-icon {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+.btn-primary .button-icon,
+.btn-danger-filled .button-icon,
+.btn-clear .button-icon {
+  filter: invert(1) brightness(2) drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+/* --- BOTÕES ESPECIAIS (NÃO seguem o .btn padrão) --- */
+
+/* Botão de Câmera HUD */
 .hud-capture-btn {
   width: 70px;
   height: 70px;
   border-radius: 50%;
   background: transparent;
   border: 4px solid white;
-  position: relative;
-  padding: 0;
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  padding: 0;
+  transition: all 0.2s;
 }
 
 .hud-capture-btn::after {
@@ -168,47 +175,79 @@ button:active {
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-pill);
-  padding: 6px 14px;
-  font-size: 0.8rem;
+  padding: 8px 16px;
+  font-size: 0.9rem;
   backdrop-filter: blur(4px);
+  transition: background-color 0.2s;
 }
 
-.hud-close-btn .button-icon {
-    filter: invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Inverte e mantém a sombra */
+.hud-close-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
 }
 
-/* --- BOTÃO VOLTAR (Navegação) --- */
+/* Botão de Navegação "Voltar" */
 .btn-back {
   background: transparent;
-  color: var(--color-tech); /* Azul Tecnológico */
+  color: var(--color-tech);
   font-weight: 700;
   padding: 8px 0;
-  justify-content: flex-start;
+  text-decoration: none;
+  transition: color 0.2s;
 }
 
 .btn-back:hover {
+  color: var(--color-forest);
   text-decoration: underline;
 }
 
-/* --- BOTÃO DE UPLOAD DE FOTO (Estilo de botão secundário) --- */
+/* Botão de Upload (usará .btn .btn-secondary) */
 .photo-btn {
-    background: var(--gradient-main); /* Alterado para gradiente */
-    border: none; /* Remove a borda, pois o gradiente já preenche */
-    color: white; /* Cor do texto para contraste com o gradiente */
-    border-radius: var(--radius-pill);
-    padding: 10px 20px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+  /* Este seletor pode ser removido se o HTML for atualizado */
+  /* Temporariamente herdando do .btn e .btn-secondary */
 }
 
-.photo-btn:hover {
-    background: var(--gradient-hover); /* Efeito de hover com gradiente */
+/* Botões de Ação do HUD (Medir, etc.) */
+.hud-action-btn {
+  /* Temporariamente herdando do .btn e .btn-primary */
 }
 
+/* Novo: Botão de Ação Geral (para modais e cards) */
+.action-btn {
+  /* Herda as propriedades do .btn e adiciona estilos específicos de primary */
+  background: var(--gradient-main);
+  color: white;
+  box-shadow: var(--shadow-floating);
+  /* Ajustes de padding e fonte para ser um pouco menor que o btn padrão, se necessário */
+  padding: 10px 20px; /* Ajuste para caber em modais menores */
+  font-size: 0.9em;
+  border: none; /* Remove a borda se estiver presente do .btn */
+  border-radius: var(--radius-pill); /* Garante o formato pilula */
+}
 
+@media (hover: hover) {
+  .action-btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 121, 107, 0.4);
+    background: var(--gradient-hover);
+  }
+}
+
+/* Modificado: Botão de Export/Outline (para modais e ações secundárias) */
+.export-btn {
+  /* Herda as propriedades do .btn e adiciona estilos específicos de secondary */
+  background-color: transparent;
+  border-color: var(--color-forest);
+  color: var(--color-forest);
+  padding: 10px 20px; /* Ajuste para caber em modais menores */
+  font-size: 0.9em;
+  border-radius: var(--radius-pill); /* Garante o formato pilula */
+}
+
+@media (hover: hover) {
+  .export-btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    background-color: rgba(var(--color-forest-rgb), 0.08); /* Suave ao passar o mouse */
+    border-color: var(--color-forest);
+  }
+}

@@ -165,9 +165,11 @@ function setupFlashCardListeners() {
  */
 export function initChecklistFlashCard(retry = 0) {
     const els = getFlashCardElements();
+    console.log("initChecklistFlashCard called. els:", els, "dataRows length:", els ? els.dataRows.length : 'N/A');
     
     // 1. Verificação Crítica: Garante que as linhas da tabela oculta existem
-    if (!els || els.dataRows.length === 0) {
+    if (!els || !els.dataRows || els.dataRows.length === 0) {
+        console.warn("initChecklistFlashCard: elements not ready or dataRows is empty. Retrying...", { els: els, dataRowsLength: els && els.dataRows ? els.dataRows.length : 'N/A' });
         if (retry < 5) {
             // Tenta novamente a cada 150ms para esperar o DOM renderizar a tabela
             setTimeout(() => initChecklistFlashCard(retry + 1), 150);
@@ -190,8 +192,10 @@ export function initChecklistFlashCard(retry = 0) {
  */
 function closeChecklistFlashCard() {
     const els = getFlashCardElements();
-    // A lógica de fechar foi movida para main.js para centralizar o controle do DOM.
-    if (els && els.container) els.container.style.display = 'none';
+    // A lógica de fechar agora usa a classe 'active' no main.js; aqui apenas removemos a classe.
+    if (els && els.container) {
+        els.container.classList.remove('active');
+    }
 }
 
 

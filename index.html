@@ -98,7 +98,7 @@
 
                     <button class="topico-btn" data-target="calculadora-view">
                         <img src="img/icons/calc.png" alt=""> 
-                        <span>Calculadora de Risco</span>
+                        <span>Levantamento de Dados</span>
                     </button>
                     
                     <button class="topico-btn" data-target="clinometro-view">
@@ -112,7 +112,7 @@
                     </button>
 
                     <button class="topico-btn" data-target="plano-intervencao-view">
-                        <img src="img/icons/planejamento.png" alt=""> 
+                        <img src="img/icons/plano-intervencao.png" alt="Plano de Intervenção"> 
                         <span>Plano de Intervenção</span>
                     </button>
                 </nav>
@@ -122,117 +122,15 @@
                 <div id="detalhe-view"></div>
             </section>
 
-            <section class="app-view content-section fullscreen-app" id="clinometro-view">
-                <div id="camera-container">
-                    <video id="camera-feed" autoplay playsinline muted></video>
-                    <div class="crosshair"></div>
-                    
-                    <div class="hud-overlay">
-                        <div class="hud-top">
-                            <span id="clinometer-angle">0.0°</span>
-                            <button type="button" id="close-clinometer" class="hud-close-btn">✖ Sair</button>
-                        </div>
-                        
-                        <div class="hud-controls">
-                            <div id="step-distance" class="hud-step active">
-                                <label>Distância da Árvore (m):</label>
-                                <input type="number" id="clino-distance" value="10" min="1" step="0.5">
-                                <button id="btn-start-measure" class="hud-action-btn">Iniciar Medição</button>
-                            </div>
-                            <div id="step-base" class="hud-step">
-                                <p>Mire na <strong>BASE</strong> da árvore</p>
-                                <button id="btn-capture-base" class="hud-capture-btn" aria-label="Capturar Base"></button>
-                            </div>
-                            <div id="step-top" class="hud-step">
-                                <p>Mire no <strong>TOPO</strong> da árvore</p>
-                                <button id="btn-capture-top" class="hud-capture-btn" aria-label="Capturar Topo"></button>
-                            </div>
-                            <div id="step-result" class="hud-step">
-                                <p>Altura Estimada:</p>
-                                <h1 id="tree-height-result">0.0 m</h1>
-                                <div class="result-actions">
-                                    <button id="btn-reset-measure" class="export-btn">Nova Medição</button>
-                                    <button id="btn-save-height" class="hud-action-btn save">Usar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
-            <section class="app-view content-section fullscreen-app" id="dap-estimator-view">
-                <div id="dap-camera-container">
-                    <video id="dap-camera-feed" autoplay playsinline muted></video>
-                    <div class="crosshair"></div>
-                    
-                    <div class="hud-overlay">
-                        <div class="hud-top">
-                            <span id="dap-current-angle">0.0°</span> 
-                            <button type="button" id="close-dap-estimator" class="hud-close-btn">✖ Sair</button>
-                        </div>
-                        
-                        <div class="hud-controls">
-                            <div id="dap-step-distance" class="hud-step active">
-                                <p><strong>1. Configuração</strong></p>
-                                <label>Distância até o tronco (m):</label>
-                                <input type="number" id="dap-distance-input" value="10" min="1" step="0.5">
-                                <p class="instruction-text">Mantenha fixo. Aponte para altura do peito (1.30m).</p>
-                                <button id="btn-dap-next-step" class="hud-action-btn">Começar</button>
-                            </div>
-                            <div id="dap-step-left" class="hud-step">
-                                <p><strong>2. Borda Esquerda</strong></p>
-                                <button id="btn-dap-capture-left" class="hud-capture-btn"></button>
-                            </div>
-                            <div id="dap-step-right" class="hud-step">
-                                <p><strong>3. Borda Direita</strong></p>
-                                <button id="btn-dap-capture-right" class="hud-capture-btn"></button>
-                            </div>
-                            <div id="dap-step-result" class="hud-step">
-                                <p>DAP Estimado:</p>
-                                <h1 id="dap-estimated-result">0.0 cm</h1>
-                                <div class="result-actions">
-                                    <button id="btn-dap-reset" class="export-btn">Refazer</button>
-                                    <button id="btn-dap-save" class="hud-action-btn save">Usar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
-            <section class="app-view fullscreen-app" id="checklist-flashcard-view" style="display:none;">
-                <div class="mobile-checklist-wrapper-fullscreen">
-                    
-                    <div class="hud-top" style="position: absolute; top: 0; left: 0; width: 100%; padding: 15px;">
-                        <button type="button" id="close-checklist-btn" class="hud-close-btn">✖ Sair</button>
-                    </div>
 
-                    <div class="mobile-checklist-card" id="flashcard-container">
-                        <h4 id="flashcard-counter">Critério 1 / 16</h4>
-                        <div id="flashcard-question-text">Carregando...</div>
-                        
-                        <div class="flashcard-toggle-area">
-                            <div class="mobile-checklist-toggle">
-                                <span style="color:white; opacity:0.8;">Não</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="flashcard-toggle-input">
-                                    <span class="toggle-slider round"></span>
-                                </label>
-                                <span style="color:white; font-weight:bold;">Sim</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="mobile-checklist-nav">
-                        <button type="button" id="flashcard-prev">❮ Anterior</button>
-                        <button type="button" id="flashcard-next">Próxima ❯</button>
-                    </div>
-                </div>
-            </section>
+
 
             <section class="app-view content-section" id="calculadora-view">
                 
-                <h3><img src="img/icons/calc.png" alt="Calculadora" class="section-title-icon"> Calculadora de Risco</h3>
+                <h3><img src="img/icons/calc.png" alt="Calculadora" class="section-title-icon"> Levantamento de Dados</h3>
                 <p>Avaliação geoespacial e análise visual de risco arbóreo (VTA).</p>
                 
                 <nav class="sub-nav">
@@ -254,7 +152,7 @@
                                     <label for="risk-altura">Altura Total (m):</label>
                                     <div style="display: flex; gap: 8px;">
                                         <input type="number" id="risk-altura" name="risk-altura" min="0" step="0.1" placeholder="0.0">
-                                        <button type="button" id="btn-measure-height-form" class="action-btn" style="width: auto; padding: 0 12px;" title="Abrir Clinômetro"><img src="img/icons/clinometro.png" alt="Clinômetro" class="button-icon"></button>
+                                        <button type="button" id="btn-measure-height-form" class="btn btn-primary" style="width: auto; padding: 0 12px;" title="Abrir Clinômetro"><img src="img/icons/clinometro.png" alt="Clinômetro" class="button-icon"></button>
                                     </div>
                                 </div>
 
@@ -262,7 +160,7 @@
                                     <label for="risk-dap">DAP (cm):</label>
                                     <div style="display: flex; gap: 8px;">
                                         <input type="number" id="risk-dap" name="risk-dap" min="0" step="any" placeholder="0.0">
-                                        <button type="button" id="btn-measure-dap-form" class="action-btn" style="width: auto; padding: 0 12px;" title="Abrir Medidor DAP"><img src="img/icons/dap.png" alt="DAP" class="button-icon"></button>
+                                        <button type="button" id="btn-measure-dap-form" class="btn btn-primary" style="width: auto; padding: 0 12px;" title="Abrir Medidor DAP"><img src="img/icons/dap.png" alt="DAP" class="button-icon"></button>
                                     </div>
                                 </div>
 
@@ -270,7 +168,7 @@
                                 <div><label for="risk-coord-y">Latitude / Y:</label><input type="text" id="risk-coord-y" name="risk-coord-y" placeholder="Ex: -15.78"></div>
                                 
                                 <div class="gps-button-container">
-                                    <button type="button" id="get-gps-btn">Capturar GPS Preciso</button>
+                                    <button type="button" id="get-gps-btn" class="btn btn-primary">Capturar GPS Preciso</button>
                                     <span id="gps-status" class="instruction-text text-center" style="display:block; margin-top:5px;"></span>
                                 </div>
                                 
@@ -283,14 +181,14 @@
                             </div>
                             
                             <div class="photo-upload-container">
-                                <label for="tree-photo-input" class="photo-btn">Anexar Foto</label>
+                                <label for="tree-photo-input" class="btn btn-secondary">Anexar Foto</label>
                                 <input type="file" id="tree-photo-input" accept="image/*" capture="environment" style="display: none;">
                                 <div id="photo-preview-container"><button type="button" id="remove-photo-btn" style="display:none;">&times;</button></div>
                             </div>
                         </fieldset>
                         
                         <div class="risk-buttons-area" style="justify-content: center; margin-bottom: 20px;">
-                            <button type="button" id="open-flashcard-btn" class="action-btn" style="width: 100%; padding: 15px; font-size: 1rem;">
+                            <button type="button" id="open-flashcard-btn" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 1rem;">
                                 Avaliar Fatores de Risco (16 Itens)
                             </button>
                         </div>
@@ -301,31 +199,31 @@
                             <table class="risk-table" id="checklist-data-table">
                                 <thead><tr><th>Nº</th><th>Critério de Avaliação</th><th>Peso</th><th>Sim</th></tr></thead>
                                 <tbody>
-                                    <tr><td>1</td><td>Há <span class="checklist-term" data-term-key="galhos-mortos">galhos mortos</span> > 5cm?</td><td>3</td><td><input type="checkbox" class="risk-checkbox" data-weight="3"></td></tr>
-                                    <tr><td>2</td><td>Existem <span class="checklist-term" data-term-key="rachaduras">rachaduras</span> ou fendas?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>3</td><td>Há <span class="checklist-term" data-term-key="apodrecimento">sinais de apodrecimento</span>?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>4</td><td>A árvore possui <span class="checklist-term" data-term-key="casca-inclusa">casca inclusa</span>?</td><td>4</td><td><input type="checkbox" class="risk-checkbox" data-weight="4"></td></tr>
-                                    <tr><td>5</td><td>Há <span class="checklist-term" data-term-key="galhos-cruzados">galhos cruzados</span>?</td><td>2</td><td><input type="checkbox" class="risk-checkbox" data-weight="2"></td></tr>
-                                    <tr><td>6</td><td>A árvore apresenta <span class="checklist-term" data-term-key="copa-assimetrica">copa assimétrica</span>?</td><td>2</td><td><input type="checkbox" class="risk-checkbox" data-weight="2"></td></tr>
-                                    <tr><td>7</td><td>Há sinais de <span class="checklist-term" data-term-key="inclinacao">inclinação anormal</span>?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>8</td><td>A árvore está próxima a vias públicas?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>9</td><td>Há risco de queda sobre edificações?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>10</td><td>A árvore interfere em redes elétricas?</td><td>4</td><td><input type="checkbox" class="risk-checkbox" data-weight="4"></td></tr>
-                                    <tr><td>11</td><td>A espécie é conhecida por falhas?</td><td>3</td><td><input type="checkbox" class="risk-checkbox" data-weight="3"></td></tr>
-                                    <tr><td>12</td><td>Há <span class="checklist-term" data-term-key="brotacao-intensa">brotação epicórmica intensa</span>?</td><td>3</td><td><input type="checkbox" class="risk-checkbox" data-weight="3"></td></tr>
-                                    <tr><td>13</td><td>Há calçadas rachadas na base?</td><td>3</td><td><input type="checkbox" class="risk-checkbox" data-weight="3"></td></tr>
-                                    <tr><td>14</td><td>Há <span class="checklist-term" data-term-key="perda-raizes">perda visível de raízes</span>?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
-                                    <tr><td>15</td><td>Há sinais de <span class="checklist-term" data-term-key="compactacao">compactação</span> do solo?</td><td>3</td><td><input type="checkbox" class="risk-checkbox" data-weight="3"></td></tr>
-                                    <tr><td>16</td><td>Há <span class="checklist-term" data-term-key="apodrecimento">apodrecimento em raízes</span>?</td><td>5</td><td><input type="checkbox" class="risk-checkbox" data-weight="5"></td></tr>
+                                    <tr><td>1</td><td>Há <span class="checklist-term" data-term-key="galhos-mortos">galhos mortos</span> > 5cm?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
+                                    <tr><td>2</td><td>Existem <span class="checklist-term" data-term-key="rachaduras">rachaduras</span> ou fendas?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
+                                    <tr><td>3</td><td>Há <span class="checklist-term" data-term-key="apodrecimento">sinais de apodrecimento</span>?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
+                                    <tr><td>4</td><td>A árvore possui <span class="checklist-term" data-term-key="casca-inclusa">casca inclusa</span>?</td><td>4</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="4"><span class="slider"></span></label></td></tr>
+                                    <tr><td>5</td><td>Há <span class="checklist-term" data-term-key="galhos-cruzados">galhos cruzados</span>?</td><td>2</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="2"><span class="slider"></span></label></td></tr>
+                                    <tr><td>6</td><td>A árvore apresenta <span class="checklist-term" data-term-key="copa-assimetrica">copa assimétrica</span>?</td><td>2</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="2"><span class="slider"></span></label></td></tr>
+                                    <tr><td>7</td><td>Há sinais de <span class="checklist-term" data-term-key="inclinacao">inclinação anormal</span>?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
+                                    <tr><td>8</td><td>A árvore está próxima a vias públicas?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
+                                    <tr><td>9</td><td>Há risco de queda sobre edificações?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
+                                    <tr><td>10</td><td>A árvore interfere em redes elétricas?</td><td>4</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="4"><span class="slider"></span></label></td></tr>
+                                    <tr><td>11</td><td>A espécie é conhecida por falhas?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
+                                    <tr><td>12</td><td>Há <span class="checklist-term" data-term-key="brotacao-intensa">brotação epicórmica intensa</span>?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
+                                    <tr><td>13</td><td>Há calçadas rachadas na base?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
+                                    <tr><td>14</td><td>Há <span class="checklist-term" data-term-key="perda-raizes">perda visível de raízes</span>?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
+                                    <tr><td>15</td><td>Há sinais de <span class="checklist-term" data-term-key="compactacao">compactação</span> do solo?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
+                                    <tr><td>16</td><td>Há <span class="checklist-term" data-term-key="apodrecimento">apodrecimento em raízes</span>?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
                                 </tbody>
                             </table>
                         </fieldset>
                         
                         <div class="risk-buttons-area">
-                            <button type="submit" id="add-tree-btn" class="action-btn">Registrar Árvore</button>
+                            <button type="submit" id="add-tree-btn" class="btn btn-primary">Registrar Árvore</button>
                         </div>
                         <div class="risk-buttons-area" style="margin-top: 15px;">
-<button type="button" id="reset-risk-form-btn" class="action-btn btn-clear">Limpar</button>
+<button type="button" id="reset-risk-form-btn" class="btn btn-clear">Limpar</button>
                         </div>
 
                     </form>
@@ -342,11 +240,11 @@
                         
                         <div id="import-export-controls" class="risk-buttons-area">
                             <input type="file" id="zip-importer" style="display: none;"><input type="file" id="csv-importer" style="display: none;">
-                            <button type="button" id="import-data-btn" class="action-btn">Importar</button>
-                            <button type="button" id="export-data-btn" class="action-btn">Exportar</button>
-                            <button type="button" id="generate-pdf-btn" class="action-btn">Gerar Laudo PDF</button>
-                            <button type="button" id="send-email-btn" class="action-btn">Enviar Laudo</button>
-                            <button type="button" id="clear-all-btn" class="btn-danger-filled">Excluir Tudo</button>
+                            <button type="button" id="import-data-btn" class="btn btn-primary">Importar</button>
+                            <button type="button" id="export-data-btn" class="btn btn-primary">Exportar</button>
+                            <button type="button" id="generate-pdf-btn" class="btn btn-primary">Gerar Laudo PDF</button>
+                            <button type="button" id="send-email-btn" class="btn btn-primary">Enviar Laudo</button>
+                            <button type="button" id="clear-all-btn" class="btn btn-danger-filled">Excluir Tudo</button>
                         </div>
                         <div id="zip-status" style="display: none;"><span class="spinner"></span><span id="zip-status-text">Processando...</span></div>
                     </fieldset>
@@ -375,8 +273,8 @@
                                 <input type="text" id="default-utm-zone" placeholder="Ex: 23K">
                             </div>
                             <div style="display: flex; gap: 10px; align-items: flex-end;">
-                                <button type="button" id="zoom-to-extent-btn" class="export-btn">Focar Tudo</button>
-                                <button type="button" id="show-my-location-btn" class="export-btn map-geolocation-btn">Onde estou?</button>
+                                <button type="button" id="zoom-to-extent-btn" class="btn btn-secondary">Focar Tudo</button>
+                                <button type="button" id="show-my-location-btn" class="btn btn-secondary map-geolocation-btn">Onde estou?</button>
                             </div>
                         </div>
                     </fieldset>
@@ -384,7 +282,7 @@
             </section>
 
             <section class="app-view content-section" id="plano-intervencao-view" style="display: none;">
-                <h3><img src="img/icons/planejamento.png" alt="Plano de Intervenção" class="section-title-icon"> Plano de Intervenção</h3>
+                <h3><img src="img/icons/plano-intervencao.png" alt="Plano de Intervenção" class="section-title-icon"> Plano de Intervenção</h3>
                 <p>Elaboração do plano de manejo e supressão para as árvores avaliadas.</p>
                 <div id="planning-module-root"></div>
             </section>
@@ -396,7 +294,7 @@
                 <div id="chat-response-box" style="min-height: 100px; margin-bottom: 10px;"><p class="text-muted">Faça uma pergunta...</p></div>
                 <div class="form-grid">
                     <input type="text" id="chat-input" placeholder="Digite sua pergunta..." autocomplete="off">
-                    <button id="chat-send-btn" class="action-btn">Enviar</button>
+                    <button id="chat-send-btn" class="btn btn-primary">Enviar</button>
                 </div>
             </div>
         </section>
@@ -417,7 +315,7 @@
                 Esta ferramenta foi projetada para auxiliar engenheiros e técnicos na <strong>avaliação de risco de queda de árvores</strong>,
                 seguindo as melhores práticas de segurança e normativas ambientais.
             </p>
-            <button id="close-welcome-btn" class="action-btn">Começar a Usar</button>
+            <button id="close-welcome-btn" class="btn btn-primary">Começar a Usar</button>
         </div>
     </div>
 
@@ -446,6 +344,31 @@
         <div id="tooltip-image-container"></div>
         <h4 id="tooltip-title"></h4>
         <p id="tooltip-text"></p>
+    </div>
+
+    <div id="checklist-flashcard-view" class="modal-overlay">
+        <div class="mobile-checklist-wrapper-fullscreen">
+            <button id="close-checklist-btn" class="hud-close-btn" aria-label="Fechar Checklist">✕</button>
+
+            <div class="mobile-checklist-card">
+                <p id="flashcard-counter">Fator de Risco 1 / 16</p>
+                <h3 id="flashcard-question-text">Há <span class="checklist-term" data-term-key="galhos-mortos">galhos mortos</span> > 5cm?</h3>
+
+                <div class="flashcard-toggle-area">
+                    <span style="color: rgba(255,255,255,0.7);">NÃO</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="flashcard-toggle-input">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span style="color: rgba(255,255,255,0.7);">SIM</span>
+                </div>
+            </div>
+
+            <div class="mobile-checklist-nav">
+                <button id="flashcard-prev" class="btn btn-secondary">❮ Anterior</button>
+                <button id="flashcard-next" class="btn btn-primary">Próxima ❯</button>
+            </div>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>

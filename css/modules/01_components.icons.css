@@ -1,0 +1,45 @@
+/**
+ * ARBORIA 2.1 - ICONS
+ * Placeholder styles for modern icons.
+ * In a real application, consider using an icon font library (e.g., Font Awesome)
+ * or SVG sprites for better performance and customization.
+ */
+
+/* Base style for icons */
+i[class^="icon-"] {
+    /* Adjust font-size, color, etc. as needed */
+    display: inline-block;
+    font-style: normal;
+    font-weight: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin-right: 5px; /* Spacing between icon and text */
+    vertical-align: middle; /* Align with text */
+    line-height: 1; /* Prevent extra space */
+}
+
+/* Specific icon content (using Unicode as placeholders) */
+.icon-map::before {
+    content: "\1F5FA"; /* World Map */
+}
+
+.icon-edit::before {
+    content: "\270F"; /* Pencil */
+}
+
+.icon-delete::before {
+    content: "\1F5D1"; /* Wastebasket */
+}
+
+.icon-camera::before {
+    content: "\1F4F7"; /* Camera */
+}
+
+.icon-close::before {
+    content: "\2716"; /* Heavy Multiplication X */
+}
+
+/* You can add more specific styling for icons within buttons if needed */
+.btn i[class^="icon-"] {
+    font-size: 1.1em; /* Slightly larger icon in buttons */
+}
