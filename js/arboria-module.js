@@ -225,34 +225,36 @@
                     </div>
                 </div>
 
-                <div class="planning-box">
-                    <div class="planning-box-header">
-                        <span class="icon">📅</span>
-                        <h3>3. Equipe e Cronograma</h3>
-                    </div>
-                    <div class="form-grid">
-                        <div>
-                            <label for="foremen">Encarregados</label>
-                            <input type="number" id="foremen" name="foremen" value="1" min="0">
-                        </div>
-                        <div>
-                            <label for="operators">Operadores</label>
-                            <input type="number" id="operators" name="operators" value="1" min="0">
-                        </div>
-                        <div>
-                            <label for="auxiliaries">Auxiliares</label>
-                            <input type="number" id="auxiliaries" name="auxiliaries" value="2" min="0">
-                        </div>
-                        <div>
-                            <label for="startDate">Data de Início</label>
-                            <input type="date" id="startDate" name="startDate" value="${today}">
-                        </div>
-                        <div>
-                            <label for="endDate">Data de Término</label>
-                            <input type="date" id="endDate" name="endDate" value="${today}">
-                        </div>
-                    </div>
-                </div>
+<div class="planning-box">
+    <div class="planning-box-header">
+        <span class="icon">⏱️</span>
+        <h3>3. Cronograma Operacional</h3>
+    </div>
+    <div class="form-grid">
+        <div>
+            <label for="startDate">Data de Início</label>
+            <input type="date" id="startDate" name="startDate" value="${today}" required>
+        </div>
+        
+        <div>
+            <label>Mobilização (dias)</label>
+            <input type="number" id="dur_mob" name="durationMobilization" value="1" min="0" class="duration-input">
+        </div>
+        <div>
+            <label>Execução (dias)</label>
+            <input type="number" id="dur_exec" name="durationExecution" value="1" min="1" class="duration-input">
+        </div>
+        <div>
+            <label>Desmobilização (dias)</label>
+            <input type="number" id="dur_demob" name="durationDemobilization" value="1" min="0" class="duration-input">
+        </div>
+
+        <div>
+            <label for="endDate">Previsão de Término</label>
+            <input type="date" id="endDate" name="endDate" value="${today}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+        </div>
+    </div>
+</div>
 
                 <div class="planning-box">
                     <div class="planning-box-header">
@@ -373,6 +375,10 @@
                                 ${plan.techniques.length > 0 ? `<p style="font-size: 0.9rem;"><strong>Técnicas:</strong> ${plan.techniques.join(', ')}</p>` : ''}
                                 <p style="font-size: 0.9rem;"><strong>Equipe:</strong> ${parseInt(plan.teamComposition.foremen) + parseInt(plan.teamComposition.chainsawOperators) + parseInt(plan.teamComposition.auxiliaries)} Pessoas</p>
                                 <p style="font-size: 0.9rem;"><strong>Duração Estimada:</strong> ${diffDays} dia(s)</p>
+                            </div>
+                            <h4 style="font-weight: bold; margin-top: 1.5rem;">Gráfico de Gantt</h4>
+                            <div style="margin-top: 1rem; overflow-x: auto;">
+                                <div id="gantt-chart" style="position: relative;"></div>
                             </div>
                         </div>
 
@@ -582,6 +588,11 @@
                     startDate: formData.get('startDate'),
                     endDate: formData.get('endDate')
                 },
+                durations: {
+                    mobilization: parseInt(formData.get('durationMobilization')),
+                    execution: parseInt(formData.get('durationExecution')),
+                    demobilization: parseInt(formData.get('durationDemobilization'))
+                },
                 responsible: formData.get('responsible'),
                 responsibleTitle: formData.get('responsibleTitle'),
                 wasteDestination: finalWaste,
@@ -646,6 +657,35 @@
             }
 
             $('#planning-form').addEventListener('submit', Actions.handleFormSubmit);
+
+            // Lógica de Cálculo de Datas (Adicionar em bindEvents)
+            const dateInputs = $$('#startDate, .duration-input');
+            const endDateInput = $('#endDate');
+
+            function calculateEndDate() {
+                const startStr = $('#startDate').value;
+                if (!startStr) return;
+
+                const start = new Date(startStr);
+                const daysMob = parseInt($('#dur_mob').value) || 0;
+                const daysExec = parseInt($('#dur_exec').value) || 0;
+                const daysDemob = parseInt($('#dur_demob').value) || 0;
+                
+                // Soma total de dias (subtrai 1 pois se começa hoje e dura 1 dia, termina hoje)
+                const totalDays = daysMob + daysExec + daysDemob;
+                
+                // Clona a data para não alterar a original
+                const end = new Date(start);
+                end.setDate(end.getDate() + (totalDays > 0 ? totalDays - 1 : 0)); // Ajuste matemático de datas
+
+                endDateInput.value = end.toISOString().split('T')[0];
+            }
+
+            // Attach listeners
+            dateInputs.forEach(input => input.addEventListener('change', calculateEndDate));
+            dateInputs.forEach(input => input.addEventListener('input', calculateEndDate)); // Para atualizar enquanto digita
+            // Roda uma vez para inicializar
+            calculateEndDate();
         }
 
         if (state.view === 'DOCUMENT') {
@@ -665,9 +705,149 @@
                 }
             }
             checkAndInitMap();
+            // Call initGanttChart here
+            initGanttChart(state.plan); 
         }
     }
 
+/**
+ * Inicializa o Gráfico de Gantt Customizado (Vanilla JS / CSS Puro).
+ * SUBSTITUIÇÃO TOTAL: Não depende de bibliotecas externas (Frappe/JSGantt).
+ */
+function initGanttChart(plan) {
+    const container = document.querySelector('#gantt-chart');
+    
+    // Fail-Fast: Se não tem container ou data, aborta sem erro.
+    if (!container) return;
+
+    // --- 1. LÓGICA DE DATAS ---
+    const addDays = (dStr, days) => {
+        if (!dStr) return new Date().toISOString().split('T')[0];
+        const d = new Date(dStr);
+        d.setDate(d.getDate() + days);
+        return d.toISOString().split('T')[0];
+    };
+
+    // Recupera dados do plano
+    const startBase = plan.schedule.startDate.split('T')[0];
+    const durMob = plan.durations?.mobilization || 0;
+    const durExec = plan.durations?.execution || 1;
+    const durDemob = plan.durations?.demobilization || 0;
+
+    // Calcula Início e Fim Lógico de cada fase
+    // O fim é visualmente inclusivo para o cálculo de largura
+    const startMob = startBase;
+    const endMob = addDays(startMob, Math.max(0, durMob - 1));
+    
+    // Execução começa após Mob (ou no início se Mob=0)
+    const startExec = durMob > 0 ? addDays(endMob, 1) : startBase;
+    const endExec = addDays(startExec, Math.max(0, durExec - 1));
+    
+    const startDemob = durDemob > 0 ? addDays(endExec, 1) : endExec;
+    const endDemob = addDays(startDemob, Math.max(0, durDemob - 1));
+
+    // Define o intervalo total do calendário (Margem de 1 dia antes e 2 depois para respiro)
+    const calendarStart = addDays(startBase, -1);
+    const finalDate = durDemob > 0 ? endDemob : endExec;
+    const calendarEnd = addDays(finalDate, 2);
+
+    // --- 2. GERAR HTML (HEADER - DIAS) ---
+    let headerHTML = '';
+    let curr = calendarStart;
+    const maxLoops = 60; // Trava de segurança para evitar loops infinitos
+    let loopCount = 0;
+    
+    // Loop para criar as colunas de dias
+    while (curr <= calendarEnd && loopCount < maxLoops) {
+        const dObj = new Date(curr);
+        // Formata dia da semana (S, T, Q...) e dia numérico (01, 02...)
+        const dayName = dObj.toLocaleDateString('pt-BR', { weekday: 'narrow' }).toUpperCase(); 
+        const dayNum = String(dObj.getDate()).padStart(2, '0');
+        
+        // data-date é a chave para o posicionamento
+        headerHTML += `<li data-date="${curr}">
+            <div style="font-size:0.7em; opacity:0.7">${dayName}</div>
+            <div>${dayNum}</div>
+        </li>`;
+        
+        curr = addDays(curr, 1);
+        loopCount++;
+    }
+
+    // --- 3. GERAR HTML (TASKS - BARRAS) ---
+    let tasksHTML = '';
+    let rowIndex = 0;
+    
+    // Helper para criar string da barra
+    const addTask = (label, start, end, colorVar) => {
+        const top = rowIndex * 45; // 45px de altura por linha (fixo no CSS)
+        rowIndex++;
+        return `<li data-start="${start}" data-end="${end}" 
+                    style="background-color: var(${colorVar}); top: ${top}px;">
+                    ${label}
+                </li>`;
+    };
+
+    if (durMob > 0) {
+        tasksHTML += addTask(`Mobilização (${durMob}d)`, startMob, endMob, '--color-mob');
+    }
+    tasksHTML += addTask(`Execução (${durExec}d)`, startExec, endExec, '--color-exec');
+    if (durDemob > 0) {
+        tasksHTML += addTask(`Desmobilização (${durDemob}d)`, startDemob, endDemob, '--color-demob');
+    }
+
+    // --- 4. RENDERIZAÇÃO E CÁLCULO DE GEOMETRIA ---
+    // Limpa o container e injeta a estrutura nova
+    container.innerHTML = `
+        <div class="chart-wrapper">
+            <ul class="chart-values">${headerHTML}</ul>
+            <ul class="chart-bars">${tasksHTML}</ul>
+        </div>
+    `;
+
+    // Timeout: Espera o navegador desenhar o HTML (Paint) para calcular as larguras
+    setTimeout(() => {
+        const wrapper = container.querySelector('.chart-wrapper');
+        if (!wrapper) return;
+
+        const headerItems = Array.from(wrapper.querySelectorAll('.chart-values li'));
+        const bars = wrapper.querySelectorAll('.chart-bars li');
+
+        // Mapeia: Data String -> Elemento DOM (para busca O(1))
+        const domMap = {};
+        headerItems.forEach(el => domMap[el.dataset.date] = el);
+
+        bars.forEach(bar => {
+            const sDate = bar.dataset.start;
+            const eDate = bar.dataset.end;
+            
+            const elStart = domMap[sDate];
+            const elEnd = domMap[eDate];
+
+            if (elStart && elEnd) {
+                // Lógica de Posicionamento Absoluto
+                const leftPos = elStart.offsetLeft;
+                
+                // A largura da barra vai do início do dia 'start' até o fim do dia 'end'
+                // offsetLeft do fim + offsetWidth do fim = Borda direita do último dia
+                const rightEdge = elEnd.offsetLeft + elEnd.offsetWidth;
+                const widthVal = rightEdge - leftPos;
+
+                // Aplica coordenadas finais
+                bar.style.left = `${leftPos}px`;
+                bar.style.width = `${widthVal}px`;
+                bar.style.opacity = '1'; // Ativa transição CSS
+            }
+        });
+    }, 100);
+}
+
+// Redesenha ao redimensionar a tela para manter alinhamento
+window.addEventListener('resize', () => {
+    if (state.plan && state.view === 'DOCUMENT') {
+        initGanttChart(state.plan);
+    }
+});
     function render() {
         if (!state.container) return;
         state.container.innerHTML = '';

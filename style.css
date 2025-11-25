@@ -14,3 +14,107 @@
 @import url('css/modules/02_feature.map.css');
 @import url('css/modules/02_feature.planning.css');
 @import url('css/modules/03_feature.clinometer.css');
+
+/* --- ARBORIA CUSTOM GANTT (Vanilla) --- */
+
+:root {
+  --chart-divider: #e0e0e0;
+  --chart-text: #37474f;
+  --color-mob: #546e7a;   /* Azul Acinzentado (Mobilização) */
+  --color-exec: #00897b;  /* Teal Principal (Execução) */
+  --color-demob: #8d6e63; /* Marrom Terra (Desmobilização) */
+  --color-white: #ffffff;
+}
+
+.chart-wrapper {
+  position: relative;
+  width: 100%;
+  margin: 20px 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: var(--color-white);
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #eee;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  overflow-x: auto; /* Scroll apenas se necessário em mobile */
+}
+
+/* CABEÇALHO (DIAS) */
+.chart-wrapper .chart-values {
+  display: flex;
+  list-style: none;
+  margin: 0 0 20px 0;
+  padding: 0;
+  border-bottom: 2px solid var(--chart-divider);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--chart-text);
+}
+
+.chart-wrapper .chart-values li {
+  flex: 1; /* Distribui espaço igualmente */
+  min-width: 40px;
+  text-align: center;
+  padding-bottom: 10px;
+  position: relative;
+}
+
+/* Linhas de Grade Verticais */
+.chart-wrapper .chart-values li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 100%;
+  height: 200px; /* Altura suficiente para cobrir as barras */
+  border-right: 1px dashed #eee;
+  z-index: 0;
+}
+
+/* BARRAS (TAREFAS) */
+.chart-wrapper .chart-bars {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    height: 150px; /* Altura fixa para a área das barras */
+    z-index: 1;
+}
+
+.chart-wrapper .chart-bars li {
+  position: absolute; /* Posicionamento via JS */
+  height: 32px;
+  line-height: 32px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: bold;
+  border-radius: 4px;
+  padding: 0 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0; /* Começa invisível para animação */
+  transition: opacity 0.6s ease-out, width 0.4s ease;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+  cursor: default;
+}
+
+/* Ajustes para Impressão/PDF */
+@media print {
+    .chart-wrapper {
+        border: none;
+        box-shadow: none;
+        overflow: visible !important;
+        width: 100% !important;
+    }
+    
+    .chart-values li {
+        color: #000;
+        font-size: 10px;
+    }
+    .chart-bars li {
+        box-shadow: none;
+        border: 1px solid #ccc; /* fallback p/ preto e branco */
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+}
