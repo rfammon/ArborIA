@@ -119,6 +119,11 @@
                     <span class="tree-card-details-item">Alt: <strong>${tree.height}m</strong></span>
                     <span class="tree-card-details-item">${riskFactorsCount} Fatores de Risco</span>
                 </div>
+                <div class="tree-card-actions">
+                    <button type="button" class="btn btn-sm btn-icon-only btn-plan-intervencion" data-id="${tree.id}" title="Plano de Intervenção">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clipboard"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                    </button>
+                </div>
             </div>
         </div>`;
     }).join('');
@@ -591,7 +596,15 @@
     function bindEvents() {
         if (state.view === 'LIST') {
             $$('.tree-card').forEach(card => {
-                card.addEventListener('click', () => {
+                card.addEventListener('click', (e) => {
+                    // Check if the click originated from the "Plano de Intervenção" button
+                    if (e.target.closest('.btn-plan-intervencion')) {
+                        const id = e.target.closest('.btn-plan-intervencion').dataset.id;
+                        if (state.config.onNavigateToPlanningForm) {
+                            state.config.onNavigateToPlanningForm(parseInt(id, 10));
+                        }
+                        return; // Prevent normal card click behavior
+                    }
                     const id = parseInt(card.dataset.id, 10);
                     state.selectedTree = state.config.trees.find(t => t.id === id);
                     state.view = 'FORM';
@@ -671,7 +684,7 @@
     // --- API PÚBLICA ---
     window.ArborIA = window.ArborIA || {};
     window.ArborIA.PlanningModule = {
-        mount: (containerId, config) => {
+        mount: (containerId, config, initialTreeId = null) => {
             const el = document.getElementById(containerId);
             if (!el) {
                 console.error(`ArborIA: Container #${containerId} not found.`);
@@ -679,7 +692,18 @@
             }
             state.container = el;
             state.config = config;
-            state.view = 'LIST';
+            
+            if (initialTreeId) {
+                state.selectedTree = state.config.trees.find(t => t.id === initialTreeId);
+                if (state.selectedTree) {
+                    state.view = 'FORM';
+                } else {
+                    console.warn(`ArborIA: Tree with ID ${initialTreeId} not found in config. Falling back to LIST view.`);
+                    state.view = 'LIST';
+                }
+            } else {
+                state.view = 'LIST';
+            }
             render();
             console.log("ArborIA Planning Module (Vanilla) mounted.");
         },

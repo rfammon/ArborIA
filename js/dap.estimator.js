@@ -174,7 +174,6 @@ export function initDAPEstimatorListeners() {
 
 function calculateDAP() {
     let delta = Math.abs(angleRightCapture - angleLeftCapture);
-    if (delta > 180) delta = 360 - delta;
 
     if (Math.abs(delta) < 0.1) {
         showToast("Erro: Ângulo muito pequeno.", "warning");
@@ -182,7 +181,7 @@ function calculateDAP() {
     }
 
     const radDelta = delta * (Math.PI / 180);
-    const widthMetros = distance * Math.tan(radDelta);
+    const widthMetros = 2 * distance * Math.tan(radDelta / 2);
     const dapCentimetros = widthMetros * 100;
 
     document.getElementById('dap-estimated-result').textContent = dapCentimetros.toFixed(1) + " cm";

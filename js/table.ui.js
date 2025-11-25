@@ -18,13 +18,17 @@ export const TableUI = {
     _containerClickHandler: null, // Armazena o handler de clique para remoção
     _currentFilterHandler: null, // Armazena o handler do filtro para remoção
     
+    // Callbacks from main.js
+    onNavigateToPlanningForm: null,
+
     // [MUDANÇA] isCompactMode agora é apenas para desktop. Mobile terá sua própria renderização.
     isCompactMode: window.innerWidth <= 768,
 
-    render() {
+    render(callbacks = {}) {
         this.container = document.getElementById('summary-table-container');
         this.badgeElement = document.getElementById('summary-badge');
         this.filterInput = document.getElementById('table-filter-input'); // Obtém o input de filtro
+        this.onNavigateToPlanningForm = callbacks.onNavigateToPlanningForm; // Store the callback
 
         if (!this.container || !this.badgeElement || !this.filterInput) return;
 
@@ -128,6 +132,9 @@ export const TableUI = {
                         <div style="display: flex; gap: 5px; justify-content: center;">
                             <button class="action-btn-icon btn-map" data-id="${tree.id}" title="Mapa" 
                                 style="background:#e3f2fd; color:#0277BD; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">📍</button>
+                            
+                            <button class="action-btn-icon btn-plan-intervencion" data-id="${tree.id}" title="Plano de Intervenção" 
+                                style="background:#d7f3e0; color:#4CAF50; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">📋</button>
                             
                             ${tree.hasPhoto ? `
                             <button class="action-btn-icon btn-photo" data-id="${tree.id}" title="Foto" 
@@ -242,18 +249,21 @@ export const TableUI = {
                 const id = parseInt(actionBtn.dataset.id, 10);
                 if (isNaN(id)) return;
 
-                if (actionBtn.classList.contains('btn-map')) {
-                    features.handleZoomToPoint(id);
-                } else if (actionBtn.classList.contains('btn-edit')) {
-                    features.handleEditTree(id);
-                } else if (actionBtn.classList.contains('btn-delete')) {
-                    showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${id}?`, () => features.handleDeleteTree(id));
-                } else if (actionBtn.classList.contains('btn-photo')) {
-                    getImageFromDB(id, blob => {
-                        if (blob) openPhotoViewer(URL.createObjectURL(blob));
-                    });
-                }
-                return;
+                            if (actionBtn.classList.contains('btn-map')) {
+                                features.handleZoomToPoint(id);
+                            } else if (actionBtn.classList.contains('btn-edit')) {
+                                features.handleEditTree(id);
+                            } else if (actionBtn.classList.contains('btn-delete')) {
+                                showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${id}?`, () => features.handleDeleteTree(id));
+                            } else if (actionBtn.classList.contains('btn-photo')) {
+                                getImageFromDB(id, blob => {
+                                    if (blob) openPhotoViewer(URL.createObjectURL(blob));
+                                });
+                            } else if (actionBtn.classList.contains('btn-plan-intervencion')) {
+                                if (this.onNavigateToPlanningForm) {
+                                    this.onNavigateToPlanningForm(id);
+                                }
+                            }                return;
             }
 
             // Clique na lista de mobile
@@ -328,6 +338,15 @@ export const TableUI = {
                 text: '📍 Mapa',
                 className: 'export-btn',
                 onClick: () => features.handleZoomToPoint(tree.id)
+            },
+            {
+                text: '📄 Plano',
+                className: 'action-btn',
+                onClick: () => {
+                    if (this.onNavigateToPlanningForm) {
+                        this.onNavigateToPlanningForm(tree.id);
+                    }
+                }
             },
             {
                 text: '✏️ Editar',

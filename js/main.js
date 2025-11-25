@@ -23,7 +23,7 @@ const detailView = document.getElementById('detalhe-view');
 const topNavContainer = document.querySelector('.topicos-container');
 
 // === 2. LÓGICA DE NAVEGAÇÃO (CORE) ===
-function handleMainNavigation(event) {
+function handleMainNavigation(event, treeId = null) {
   const targetButton = event.target.closest('.topico-btn');
   if (!targetButton) return;
 
@@ -33,7 +33,9 @@ function handleMainNavigation(event) {
   // 1. CICLO DE VIDA DE SENSORES E MÓDULOS
   if (targetId !== 'clinometro-view') clinometer.stopClinometer();
   if (targetId !== 'dap-estimator-view') dapEstimator.stopDAPEstimator();
-  if (targetId !== 'plano-intervencao-view') {
+  if (targetId === 'plano-intervencao-view') {
+    openPlanningModule(treeId);
+  } else {
     if (window.ArborIA && window.ArborIA.PlanningModule) {
         window.ArborIA.PlanningModule.unmount();
     }
@@ -58,9 +60,6 @@ function handleMainNavigation(event) {
 
   } else if (targetId === 'dap-estimator-view') {
     dapEstimator.startDAPEstimator();
-
-  } else if (targetId === 'plano-intervencao-view') {
-    openPlanningModule();
   
   } else {
     // --- MANUAL TÉCNICO ---
@@ -73,8 +72,17 @@ function handleMainNavigation(event) {
   }
 }
 
-async function openPlanningModule() {
-    const trees = state.registeredTrees.map(tree => ({
+async function openPlanningModule(treeId = null) {
+    let treesToProcess = state.registeredTrees;
+    if (treeId) {
+        treesToProcess = state.registeredTrees.filter(tree => tree.id === treeId);
+        if (treesToProcess.length === 0) {
+            utils.showToast(`Árvore com ID ${treeId} não encontrada.`, "error");
+            return;
+        }
+    }
+
+    const trees = treesToProcess.map(tree => ({
         ...tree,
         species: tree.especie,
         location: tree.local,
@@ -118,8 +126,11 @@ async function openPlanningModule() {
             onCancel: () => {
                 const calcViewButton = document.querySelector('.topico-btn[data-target="calculadora-view"]');
                 if (calcViewButton) calcViewButton.click();
+            },
+            onNavigateToPlanningForm: (treeId) => {
+                handleMainNavigation({ target: { closest: () => ({ dataset: { target: 'plano-intervencao-view' } }) } }, treeId);
             }
-        });
+        }, treeId);
     }
 }
 
@@ -391,7 +402,11 @@ async function initApp() {
     // Ele é iniciado apenas pelo clique do botão #open-checklist-btn
 
     // 5. Renderiza Tabela Inicial
-    TableUI.render();
+    TableUI.render({
+        onNavigateToPlanningForm: (treeId) => {
+            handleMainNavigation({ target: { closest: () => ({ dataset: { target: 'plano-intervencao-view' } }) } }, treeId);
+        }
+    });
 
     // 6. Listener Global de Resize (Mapa)
     window.addEventListener('resize', () => {
