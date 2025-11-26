@@ -7,5 +7,5 @@
  * elementos HTML que ainda não existem.
  */
 document.addEventListener('DOMContentLoaded', () => {
-    import('./main.js?v=2.0').catch(err => console.error("Erro ao carregar o módulo principal:", err));
+    import('./main.js?v=2.0').catch(err => {});
 });

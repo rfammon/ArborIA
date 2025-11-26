@@ -14,6 +14,7 @@ import { manualContent } from './content.js';
 import * as utils from './utils.js';
 import * as clinometer from './clinometer.js'; 
 import * as dapEstimator from './dap.estimator.js';
+import { PlanningModule } from './arboria-module.js';
 
 // Tenta importar o gerador de PDF dinamicamente
 let pdfGenerator = null;
@@ -36,9 +37,7 @@ function handleMainNavigation(event, treeId = null) {
   if (targetId === 'plano-intervencao-view') {
     openPlanningModule(treeId);
   } else {
-    if (window.ArborIA && window.ArborIA.PlanningModule) {
-        window.ArborIA.PlanningModule.unmount();
-    }
+    PlanningModule.unmount();
   }
 
   // 2. DELEGAÇÃO VISUAL (SPA)
@@ -73,15 +72,22 @@ function handleMainNavigation(event, treeId = null) {
 }
 
 async function openPlanningModule(treeId = null) {
+    console.log("🦫 Beaver Log: Iniciando módulo de planejamento...");
+    
+    // 1. Verifica estado
     let treesToProcess = state.registeredTrees;
+    console.log("🦫 Beaver Log: Árvores no State:", treesToProcess); 
+
+    // 2. Filtra se houver ID
     if (treeId) {
         treesToProcess = state.registeredTrees.filter(tree => tree.id === treeId);
         if (treesToProcess.length === 0) {
-            utils.showToast(`Árvore com ID ${treeId} não encontrada.`, "error");
+            utils.showToast(`Árvore ID ${treeId} não encontrada.`, "error");
             return;
         }
     }
 
+    // 3. Mapeia dados para o formato do módulo
     const trees = treesToProcess.map(tree => ({
         ...tree,
         species: tree.especie,
@@ -92,46 +98,46 @@ async function openPlanningModule(treeId = null) {
         riskScore: tree.pontuacao,
         date: tree.data,
         dap: tree.dap,
-        height: tree.altura,
-        coordinates: (tree.coordX && tree.coordY && tree.coordX !== 'N/A' && tree.coordY !== 'N/A') ? { lat: parseFloat(tree.coordY.replace(',', '.')), lng: parseFloat(tree.coordX.replace(',', '.')) } : null
+        height: tree.altura
     }));
 
+    // 4. Carrega imagens (Assíncrono)
     const treesWithImages = await Promise.all(trees.map(async (tree) => {
         if (tree.hasPhoto) {
             return new Promise((resolve) => {
                 getImageFromDB(tree.id, (blob) => {
-                    if (blob) {
-                        resolve({ ...tree, image: URL.createObjectURL(blob) });
-                    } else {
-                        resolve({ ...tree, image: null });
-                    }
+                    resolve({ ...tree, image: blob ? URL.createObjectURL(blob) : null });
                 });
             });
         }
         return tree;
     }));
 
-    const currentUser = document.getElementById('risk-avaliador').value || 'Usuário';
+    console.log("🦫 Beaver Log: Dados finais enviados:", treesWithImages);
 
-    if (window.ArborIA && window.ArborIA.PlanningModule) {
-        window.ArborIA.PlanningModule.mount('planning-module-root', {
-            trees: treesWithImages,
-            currentUser: currentUser,
-            onSavePlan: (plan) => {
-                console.log("Plano recebido pelo App Mãe:", plan);
-                utils.showToast("Plano Salvo com Sucesso!", "success");
-                const calcViewButton = document.querySelector('.topico-btn[data-target="calculadora-view"]');
-                if (calcViewButton) calcViewButton.click();
-            },
-            onCancel: () => {
-                const calcViewButton = document.querySelector('.topico-btn[data-target="calculadora-view"]');
-                if (calcViewButton) calcViewButton.click();
-            },
-            onNavigateToPlanningForm: (treeId) => {
-                handleMainNavigation({ target: { closest: () => ({ dataset: { target: 'plano-intervencao-view' } }) } }, treeId);
-            }
-        }, treeId);
+    // 5. Verificação Crítica do DOM
+    const container = document.getElementById('planning-module-root');
+    if (!container) {
+        console.error("🦫 ERRO CRÍTICO: Container 'planning-module-root' não encontrado no DOM!");
+        utils.showToast("Erro interno: Elemento de visualização não encontrado.", "error");
+        return;
     }
+
+    // 6. Montagem
+    PlanningModule.mount('planning-module-root', {
+        trees: treesWithImages,
+        currentUser: document.getElementById('risk-avaliador')?.value || 'Usuário',
+        onSavePlan: (plan) => {
+            utils.showToast("Plano Salvo!", "success");
+            document.querySelector('.topico-btn[data-target="calculadora-view"]')?.click();
+        },
+        onCancel: () => {
+            document.querySelector('.topico-btn[data-target="calculadora-view"]')?.click();
+        },
+        onNavigateToPlanningForm: (tId) => {
+            handleMainNavigation({ target: { closest: () => ({ dataset: { target: 'plano-intervencao-view' } }) } }, tId);
+        }
+    }, treeId);
 }
 
 
@@ -150,7 +156,6 @@ function loadManualContent(topicId) {
 
 // === 3. CONEXÃO DOS BOTÕES DE AÇÃO ===
 function setupActionButtons() {
-    console.log("🔌 Conectando botões de ação...");
 
     // --- FORMULÁRIO DE RISCO ---
     const riskForm = document.getElementById('risk-calculator-form');
@@ -177,19 +182,16 @@ function setupActionButtons() {
     const openFlashcardBtn = document.getElementById('open-flashcard-btn');
     if (openFlashcardBtn) {
       openFlashcardBtn.addEventListener('click', () => {
-        console.log("openFlashcardBtn clicked!");
         const checklistView = document.getElementById('checklist-flashcard-view');
         if (checklistView) {
-          console.log("checklist-flashcard-view found, adding active class.");
           checklistView.classList.add('active'); // Use classList.add
           if (typeof features.initChecklistFlashCard === 'function') {
-            console.log("Calling features.initChecklistFlashCard()");
             features.initChecklistFlashCard();
           } else {
-            console.error("features.initChecklistFlashCard is not a function.");
+            
           }
         } else {
-          console.error("checklist-flashcard-view not found.");
+          
         }
       });
     }
@@ -262,12 +264,6 @@ function setupActionButtons() {
     const filterInput = document.getElementById('table-filter-input');
     if(filterInput) filterInput.addEventListener('keyup', features.handleTableFilter);
 
-    // --- CHAT & CONTATO ---
-    const chatSendBtn = document.getElementById('chat-send-btn');
-    const chatInput = document.getElementById('chat-input');
-    if (chatSendBtn) chatSendBtn.addEventListener('click', features.handleChatSend);
-    if (chatInput) chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') features.handleChatSend(); });
-
     // --- LÓGICA DE UPLOAD E PREVIEW DE FOTO ---
     const photoInput = document.getElementById('tree-photo-input');
     const removePhotoBtn = document.getElementById('remove-photo-btn');
@@ -291,7 +287,7 @@ function setupActionButtons() {
                 if(removePhotoBtn) removePhotoBtn.style.display = 'block';
 
             } catch (error) {
-                console.error('Erro ao otimizar imagem:', error);
+                
                 utils.showToast('Erro ao processar a foto.', 'error');
             }
         });
@@ -337,17 +333,14 @@ function setupWelcomeScreen() {
     if (!welcomeScreen || !closeBtn) return;
 
     const closeWelcome = () => {
-        console.log("Welcome screen close button clicked.");
         welcomeScreen.classList.remove('active');
         setTimeout(() => {
             welcomeScreen.style.display = 'none';
-            console.log("Welcome screen hidden.");
             localStorage.setItem('arboriaWelcomeShown', 'true');
         }, 300);
     };
 
     closeBtn.addEventListener('click', closeWelcome);
-    console.log("Welcome screen close button event listener attached.");
 
     if (!localStorage.getItem('arboriaWelcomeShown')) {
         setTimeout(() => welcomeScreen.classList.add('active'), 500);
@@ -361,17 +354,16 @@ function initFormDefaults() {
       
       const avaliadorInput = document.getElementById('risk-avaliador');
       if (avaliadorInput && state.lastEvaluatorName) avaliadorInput.value = state.lastEvaluatorName;
-    } catch(e) { console.warn(e); }
+    } catch(e) { }
 }
 
 // === 5. INICIALIZAÇÃO PRINCIPAL ===
 async function initApp() {
   try {
-    console.log("🚀 Inicializando ArborIA 2.0...");
     try {
         pdfGenerator = await import('./pdf.generator.js');
     } catch (e) {
-        console.warn("Módulo de PDF não encontrado.", e);
+        
     }
 
     // 1. Inicializa UI Base
@@ -425,10 +417,8 @@ async function initApp() {
       UI.navigateTo('calculadora-view');
     }
     
-    console.log("✅ ArborIA 2.0 Pronto.");
-
   } catch (error) {
-    console.error("❌ Falha crítica ao inicializar:", error);
+    
     try { UI.showToast("Erro ao carregar aplicação.", "error"); } catch(e){}
   }
 }
@@ -437,7 +427,7 @@ async function initApp() {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js')
-      .catch((err) => console.log('SW Falhou:', err));
+      .catch((err) => {});
   });
 }
 

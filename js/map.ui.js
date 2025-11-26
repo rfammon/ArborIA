@@ -8,10 +8,6 @@ import * as features from './features.js';
 import { getImageFromDB } from './database.js';
 import { showToast } from './utils.js';
 
-const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-let currentInfoBoxZoom = 0;
-const ZOOM_LEVELS = [280, 400, 550];
-
 let userLocationMarker = null; 
 let userAccuracyCircle = null;
 let locationWatchId = null;
@@ -237,15 +233,12 @@ export function zoomToAllPoints() {
 
 export function toggleMapLayer() {
     const map = state.mapInstance;
-    const btn = document.getElementById('toggle-map-layer-btn');
     if (!map || !osmLayer || !satelliteLayer) return;
 
     if (currentLayerType === 'osm') {
         map.removeLayer(osmLayer); map.addLayer(satelliteLayer); currentLayerType = 'satellite';
-        if(btn) { btn.innerHTML = '🗺️ Ruas'; btn.style.borderColor = '#0277BD'; btn.style.color = '#0277BD'; }
     } else {
         map.removeLayer(satelliteLayer); map.addLayer(osmLayer); currentLayerType = 'osm';
-        if(btn) { btn.innerHTML = '🌎 Satélite'; btn.style.borderColor = '#2E7D32'; btn.style.color = '#2E7D32'; } 
     }
 }
 
@@ -253,12 +246,10 @@ export function toggleMapLayer() {
 export function setupMapListeners() {
   const mapLegend = document.getElementById('map-legend-filter');
   const zoomBtn = document.getElementById('zoom-to-extent-btn');
-  const layerBtn = document.getElementById('toggle-map-layer-btn');
   const locBtn = document.getElementById('show-my-location-btn');
   
   if (mapLegend) mapLegend.addEventListener('change', handleMapFilterChange);
   if (zoomBtn) zoomBtn.addEventListener('click', zoomToAllPoints);
-  if (layerBtn) layerBtn.addEventListener('click', toggleMapLayer);
   if (locBtn) locBtn.addEventListener('click', toggleUserLocation);
 }
 
@@ -277,8 +268,6 @@ export function setupMap() {
     
     satelliteLayer.addTo(map);
     currentLayerType = 'satellite';
-    const btn = document.getElementById('toggle-map-layer-btn');
-    if(btn) { btn.innerHTML = '🗺️ Ruas'; btn.style.borderColor = '#0277BD'; btn.style.color = '#0277BD'; }
 
     updateMapData(true); // Carga inicial de dados e ajuste de zoom
 }

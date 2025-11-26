@@ -144,7 +144,7 @@ export function convertLatLonToUtm(lat, lon) {
     const lonNum = parseFloat(lon);
 
     if (isNaN(latNum) || isNaN(lonNum)) {
-        console.error("GPS: Coordenadas inválidas.");
+        
         return null;
     }
 
@@ -152,7 +152,7 @@ export function convertLatLonToUtm(lat, lon) {
     const proj4Lib = (typeof window !== 'undefined' && window.proj4) || (typeof proj4 !== 'undefined' && proj4) || null;
 
     if (!proj4Lib) {
-        console.error("GPS: Biblioteca Proj4 não encontrada.");
+        
         showToast("Erro: Biblioteca GPS ausente.", "error");
         return null;
     }
@@ -183,7 +183,7 @@ export function convertLatLonToUtm(lat, lon) {
         };
 
     } catch (e) {
-        console.error("GPS: Erro na conversão Proj4:", e);
+        
         return null;
     }
 }

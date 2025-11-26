@@ -8,7 +8,7 @@ import * as utils from './utils.js'; // Assuming utils.js has necessary helper f
 function convertToLatLon(tree) {
     if (tree.coordX === 'N/A' || tree.coordY === 'N/A') return null;
     if (typeof window.proj4 === 'undefined') {
-        console.warn("Proj4.js not loaded. Cannot convert UTM coordinates.");
+        
         return null;
     }
 
@@ -25,7 +25,7 @@ function convertToLatLon(tree) {
         const ll = window.proj4(def, "EPSG:4326", [e, n]);
         return [ll[1], ll[0]]; // Leaflet uses [latitude, longitude]
     } catch (e) {
-        console.error("Error converting UTM to Lat/Lon:", e);
+        
         return null;
     }
 }
@@ -36,7 +36,7 @@ let reportMap = null; // To hold the Leaflet map instance
 async function initializeReportMap(trees) {
     const mapContainer = document.getElementById('report-map-container');
     if (!mapContainer) {
-        console.warn('Map container not found for report.');
+        
         return;
     }
 
@@ -90,12 +90,12 @@ async function initializeReportMap(trees) {
 
 // Function to generate and populate the HTML report
 async function generateReportHTML() {
-    console.log('Generating report HTML...');
+    
     const registeredTrees = state.getRegisteredTrees();
-    console.log('Registered trees:', registeredTrees);
+    
     const treeCardsContainer = document.getElementById('tree-cards-container');
     const noTreesMessage = document.getElementById('no-trees-message');
-    console.log('noTreesMessage element:', noTreesMessage);
+    
     const reportMapSection = document.querySelector('.report-map-section');
 
 
@@ -114,7 +114,7 @@ async function generateReportHTML() {
     } else {
         noTreesMessage.style.display = 'none';
         if (reportMapSection) reportMapSection.style.display = 'block'; // Show map if trees are present
-        console.log(`Found ${registeredTrees.length} trees.`);
+        
     }
 
     // Populate summary statistics
@@ -160,7 +160,7 @@ async function generateReportHTML() {
         `;
 
         if (tree.hasPhoto) {
-            console.log(`Tree ${tree.id} has a photo. Attempting to retrieve from DB.`);
+            
             const blob = await new Promise(resolve => db.getImageFromDB(tree.id, resolve));
             if (blob) {
                 const imageUrl = URL.createObjectURL(blob);
@@ -171,9 +171,9 @@ async function generateReportHTML() {
                         <div class="risk-badge ${getRiskBadgeClass(tree.risco)}">${tree.risco.toUpperCase()}</div>
                     </div>
                 `;
-                console.log(`Photo for tree ${tree.id} retrieved and URL created.`);
+                
             } else {
-                console.warn(`Photo for tree ${tree.id} not found in DB.`);
+                
             }
         }
 
@@ -203,7 +203,7 @@ async function generateReportHTML() {
             </div>
         `;
         treeCardsContainer.appendChild(treeCard);
-        console.log(`Tree card for ID ${tree.id} appended.`);
+        
     }
 }
 
@@ -294,7 +294,7 @@ async function exportReportToPDF() {
         // Restore hidden elements
         elementsToHide.forEach(el => el.style.display = '');
     }).catch(error => {
-        console.error('Erro ao gerar PDF:', error);
+        
         utils.showToast('Erro ao gerar PDF. Tente novamente.', 'error');
         // Restore hidden elements in case of error
         elementsToHide.forEach(el => el.style.display = '');
@@ -303,17 +303,17 @@ async function exportReportToPDF() {
 
 // Initialize the report generation when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOMContentLoaded: Initializing report...');
+    
     
     // Make sure the database is initialized before trying to get images
     await db.initImageDB(); // Ensure DB is ready
     
     // Log localStorage content for debugging
     const storageKey = 'manualPodaData'; // Assuming this is the correct key from state.js
-    console.log('Raw localStorage data (key:', storageKey, '):', localStorage.getItem(storageKey));
+    
     
     await state.loadDataFromStorage(); // Load tree data
-    console.log('Data and DB initialized. state.registeredTrees:', state.getRegisteredTrees());
+    
 
     // Initial render of the report
     await generateReportHTML();
@@ -322,8 +322,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const generatePdfBtn = document.getElementById('generate-pdf-btn');
     if (generatePdfBtn) {
         generatePdfBtn.addEventListener('click', exportReportToPDF);
-        console.log('Generate PDF button listener attached.');
+        
     } else {
-        console.warn('Generate PDF button not found in report.html.');
+        
     }
 });

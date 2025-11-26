@@ -30,8 +30,6 @@ export const UI = {
         
         // Ajuste inicial de layout
         this.handleResize();
-        
-        console.log("✅ UI Controller Initialized");
     },
 
     /**

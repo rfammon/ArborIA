@@ -74,7 +74,7 @@ export function openPhotoViewer(imageSrc) {
     const actionModal = document.getElementById('action-modal'); // Get reference to action-modal
     
     if (!dialog || !content) {
-        console.warn("Elementos do Photo Viewer não encontrados.");
+        
         return;
     }
 

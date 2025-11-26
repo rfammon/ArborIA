@@ -1,18 +1,12 @@
 // js/pdf.generator.js (v80.0 - Rebranding ArborIA Final)
 
 import * as state from './state.js';
+import { getActiveTab } from './state.js';
 import { getImageFromDB } from './database.js';
 import { showToast } from './utils.js';
+import { UI } from './ui.js'; 
 import { prepareMapForScreenshot, initializeMap, currentLayerType, toggleMapLayer } from './map.ui.js'; 
-
-// Lista de Riscos
-const RISK_LABELS = [
-    "1. Galhos Mortos > 5cm", "2. Rachaduras/Fendas", "3. Sinais de Apodrecimento",
-    "4. Casca Inclusa (União em V)", "5. Galhos Cruzados", "6. Copa Assimétrica",
-    "7. Inclinação Anormal", "8. Próxima a Vias Públicas", "9. Risco de Queda sobre Alvos",
-    "10. Interferência em Redes", "11. Espécie com Histórico de Falhas", "12. Poda Drástica/Brotação",
-    "13. Calçadas Rachadas", "14. Perda de Raízes", "15. Compactação/Asfixia", "16. Apodrecimento Raízes"
-];
+import { RISK_LABELS } from './constants.js';
 
 const blobToDataURL = (blob) => {
     return new Promise((resolve, reject) => {
@@ -49,28 +43,15 @@ export async function generatePDF() {
 
     // === 1. CAPTURA DO MAPA ===
     let mapImageParams = null;
-    const mapTabContent = document.getElementById('tab-content-mapa');
-    const summaryTabContent = document.getElementById('tab-content-summary');
     const mapContainer = document.getElementById('map-container');
-    
-    const originalWidth = mapContainer.style.width;
-    const originalHeight = mapContainer.style.height;
-    let wasSummaryActive = false;
-    let originalLayerType = currentLayerType;
+    const originalActiveTab = getActiveTab();
 
     try {
-        if (mapTabContent && summaryTabContent) {
-            wasSummaryActive = summaryTabContent.classList.contains('active');
-            summaryTabContent.classList.remove('active');
-            summaryTabContent.style.display = 'none';
-            mapTabContent.classList.add('active');
-            mapTabContent.style.display = 'block'; 
-        }
-        
-        mapContainer.style.width = "800px";
-        mapContainer.style.height = "600px";
+        // Força a navegação para a visualização do mapa para a captura de tela
+        UI.navigateTo('calculadora-view');
+        document.querySelector('.sub-nav-btn[data-target="tab-content-mapa"]').click();
 
-        initializeMap();
+        // Prepara o mapa para a captura de tela
         await prepareMapForScreenshot();
         
         const canvas = await html2canvas(mapContainer, {
@@ -80,25 +61,13 @@ export async function generatePDF() {
         mapImageParams = { data: canvas.toDataURL('image/jpeg', 0.8), w: 180, h: 120 }; 
         
     } catch (e) {
-        console.error("Erro mapa:", e);
+        
     } finally {
-        mapContainer.style.width = originalWidth;
-        mapContainer.style.height = originalHeight;
-
-        if (originalLayerType !== 'satellite' && typeof toggleMapLayer === 'function') {
-             // Opcional: restaurar camada se necessário
-        }
-
-        if (mapTabContent && summaryTabContent) {
-            mapTabContent.style.display = ''; 
-            summaryTabContent.style.display = '';
-            if (wasSummaryActive) {
-                mapTabContent.classList.remove('active');
-                summaryTabContent.classList.add('active');
-            } else {
-                mapTabContent.classList.add('active');
-                summaryTabContent.classList.remove('active');
-            }
+        // Restaura a visualização original da UI
+        if (originalActiveTab) {
+            UI.navigateTo(originalActiveTab);
+            // Nota: A restauração da sub-aba (Resumo/Mapa) não é feita para simplificar,
+            // mas a navegação principal é restaurada corretamente.
         }
         if (state.mapInstance) state.mapInstance.invalidateSize();
     }
@@ -311,7 +280,7 @@ export async function generatePDF() {
                     doc.addImage(imgData, imgFormat, pageWidth - margin - 48, contentY - 4, 45, 45);
                     contentY += 50;
                 }
-            } catch (e) { console.warn(e); }
+            } catch (e) { }
         }
         doc.setFont(undefined, 'bold'); doc.setTextColor(0);
         doc.text("Observações:", rightColX, contentY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); contentY += 5;
@@ -447,7 +416,7 @@ export async function generateSingleTreePDF(tree) {
                 doc.addImage(imgData, imgFormat, imgX, cursorY, imgW, imgH);
             }
         } catch (e) {
-            console.warn("Erro ao incluir foto no PDF individual:", e);
+            
         }
     }
 

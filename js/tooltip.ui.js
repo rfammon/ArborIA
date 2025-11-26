@@ -45,7 +45,7 @@ export const TooltipUI = {
         
         // Garante que o card existe antes de tentar adicionar o botão de fechar
         if (!this.elements.card) {
-            console.warn("TooltipUI: Elementos do DOM não encontrados (tooltip-card).");
+            
             return; 
         }
 
@@ -137,7 +137,7 @@ export const TooltipUI = {
         document.body.addEventListener('focusout', this._handleTooltipEvent.bind(this));
         document.body.addEventListener('click', this._handleTooltipEvent.bind(this)); // Mantém click para compatibilidade touch
 
-        console.log("✅ TooltipUI Initialized");
+        
     },
 
     _handleTooltipEvent(e) {

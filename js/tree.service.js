@@ -328,7 +328,7 @@ export function init() {
                 if (removeBtn) removeBtn.style.display = 'block';
 
             } catch (error) {
-                console.error('Erro ao otimizar imagem:', error);
+                
                 utils.showToast('Erro ao processar a foto.', 'error');
                 state.setCurrentTreePhoto(null);
                 clearPhotoPreview();

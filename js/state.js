@@ -106,7 +106,7 @@ export function saveDataToStorage() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(registeredTrees));
   } catch (e) {
-    console.error("Erro ao salvar dados no localStorage:", e);
+    
   }
 }
 
@@ -120,7 +120,7 @@ export function loadDataFromStorage() {
       registeredTrees = JSON.parse(data);
     }
   } catch (e) {
-    console.error("Erro ao ler dados do localStorage:", e);
+    
     registeredTrees = [];
   }
 }
@@ -132,7 +132,7 @@ export function saveActiveTab(tabKey) {
   try {
     localStorage.setItem(ACTIVE_TAB_KEY, tabKey);
   } catch (e) {
-    console.error("Erro ao salvar aba ativa:", e);
+    
   }
 }
 
