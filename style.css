@@ -118,3 +118,81 @@
         -webkit-print-color-adjust: exact;
     }
 }
+
+/* --- LAYOUT COMPACTO PARA RELATÓRIO PDF --- */
+
+/* 1. Otimização de Listas (Grid de 2 Colunas) */
+.form-grid ul, .form-grid ol {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Divide em 2 colunas */
+    gap: 5px 15px; /* Espaçamento reduzido */
+    padding-left: 15px;
+    margin: 5px 0;
+}
+
+.form-grid li {
+    font-size: 0.85rem;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+/* 2. Compactação dos Boxes */
+.planning-box {
+    margin-bottom: 10px !important; /* Menos espaço entre caixas */
+    break-inside: avoid; /* Evita quebra interna */
+    page-break-inside: avoid;
+    border: 1px solid #ccc;
+}
+
+.planning-box-header {
+    padding: 6px 10px !important;
+    background: #f4f4f4;
+}
+.planning-box-header h3 {
+    font-size: 1rem !important;
+    margin: 0;
+}
+
+.planning-box > div:not(.planning-box-header) {
+    padding: 8px !important;
+}
+
+/* 3. Título do Relatório (Ocupar menos espaço) */
+#printable-area h1 {
+    font-size: 1.5rem !important;
+    margin-bottom: 5px !important;
+}
+#printable-area > div:first-child {
+    margin-bottom: 10px !important;
+    padding-bottom: 5px !important;
+}
+
+/* 4. Correção do Gantt no PDF */
+#gantt-chart {
+    border: none !important;
+    box-shadow: none !important;
+    margin-top: 5px;
+}
+.chart-wrapper {
+    padding: 5px !important;
+    border: 1px solid #ddd !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+
+/* --- CORREÇÃO: Visível na tela, Oculto na impressão --- */
+
+.risk-buttons-area {
+    display: flex !important; /* Força aparecer na tela */
+    gap: 10px;
+}
+
+/* Oculta apenas na mídia de impressão real */
+@media print {
+    .risk-buttons-area, 
+    #btn-back, 
+    #btn-download-pdf,
+    .btn {
+        display: none !important;
+    }
+}

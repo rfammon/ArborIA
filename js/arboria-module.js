@@ -294,137 +294,114 @@
 }
 
     function renderDocumentView(plan, tree) {
-        const start = new Date(plan.schedule.startDate);
-        const end = new Date(plan.schedule.endDate);
-        const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+    const start = new Date(plan.schedule.startDate);
+    const end = new Date(plan.schedule.endDate);
+    const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-        let steps = [
-            `Realizar o isolamento da área (Raio = Altura da árvore (${tree.height}m) + 50%).`,
-            'Verificar ausência de fauna (ninhos/colmeias) antes do início.',
-            'Posicionar equipe e sinalizar rotas de fuga.'
-        ];
-        if (tree.defects && tree.defects.some(d => d.toLowerCase().includes('elétrica'))) {
-            steps.push('<strong>RISCO ELÉTRICO:</strong> Confirmar desligamento/bloqueio da rede.');
-        }
-        if (plan.interventionType.includes('Supressão')) {
-            steps.push('Realizar entalhe direcional (45°-70°) na direção de queda.');
-            steps.push('Executar corte de abate com filete de ruptura.');
-        } else {
-            steps.push(`Executar técnicas de poda: <strong>${plan.techniques.join(', ')}</strong>.`);
-        }
-        steps.push(`Destinação dos resíduos: <strong>${plan.wasteDestination}</strong>.`);
-        steps.push('Limpeza final e desmobilização da área.');
+    // Tratamento de dados seguro
+    const countTeam = (parseInt(plan.teamComposition?.foremen) || 0) + 
+                      (parseInt(plan.teamComposition?.chainsawOperators) || 0) + 
+                      (parseInt(plan.teamComposition?.auxiliaries) || 0);
 
-        return `
-            <div>
-                <div class="risk-buttons-area" style="padding: 1rem; justify-content: space-between;">
-                    <button type="button" id="btn-back-edit" class="btn btn-secondary">Voltar e Editar</button>
-                    <button type="button" id="btn-download-pdf" class="btn btn-primary">Baixar PDF</button>
-                </div>
+    const safeJustification = plan.justification || 'Intervenção técnica padrão.';
 
-                <div style="padding: 1rem;">
-                    <div id="printable-area">
-                        
-                        <div style="border-bottom: 4px solid var(--color-tech); padding-bottom: 1rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+    // Montagem dos passos operacionais
+    let steps = [`Isolamento (Raio: ${tree.height || 5}m + 50%)`, 'Verificação de fauna/ninhos', 'Sinalização'];
+    if (plan.interventionType.includes('Supressão')) steps.push('Corte de abate controlado');
+    else steps.push(`Poda: ${plan.techniques.join(', ')}`);
+    steps.push(`Destinação: ${plan.wasteDestination}`);
+
+    // HTML da Foto (Com altura fixa igual à do mapa)
+    const photoHTML = tree.image 
+        ? `<img src="${tree.image}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" crossorigin="anonymous">`
+        : `<div style="height:160px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; color:#888; border:1px solid #ddd; border-radius:4px;">Sem Foto</div>`;
+
+    return `
+        <div>
+            <div class="risk-buttons-area" style="padding: 1rem; justify-content: space-between; display: flex;">
+                <button type="button" id="btn-back-edit" class="btn btn-secondary">Editar</button>
+                <button type="button" id="btn-download-pdf" class="btn btn-primary">Baixar PDF</button>
+            </div>
+
+            <div style="padding: 0 1rem 1rem 1rem;">
+                <div id="printable-area">
+                    
+                    <div style="border-bottom: 2px solid var(--color-tech); padding-bottom: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div>
+                            <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--color-tech); margin: 0; line-height: 1;">Plano de Intervenção</h1>
+                        </div>
+                        <div style="text-align: right; line-height: 1.2;">
+                            <div style="font-weight: bold; font-size: 0.9rem; color: var(--color-text-main);">PI Nº ${plan.id}</div>
+                            <div style="font-size: 0.75rem;">${new Date().toLocaleDateString('pt-BR')}</div>
+                        </div>
+                    </div>
+
+                    <div class="planning-box">
+                        <div class="planning-box-header" style="padding: 4px 10px;"><span>📍</span><h3>1. Identificação</h3></div>
+                        <div style="padding: 10px;">
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; font-size: 0.85rem; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                                <div><strong>ID:</strong> ${tree.id} - ${tree.species}</div>
+                                <div><strong>DAP:</strong> ${tree.dap}cm / <strong>Alt:</strong> ${tree.height}m</div>
+                                <div style="text-align:right; font-weight:bold; color:${tree.riskLevel.includes('Alto') ? '#c62828' : '#2e7d32'}">${tree.riskLevel}</div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div>
+                                    <div style="font-size: 0.75rem; font-weight:bold; color:#666; margin-bottom:2px;">Registro Fotográfico</div>
+                                    ${photoHTML}
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75rem; font-weight:bold; color:#666; margin-bottom:2px;">Geolocalização</div>
+                                    <div id="map-container" style="width: 100%; height: 160px; background: #eee; border: 1px solid #ccc; border-radius: 4px;"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="planning-box">
+                        <div class="planning-box-header" style="padding: 4px 10px;"><span>📋</span><h3>2. Cronograma</h3></div>
+                        <div style="padding: 8px;">
+                            <div style="background:#f9f9f9; padding: 5px 8px; border-radius: 4px; font-size: 0.85rem; margin-bottom: 5px;">
+                                <strong>${plan.interventionType}</strong> (${diffDays}d) • Equipe: ${countTeam} • <em>"${safeJustification}"</em>
+                            </div>
+                            <div id="gantt-chart" style="margin: 0;"></div>
+                        </div>
+                    </div>
+
+                    <div class="planning-box">
+                        <div class="planning-box-header" style="padding: 4px 10px;"><span>🛠️</span><h3>3. Recursos</h3></div>
+                        <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 8px;">
                             <div>
-                                <h1 style="font-size: 2rem; font-weight: 800; color: var(--color-tech); margin: 0;">
-                                    Plano de Intervenção
-                                </h1>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 1rem; font-weight: bold; color: var(--color-text-main);">PI Nº ${plan.id}</div>
-                                <div style="font-size: 0.8rem; color: var(--color-text-muted);">Emissão: ${new Date().toLocaleDateString('pt-BR')}</div>
-                            </div>
-                        </div>
-
-                        <!-- Box 1: Identificação -->
-                        <div class="planning-box">
-                            <div class="planning-box-header">
-                                <span class="icon">🌳</span>
-                                <h3>1. Identificação da Árvore</h3>
-                            </div>
-                            <div class="form-grid">
-                                <div>
-                                    <p><strong>ID:</strong> ${tree.id}</p>
-                                    <p><strong>Espécie:</strong> ${tree.species}</p>
-                                    <p><strong>Local:</strong> ${tree.location}</p>
-                                </div>
-                                <div>
-                                    <p><strong>DAP:</strong> ${tree.dap} cm</p>
-                                    <p><strong>Altura:</strong> ${tree.height} m</p>
-                                    <p><strong>Nível de Risco:</strong> <span class="risk-${tree.riskLevel.toLowerCase().split(' ')[0]}">${tree.riskLevel}</span></p>
-                                </div>
-                            </div>
-                            ${tree.image ? `
-                            <div class="report-photo-container">
-                                <img src="${tree.image}" alt="Foto da Árvore" class="report-photo">
-                            </div>
-                            ` : ''}
-                            <div id="map-container"></div>
-                        </div>
-
-                        <!-- Box 2: Escopo -->
-                        <div class="planning-box green">
-                            <div class="planning-box-header">
-                                <span class="icon">📋</span>
-                                <h3>2. Escopo e Cronograma</h3>
-                            </div>
-                            <div style="background-color: var(--color-bg-body); padding: 1rem; border-radius: var(--radius-sm);">
-                                <h4 style="font-weight: bold; color: var(--color-forest); margin: 0;">${plan.interventionType}</h4>
-                                <p style="margin: 0.5rem 0; font-style: italic;">"${plan.justification}"</p>
-                                ${plan.techniques.length > 0 ? `<p style="font-size: 0.9rem;"><strong>Técnicas:</strong> ${plan.techniques.join(', ')}</p>` : ''}
-                                <p style="font-size: 0.9rem;"><strong>Equipe:</strong> ${parseInt(plan.teamComposition.foremen) + parseInt(plan.teamComposition.chainsawOperators) + parseInt(plan.teamComposition.auxiliaries)} Pessoas</p>
-                                <p style="font-size: 0.9rem;"><strong>Duração Estimada:</strong> ${diffDays} dia(s)</p>
-                            </div>
-                            <h4 style="font-weight: bold; margin-top: 1.5rem;">Gráfico de Gantt</h4>
-                            <div style="margin-top: 1rem; overflow-x: auto;">
-                                <div id="gantt-chart" style="position: relative;"></div>
-                            </div>
-                        </div>
-
-                        <!-- Box 3: Recursos -->
-                        <div class="planning-box">
-                             <div class="planning-box-header">
-                                <span class="icon">🛠️</span>
-                                <h3>3. Recursos e Procedimentos</h3>
-                            </div>
-                            <div class="form-grid">
-                                <div>
-                                    <h4 style="font-weight: bold;">Ferramentas</h4>
-                                    <ul>${plan.tools.map(t => `<li>${t}</li>`).join('')}</ul>
-                                </div>
-                                <div>
-                                    <h4 style="font-weight: bold;">EPIs</h4>
-                                    <ul>${plan.epis.map(e => `<li>${e}</li>`).join('')}</ul>
-                                </div>
-                            </div>
-                            <div style="margin-top: 1.5rem;">
-                                <h4 style="font-weight: bold;">Procedimento Operacional</h4>
-                                <ol>${steps.map(s => `<li>${s}</li>`).join('')}</ol>
-                            </div>
-                            ${plan.executionInstructions ? `
-                                <div style="margin-top: 1rem; padding: 1rem; background-color: #fffbe6; border: 1px solid #ffe58f; border-radius: var(--radius-sm);">
-                                    <strong>Nota de Campo:</strong> ${plan.executionInstructions}
-                                </div>` : ''}
-                        </div>
-
-                        <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--color-border); display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; text-align: center;">
-                            <div>
-                                <p style="border-bottom: 1px solid var(--color-text-dark); margin-bottom: 0.5rem;">&nbsp;</p>
-                                <p style="font-weight: bold; margin: 0;">${plan.responsible}</p>
-                                <p style="font-size: 0.8rem; color: var(--color-text-muted); margin: 0;">${plan.responsibleTitle}</p>
+                                <h4 style="font-size: 0.8rem; margin: 0; font-weight: bold;">Ferramentas</h4>
+                                <ul style="margin: 0; padding-left: 1rem; font-size: 0.8rem;">${plan.tools.map(t => `<li>${t}</li>`).join('')}</ul>
                             </div>
                             <div>
-                                <p style="border-bottom: 1px solid var(--color-text-dark); margin-bottom: 0.5rem;">&nbsp;</p>
-                                <p style="font-weight: bold; margin: 0;">Segurança do Trabalho</p>
+                                <h4 style="font-size: 0.8rem; margin: 0; font-weight: bold;">EPIs</h4>
+                                <ul style="margin: 0; padding-left: 1rem; font-size: 0.8rem;">${plan.epis.map(e => `<li>${e}</li>`).join('')}</ul>
                             </div>
                         </div>
                     </div>
+
+                    <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center; page-break-inside: avoid;">
+                        <div>
+                            <div style="border-bottom: 1px solid #000; margin-bottom: 2px;"></div>
+                            <strong style="font-size: 0.85rem;">${plan.responsible}</strong><br>
+                            <span style="font-size: 0.7rem; color: #555;">Engenheiro Responsável</span>
+                        </div>
+                        <div>
+                            <div style="border-bottom: 1px solid #000; margin-bottom: 2px;"></div>
+                            <strong style="font-size: 0.85rem;">Segurança do Trabalho</strong><br>
+                            <span style="font-size: 0.7rem; color: #555;">Visto / Aprovação</span>
+                        </div>
+                    </div>
+
                 </div>
             </div>
-        `;
-    }
-
+        </div>
+    `;
+}
     // --- CONTROLLER ---
 
     const Actions = {
@@ -504,49 +481,57 @@
             const btn = $('#btn-download-pdf');
             if (btn) {
                 btn.originalText = btn.innerHTML;
-                btn.innerHTML = 'Gerando...';
+                btn.innerHTML = 'Processando...';
                 btn.disabled = true;
             }
 
             try {
                 const content = $('#printable-area');
-                if (!content) throw new Error("Elemento #printable-area não encontrado.");
+                if (!content) throw new Error("Área de impressão não encontrada.");
 
                 const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                const margin = 15;
+                const pdfWidth = pdf.internal.pageSize.getWidth();   // ~210mm
+                const pdfHeight = pdf.internal.pageSize.getHeight(); // ~297mm
+                const margin = 12; // Margem padrão (ajustado de 10)
                 const contentWidth = pdfWidth - (margin * 2);
                 
-                let yPos = margin;
+                let cursorY = margin;
 
-                const elementsToRender = Array.from(content.children).filter(el => el.offsetHeight > 0);
+                // Seleciona os Blocos Lógicos (Header + Boxes)
+                const blocks = Array.from(content.querySelectorAll('#printable-area > div'))
+                                    .filter(el => el.offsetHeight > 0 && !el.classList.contains('risk-buttons-area'));
 
-                for (const element of elementsToRender) {
-                    const canvas = await window.html2canvas(element, {
-                        scale: 2,
-                        useCORS: true,
-                        logging: false,
-                        backgroundColor: '#ffffff', // Set background to white
-                    });
-
-                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
-                    const imgHeight = (canvas.height * contentWidth) / canvas.width;
-
-                    if (yPos + imgHeight > pdfHeight - margin) {
-                        pdf.addPage();
-                        yPos = margin;
+                for (const block of blocks) {
+                    
+                    // Se o bloco contém o mapa, dê um tempo extra para os tiles carregarem
+                    if (block.querySelector('#map-container')) {
+                        await new Promise(r => setTimeout(r, 500)); // Espera 500ms tiles
                     }
 
-                    pdf.addImage(imgData, 'JPEG', margin, yPos, contentWidth, imgHeight);
-                    yPos += imgHeight + 5;
+                    const canvas = await window.html2canvas(block, { 
+                        scale: 2, 
+                        backgroundColor: '#ffffff',
+                        useCORS: true // Essencial para carregar tiles do mapa e fotos externas
+                    });
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const imgHeight = (canvas.height * contentWidth) / canvas.width;
+
+                    // Lógica Anti-Página-Branca
+                    // Só quebra página se NÃO for o primeiro bloco E se não couber
+                    if (cursorY > margin && (cursorY + imgHeight > pdfHeight - margin)) {
+                        pdf.addPage();
+                        cursorY = margin;
+                    }
+
+                    pdf.addImage(imgData, 'JPEG', margin, cursorY, contentWidth, imgHeight);
+                    cursorY += imgHeight + 4; // Espaço menor entre blocos (ajustado de 5)
                 }
 
-                pdf.save(`${state.plan.id}.pdf`);
+                pdf.save(`${state.plan.id}_Plano.pdf`);
 
             } catch (err) {
-                console.error("Erro ao gerar PDF:", err);
-                alert("Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.");
+                console.error("PDF Error:", err);
+                alert("Erro ao gerar PDF.");
             } finally {
                 if (btn) {
                     btn.innerHTML = btn.originalText;
@@ -692,21 +677,41 @@
             $('#btn-back-edit').addEventListener('click', () => { state.view = 'FORM'; render(); });
             $('#btn-download-pdf').addEventListener('click', Actions.generatePDF);
             
+            // Função de polling para garantir que o mapa carregue
             let attempts = 0;
             function checkAndInitMap() {
                 const container = $('#map-container');
-                if (container && container.offsetWidth > 0) {
+                
+                // Verifica se o container existe E tem altura definida (CSS inline que colocamos)
+                if (container && container.offsetHeight > 0) {
+                    
+                    // 1. Inicializa o Mapa
                     Actions.initMap(state.selectedTree);
-                } else if (attempts < 20) { // Try for 2 seconds max (20 * 100ms)
+                    
+                    // 2. CRUCIAL: Força o Leaflet a entender o tamanho da div
+                    if (state.mapInstance) {
+                        setTimeout(() => {
+                            state.mapInstance.invalidateSize();
+                            
+                            // Centraliza novamente para garantir
+                            const coords = convertToLatLon(state.selectedTree);
+                            if(coords) state.mapInstance.setView(coords, 18);
+                        }, 200);
+                    }
+                } else if (attempts < 20) { 
                     attempts++;
-                    setTimeout(checkAndInitMap, 100);
+                    setTimeout(checkAndInitMap, 200); // Tenta a cada 200ms
                 } else {
-                    console.error("Map container not ready after 2 seconds.");
+                    console.error("Map container falhou ao renderizar dimensões.");
                 }
             }
-            checkAndInitMap();
-            // Call initGanttChart here
-            initGanttChart(state.plan); 
+
+            // Inicia o processo
+            // Usamos um pequeno requestAnimationFrame para garantir que o HTML foi pintado
+            requestAnimationFrame(() => {
+                checkAndInitMap();
+                initGanttChart(state.plan);
+            });
         }
     }
 
