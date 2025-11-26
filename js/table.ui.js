@@ -28,7 +28,9 @@ export const TableUI = {
         this.container = document.getElementById('summary-table-container');
         this.badgeElement = document.getElementById('summary-badge');
         this.filterInput = document.getElementById('table-filter-input'); // Obtém o input de filtro
-        this.onNavigateToPlanningForm = callbacks.onNavigateToPlanningForm; // Store the callback
+        if (callbacks.onNavigateToPlanningForm) {
+            this.onNavigateToPlanningForm = callbacks.onNavigateToPlanningForm;
+        } // Store the callback
 
         if (!this.container || !this.badgeElement || !this.filterInput) return;
 
@@ -343,6 +345,7 @@ export const TableUI = {
                 text: '📄 Plano',
                 className: 'action-btn',
                 onClick: () => {
+                    console.log('Tentando navegar para plano, ID:', tree.id, 'Callback:', this.onNavigateToPlanningForm);
                     if (this.onNavigateToPlanningForm) {
                         this.onNavigateToPlanningForm(tree.id);
                     }

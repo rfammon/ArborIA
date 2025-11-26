@@ -628,30 +628,62 @@ export async function handleImportZip(event) {
     let maxId = newTrees.length > 0 ? Math.max(...newTrees.map(t => t.id)) : 0;
     
     for (let i = 1; i < lines.length; i++) {
-        const row = lines[i].split(';'); 
-        if(row.length < 5) continue;
-        
-        const newId = ++maxId;
-        const tree = {
-            id: newId, data: row[1], especie: row[2], coordX: row[3], coordY: row[4],
-            utmZoneNum: parseInt(row[5]), utmZoneLetter: row[6],
-            dap: row[7], altura: row[8], distancia: row[9],
-            local: row[10], avaliador: row[11], pontuacao: parseInt(row[12]),
-            risco: row[13], observacoes: row[14], 
-            riskFactors: (row[15]||'').split(',').map(Number),
-            hasPhoto: (row[16] && row[16].trim() === 'Sim')
-        };
-        
-        if(tree.pontuacao >= 20) tree.riscoClass = 'risk-high'; 
-        else if(tree.pontuacao >= 10) tree.riscoClass = 'risk-medium'; 
-        else tree.riscoClass = 'risk-low';
+        const row = lines[i].split(';');
+        // Basic validation: ensure row has enough columns based on the new mapping (at least up to hasPhoto)
+        if (row.length < 16) { // Minimum 16 columns for the specified mapping
+            console.warn(`[Import Error] CSV row ${i + 1} has too few columns. Skipping.`);
+            continue;
+        }
 
-        if(tree.hasPhoto) {
-            const oldId = row[0];
-            const imgFile = zip.file(`images/tree_id_${oldId}.jpg`) || zip.file(`images/tree_id_${oldId}.png`);
-            if(imgFile) {
+        const newId = ++maxId;
+        const pontuacao = parseInt(row[11]) || 0; // Read pontuacao from new index 11
+
+        // Recalculo de Risco
+        let risco = 'Baixo Risco';
+        let riscoClass = 'risk-low';
+
+        if (pontuacao >= 20) {
+            risco = 'Alto Risco';
+            riscoClass = 'risk-high';
+        } else if (pontuacao >= 10) {
+            risco = 'Médio Risco';
+            riscoClass = 'risk-medium';
+        }
+
+        const tree = {
+            id: newId,
+            data: row[1],
+            especie: row[2],
+            coordX: row[3],
+            coordY: row[4],
+            utmZoneNum: parseInt(row[5]) || 0, // Ensure parsing to int
+            utmZoneLetter: row[6],
+            dap: row[7],
+            altura: row[8],
+            local: row[9], // Corrected index
+            avaliador: row[10], // Corrected index
+            pontuacao: pontuacao, // Use the recalculated pontuacao
+            risco: risco, // Use the recalculated risco text
+            riscoClass: riscoClass, // Use the recalculated riscoClass
+            observacoes: row[13],
+            riskFactors: (row[14] || '').split(',').map(Number), // Corrected index
+            hasPhoto: (row[15] && row[15].trim() === 'Sim') // Corrected index
+        };
+
+        if (tree.hasPhoto) {
+            const oldId = row[0]; // Original ID from CSV
+            // Tenta JPG e PNG dentro da pasta 'images/'
+            let imgFile = zip.file(`images/tree_id_${oldId}.jpg`);
+            if (!imgFile) {
+                imgFile = zip.file(`images/tree_id_${oldId}.png`);
+            }
+
+            if (imgFile) {
                 const blob = await imgFile.async("blob");
-                db.saveImageToDB(newId, blob);
+                // Salva com o NOVO ID gerado na importação
+                await db.saveImageToDB(newId, blob);
+            } else {
+                console.warn(`Foto não encontrada no ZIP para ID original ${oldId}`);
             }
         }
         newTrees.push(tree);
