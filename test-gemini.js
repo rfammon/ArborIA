@@ -3,7 +3,7 @@ import readline from "readline";
 
 // ATEN��O: Sub
 // stitua ISSO_AQUI pela sua chave API real
-const API_KEY = "AIzaSyAXn6SBV0WTKIfr80N_WLmvPBa1DOcQsTs";
+const API_KEY = "";
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
