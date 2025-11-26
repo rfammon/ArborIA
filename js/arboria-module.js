@@ -353,121 +353,130 @@ function renderDocumentView(plan, tree) {
     const end = new Date(plan.schedule.endDate);
     const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-    // Calcula equipe
+    // Lógica de Dados
     const countTeam = (parseInt(plan.teamComposition?.foremen) || 0) + 
                       (parseInt(plan.teamComposition?.chainsawOperators) || 0) + 
                       (parseInt(plan.teamComposition?.auxiliaries) || 0);
-
-    // Gera procedimento dinâmico
     const steps = getOperationalSteps(plan.interventionType, plan.techniques);
 
-    // HTML da Foto (Altura Forçada: 180px)
+    // Imagem e Mapa (Altura Reduzida para 140px para caber na página)
+    const imgHeight = "140px";
     const photoHTML = tree.image 
-        ? `<img src="${tree.image}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; display: block;" crossorigin="anonymous">`
-        : `<div style="height:180px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; color:#999; border:1px solid #ccc; border-radius:4px;">Sem Registro Fotográfico</div>`;
+        ? `<img src="${tree.image}" style="width: 100%; height: ${imgHeight}; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" crossorigin="anonymous">`
+        : `<div style="height:${imgHeight}; background:#f0f0f0; display:flex; align-items:center; justify-content:center; color:#999; font-size:0.7rem; border:1px solid #ddd; border-radius:4px;">Sem Foto</div>`;
 
     return `
         <div>
-            <div class="risk-buttons-area" style="padding: 1rem; justify-content: space-between; display: flex;">
-                <button type="button" id="btn-back-edit" class="btn btn-secondary">Editar Dados</button>
-                <button type="button" id="btn-download-pdf" class="btn btn-primary">Gerar PDF</button>
+            <div class="risk-buttons-area" style="padding: 15px; background: #fff; border-bottom: 1px solid #eee; margin-bottom: 20px; display: flex; justify-content: space-between;">
+                <button type="button" id="btn-back-edit" class="btn btn-secondary">Editar</button>
+                <button type="button" id="btn-download-pdf" class="btn btn-primary" style="background: var(--arb-green); border-color: var(--arb-green);">Baixar Relatório</button>
             </div>
 
-            <div style="padding: 0 1rem 1rem 1rem;">
-                <div id="printable-area">
+            <div style="background: #555; padding: 20px; display: flex; justify-content: center;"> <div id="printable-area">
                     
-                    <div style="border-bottom: 3px solid var(--color-tech); padding-bottom: 5px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
-                        <div>
-                            <h1 style="font-size: 1.5rem; font-weight: 900; color: var(--color-tech); margin: 0; line-height: 1.1; letter-spacing: -0.5px;">PLANO DE INTERVENÇÃO</h1>
-                            <span style="font-size: 0.8rem; color: #555; text-transform: uppercase;">Manejo Arbóreo Integrado</span>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; border-bottom: 4px solid; border-image: var(--arb-gradient) 1;">
+                        <div style="padding-bottom: 5px;">
+                            <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; line-height: 1;">
+                                <span style="color: var(--arb-blue);">Arbor</span><span style="color: var(--arb-green);">IA</span>
+                            </h1>
+                            <div style="font-size: 0.8rem; color: #666; margin-left: 2px;">Sistema de Manejo Integrado</div>
                         </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: bold; font-size: 1rem; color: #333;">PI-${plan.id.split('-').slice(1).join('-')}</div>
-                            <div style="font-size: 0.75rem;">${new Date().toLocaleDateString('pt-BR')}</div>
-                        </div>
-                    </div>
-
-                    <div class="planning-box">
-                        <div class="planning-box-header"><span>📍</span><h3>1. Onde será feito? (Identificação e Localização)</h3></div>
-                        <div style="padding: 10px;">
-                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 10px; font-size: 0.85rem; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-                                <div><strong>Espécie:</strong> ${tree.species} (ID: ${tree.id})</div>
-                                <div><strong>Dimensões:</strong> DAP ${tree.dap}cm / Alt ${tree.height}m</div>
-                                <div style="text-align:right;"><strong>Risco:</strong> <span style="color:${tree.riskLevel.includes('Alto') ? '#d32f2f' : '#388e3c'}">${tree.riskLevel}</span></div>
-                            </div>
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: stretch;">
-                                <div>
-                                    <div style="font-size: 0.7rem; font-weight:bold; color:#666; margin-bottom: 2px;">FOTO DO INDIVÍDUO</div>
-                                    ${photoHTML}
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.7rem; font-weight:bold; color:#666; margin-bottom: 2px;">MAPA DE LOCALIZAÇÃO</div>
-                                    <div id="map-container" style="width: 100%; height: 180px; background: #eee; border: 1px solid #ccc; border-radius: 4px;"></div>
-                                </div>
-                            </div>
-                            <div style="font-size: 0.8rem; margin-top: 5px; color: #666;"><strong>Local:</strong> ${tree.location}</div>
+                        <div style="text-align: right; padding-bottom: 8px;">
+                            <div style="font-size: 1.1rem; font-weight: bold; color: #333;">PI-${plan.id.split('-').slice(1).join('-')}</div>
+                            <div style="font-size: 0.8rem; color: #666;">Expedição: ${new Date().toLocaleDateString('pt-BR')}</div>
                         </div>
                     </div>
 
-                    <div class="planning-box">
-                        <div class="planning-box-header"><span>📅</span><h3>2. O que será feito e quando?</h3></div>
-                        <div style="padding: 10px;">
-                            <div style="display: flex; gap: 15px; margin-bottom: 10px; font-size: 0.9rem;">
-                                <div style="flex: 1; background: #f0f7f4; padding: 8px; border-radius: 4px; border: 1px solid #ccece6;">
-                                    <strong>Ação Principal:</strong> ${plan.interventionType}<br>
-                                    <span style="font-size: 0.8rem; color: #555;">${plan.justification}</span>
+                    <div class="arb-card">
+                        <div class="arb-card-header" style="border-color: var(--arb-blue);">
+                            <span>📍</span> Identificação e Localização
+                        </div>
+                        <div class="arb-card-body">
+                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px dashed #eee; font-size: 0.9rem;">
+                                <div>
+                                    <span style="color:#888; font-size:0.75rem; text-transform:uppercase;">Espécie / ID</span><br>
+                                    <strong>${tree.species}</strong> <small>(#${tree.id})</small>
                                 </div>
-                                <div style="width: 140px; background: #fff8e1; padding: 8px; border-radius: 4px; border: 1px solid #ffe0b2; text-align: center;">
-                                    <strong>Duração Total</strong><br>
-                                    <span style="font-size: 1.2rem; font-weight: bold;">${diffDays} dias</span>
+                                <div>
+                                    <span style="color:#888; font-size:0.75rem; text-transform:uppercase;">Biometria</span><br>
+                                    DAP: <strong>${tree.dap}cm</strong> • Alt: <strong>${tree.height}m</strong>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="color:#888; font-size:0.75rem; text-transform:uppercase;">Risco</span><br>
+                                    <strong style="color:${tree.riskLevel.includes('Alto') ? '#d32f2f' : '#2e7d32'}">${tree.riskLevel}</strong>
                                 </div>
                             </div>
-                            
-                            <div id="gantt-chart" style="margin: 0; border: 1px solid #eee;"></div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>${photoHTML}</div>
+                                <div id="map-container" style="width: 100%; height: ${imgHeight}; background: #eee; border: 1px solid #ddd; border-radius: 4px;"></div>
+                            </div>
+                            <div style="font-size: 0.8rem; color: #666; margin-top: 5px;"><strong>Local:</strong> ${tree.location}</div>
                         </div>
                     </div>
 
-                    <div class="planning-box">
-                        <div class="planning-box-header"><span>🛠️</span><h3>3. Como e com o que será feito?</h3></div>
-                        <div style="padding: 10px;">
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <div class="arb-card">
+                        <div class="arb-card-header" style="border-color: var(--arb-green);">
+                            <span>📅</span> Planejamento Operacional
+                        </div>
+                        <div class="arb-card-body" style="padding-bottom: 5px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
                                 <div>
-                                    <h4 style="font-size: 0.8rem; font-weight: bold; margin: 0 0 5px 0; color: #00695c;">FERRAMENTAS E EQUIPAMENTOS</h4>
-                                    <ul style="margin: 0; padding-left: 15px; font-size: 0.8rem; line-height: 1.4;">
-                                        ${plan.tools.map(t => `<li>${t}</li>`).join('')}
-                                    </ul>
+                                    <strong>${plan.interventionType}</strong> 
+                                    <span style="color:#666; font-size: 0.85rem;"> — ${plan.justification}</span>
                                 </div>
                                 <div>
-                                    <h4 style="font-size: 0.8rem; font-weight: bold; margin: 0 0 5px 0; color: #00695c;">EQUIPE E EPIs</h4>
-                                    <div style="font-size: 0.8rem; margin-bottom: 4px;"><strong>Dimensionamento:</strong> ${countTeam} profissionais</div>
-                                    <ul style="margin: 0; padding-left: 15px; font-size: 0.8rem; line-height: 1.4;">
+                                    Duração Estimada: <strong>${diffDays} dias</strong>
+                                </div>
+                            </div>
+                            <div id="gantt-chart"></div>
+                        </div>
+                    </div>
+
+                    <div class="arb-card">
+                        <div class="arb-card-header" style="border-color: #ffa000;"> <span>🛠️</span> Recursos e Procedimentos
+                        </div>
+                        <div class="arb-card-body">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <h4 style="font-size: 0.8rem; color: var(--arb-blue); margin-bottom: 5px; text-transform: uppercase;">Recursos Alocados</h4>
+                                    <div style="font-size: 0.85rem; margin-bottom: 5px;"><strong>Equipe:</strong> ${countTeam} profissionais</div>
+                                    
+                                    <div style="font-size: 0.8rem; font-weight:bold; margin-top:8px;">Ferramentas:</div>
+                                    <ul class="compact-list" style="color:#444;">${plan.tools.map(t => `<li>${t}</li>`).join('')}</ul>
+
+                                    <div style="font-size: 0.8rem; font-weight:bold; margin-top:8px;">EPIs Principais:</div>
+                                    <ul class="compact-list" style="color:#444;">
                                         ${plan.epis.slice(0, 4).map(e => `<li>${e}</li>`).join('')}
-                                        ${plan.epis.length > 4 ? `<li>e mais ${plan.epis.length - 4} itens...</li>` : ''}
+                                        ${plan.epis.length > 4 ? `<li style="font-style:italic;">+ ${plan.epis.length - 4} itens</li>` : ''}
                                     </ul>
                                 </div>
-                            </div>
 
-                            <div>
-                                <h4 style="font-size: 0.8rem; font-weight: bold; margin: 0 0 5px 0; color: #2e7d32;">PROCEDIMENTO OPERACIONAL PADRÃO (${plan.interventionType.toUpperCase()})</h4>
-                                <ol style="margin: 0; padding-left: 15px; font-size: 0.85rem; line-height: 1.3; color: #333;">
-                                    ${steps.map(s => `<li style="margin-bottom: 2px;">${s}</li>`).join('')}
-                                </ol>
+                                <div style="border-left: 1px solid #eee; padding-left: 15px;">
+                                    <h4 style="font-size: 0.8rem; color: var(--arb-green); margin-bottom: 5px; text-transform: uppercase;">Procedimento (${plan.interventionType})</h4>
+                                    <ol class="compact-list" style="color:#333;">
+                                        ${steps.map(s => `<li style="margin-bottom: 3px;">${s}</li>`).join('')}
+                                    </ol>
+                                    ${plan.executionInstructions ? `
+                                    <div style="margin-top: 10px; padding: 8px; background: #fff3e0; border: 1px solid #ffe0b2; border-radius: 4px; font-size: 0.75rem;">
+                                        <strong>Nota de Campo:</strong> ${plan.executionInstructions}
+                                    </div>` : ''}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; page-break-inside: avoid;">
-                        <div style="text-align: center;">
-                            <div style="border-bottom: 1px solid #333; margin-bottom: 4px;"></div>
-                            <strong style="font-size: 0.8rem;">${plan.responsible}</strong><br>
-                            <span style="font-size: 0.7rem; color: #666;">${plan.responsibleTitle}</span>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="border-bottom: 1px solid #333; margin-bottom: 4px;"></div>
-                            <strong style="font-size: 0.8rem;">Segurança do Trabalho (SMS)</strong><br>
-                            <span style="font-size: 0.7rem; color: #666;">Liberação do Serviço</span>
+                    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: center;">
+                            <div>
+                                <div style="border-bottom: 1px solid #333; margin-bottom: 5px; width: 80%; margin-left: auto; margin-right: auto;"></div>
+                                <strong style="font-size: 0.9rem;">${plan.responsible}</strong><br>
+                                <span style="font-size: 0.75rem; color: #666;">Engenheiro Responsável</span>
+                            </div>
+                            <div>
+                                <div style="border-bottom: 1px solid #333; margin-bottom: 5px; width: 80%; margin-left: auto; margin-right: auto;"></div>
+                                <strong style="font-size: 0.9rem;">Segurança do Trabalho</strong><br>
+                                <span style="font-size: 0.75rem; color: #666;">Liberação de Serviço</span>
+                            </div>
                         </div>
                     </div>
 
