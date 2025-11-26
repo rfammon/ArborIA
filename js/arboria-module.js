@@ -225,6 +225,21 @@
                     </div>
                 </div>
 
+<div class="planning-box" style="background: #f1f8e9; border: 1px solid #c5e1a5;">
+    <div class="planning-box-header">
+        <span class="icon">📜</span>
+        <h3>Procedimento Padrão (Pré-visualização)</h3>
+    </div>
+    <div style="padding: 1rem;">
+        <p style="font-size: 0.9rem; color: #558b2f; margin-bottom: 0.5rem;">
+            O procedimento abaixo será incluído automaticamente no relatório com base na sua seleção de intervenção (Poda/Supressão).
+        </p>
+        <div id="procedure-preview" style="font-size: 0.85rem; background: #fff; padding: 10px; border-radius: 4px; border: 1px dashed #aaa;">
+            Selecione o tipo de intervenção acima para visualizar o passo-a-passo.
+        </div>
+    </div>
+</div>
+
 <div class="planning-box">
     <div class="planning-box-header">
         <span class="icon">⏱️</span>
@@ -293,107 +308,166 @@
     `;
 }
 
-    function renderDocumentView(plan, tree) {
+    // Helper: Gera o procedimento baseado no tipo de intervenção (Manual Técnico)
+function getOperationalSteps(type, techniques = []) {
+    // Passos comuns (Segurança e Preparo)
+    const safetySteps = [
+        'Isolamento da área (Raio: Altura da árvore + 50%) e sinalização.',
+        'Verificação prévia de fauna (ninhos/colmeias) e redes elétricas.',
+        'Definição de rotas de fuga e posicionamento da equipe em solo.'
+    ];
+
+    let specificSteps = [];
+
+    if (type.includes('Supressão') || type.includes('Corte')) {
+        // Procedimento de Supressão (Baseado no Manual)
+        specificSteps = [
+            'Realizar limpeza da base do tronco.',
+            'Executar entalhe direcional (boca) entre 45° e 70° na direção de queda.',
+            'Executar corte de abate (trás) 5cm acima da base do entalhe.',
+            'Manter filete de ruptura (dobradiça) para controle da queda.',
+            'Realizar o traçamento do tronco no solo.'
+        ];
+    } else {
+        // Procedimento de Poda (Baseado no Manual)
+        const techStr = techniques.length ? `(${techniques.join(', ')})` : '';
+        specificSteps = [
+            `Identificar galhos alvo conforme objetivo da poda ${techStr}.`,
+            'Realizar o corte final rente ao colar, sem ferir a crista da casca.',
+            'Utilizar a técnica de três cortes para galhos pesados (evitar lascamento).',
+            'Não utilizar esporas para escalada (exceto em remoção total).'
+        ];
+    }
+
+    // Passos finais
+    const finalSteps = [
+        'Trituração/Destinação adequada dos resíduos (Biomassa).',
+        'Limpeza final da área e desmobilização.'
+    ];
+
+    return [...safetySteps, ...specificSteps, ...finalSteps];
+}
+
+function renderDocumentView(plan, tree) {
     const start = new Date(plan.schedule.startDate);
     const end = new Date(plan.schedule.endDate);
     const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-    // Tratamento de dados seguro
+    // Calcula equipe
     const countTeam = (parseInt(plan.teamComposition?.foremen) || 0) + 
                       (parseInt(plan.teamComposition?.chainsawOperators) || 0) + 
                       (parseInt(plan.teamComposition?.auxiliaries) || 0);
 
-    const safeJustification = plan.justification || 'Intervenção técnica padrão.';
+    // Gera procedimento dinâmico
+    const steps = getOperationalSteps(plan.interventionType, plan.techniques);
 
-    // Montagem dos passos operacionais
-    let steps = [`Isolamento (Raio: ${tree.height || 5}m + 50%)`, 'Verificação de fauna/ninhos', 'Sinalização'];
-    if (plan.interventionType.includes('Supressão')) steps.push('Corte de abate controlado');
-    else steps.push(`Poda: ${plan.techniques.join(', ')}`);
-    steps.push(`Destinação: ${plan.wasteDestination}`);
-
-    // HTML da Foto (Com altura fixa igual à do mapa)
+    // HTML da Foto (Altura Forçada: 180px)
     const photoHTML = tree.image 
-        ? `<img src="${tree.image}" style="width: 100%; height: 160px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" crossorigin="anonymous">`
-        : `<div style="height:160px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; color:#888; border:1px solid #ddd; border-radius:4px;">Sem Foto</div>`;
+        ? `<img src="${tree.image}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; display: block;" crossorigin="anonymous">`
+        : `<div style="height:180px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; color:#999; border:1px solid #ccc; border-radius:4px;">Sem Registro Fotográfico</div>`;
 
     return `
         <div>
             <div class="risk-buttons-area" style="padding: 1rem; justify-content: space-between; display: flex;">
-                <button type="button" id="btn-back-edit" class="btn btn-secondary">Editar</button>
-                <button type="button" id="btn-download-pdf" class="btn btn-primary">Baixar PDF</button>
+                <button type="button" id="btn-back-edit" class="btn btn-secondary">Editar Dados</button>
+                <button type="button" id="btn-download-pdf" class="btn btn-primary">Gerar PDF</button>
             </div>
 
             <div style="padding: 0 1rem 1rem 1rem;">
                 <div id="printable-area">
                     
-                    <div style="border-bottom: 2px solid var(--color-tech); padding-bottom: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div style="border-bottom: 3px solid var(--color-tech); padding-bottom: 5px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end;">
                         <div>
-                            <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--color-tech); margin: 0; line-height: 1;">Plano de Intervenção</h1>
+                            <h1 style="font-size: 1.5rem; font-weight: 900; color: var(--color-tech); margin: 0; line-height: 1.1; letter-spacing: -0.5px;">PLANO DE INTERVENÇÃO</h1>
+                            <span style="font-size: 0.8rem; color: #555; text-transform: uppercase;">Manejo Arbóreo Integrado</span>
                         </div>
-                        <div style="text-align: right; line-height: 1.2;">
-                            <div style="font-weight: bold; font-size: 0.9rem; color: var(--color-text-main);">PI Nº ${plan.id}</div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: bold; font-size: 1rem; color: #333;">PI-${plan.id.split('-').slice(1).join('-')}</div>
                             <div style="font-size: 0.75rem;">${new Date().toLocaleDateString('pt-BR')}</div>
                         </div>
                     </div>
 
                     <div class="planning-box">
-                        <div class="planning-box-header" style="padding: 4px 10px;"><span>📍</span><h3>1. Identificação</h3></div>
+                        <div class="planning-box-header"><span>📍</span><h3>1. Onde será feito? (Identificação e Localização)</h3></div>
                         <div style="padding: 10px;">
-                            
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; font-size: 0.85rem; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-                                <div><strong>ID:</strong> ${tree.id} - ${tree.species}</div>
-                                <div><strong>DAP:</strong> ${tree.dap}cm / <strong>Alt:</strong> ${tree.height}m</div>
-                                <div style="text-align:right; font-weight:bold; color:${tree.riskLevel.includes('Alto') ? '#c62828' : '#2e7d32'}">${tree.riskLevel}</div>
+                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 10px; font-size: 0.85rem; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                                <div><strong>Espécie:</strong> ${tree.species} (ID: ${tree.id})</div>
+                                <div><strong>Dimensões:</strong> DAP ${tree.dap}cm / Alt ${tree.height}m</div>
+                                <div style="text-align:right;"><strong>Risco:</strong> <span style="color:${tree.riskLevel.includes('Alto') ? '#d32f2f' : '#388e3c'}">${tree.riskLevel}</span></div>
                             </div>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: stretch;">
                                 <div>
-                                    <div style="font-size: 0.75rem; font-weight:bold; color:#666; margin-bottom:2px;">Registro Fotográfico</div>
+                                    <div style="font-size: 0.7rem; font-weight:bold; color:#666; margin-bottom: 2px;">FOTO DO INDIVÍDUO</div>
                                     ${photoHTML}
                                 </div>
                                 <div>
-                                    <div style="font-size: 0.75rem; font-weight:bold; color:#666; margin-bottom:2px;">Geolocalização</div>
-                                    <div id="map-container" style="width: 100%; height: 160px; background: #eee; border: 1px solid #ccc; border-radius: 4px;"></div>
+                                    <div style="font-size: 0.7rem; font-weight:bold; color:#666; margin-bottom: 2px;">MAPA DE LOCALIZAÇÃO</div>
+                                    <div id="map-container" style="width: 100%; height: 180px; background: #eee; border: 1px solid #ccc; border-radius: 4px;"></div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.8rem; margin-top: 5px; color: #666;"><strong>Local:</strong> ${tree.location}</div>
+                        </div>
+                    </div>
+
+                    <div class="planning-box">
+                        <div class="planning-box-header"><span>📅</span><h3>2. O que será feito e quando?</h3></div>
+                        <div style="padding: 10px;">
+                            <div style="display: flex; gap: 15px; margin-bottom: 10px; font-size: 0.9rem;">
+                                <div style="flex: 1; background: #f0f7f4; padding: 8px; border-radius: 4px; border: 1px solid #ccece6;">
+                                    <strong>Ação Principal:</strong> ${plan.interventionType}<br>
+                                    <span style="font-size: 0.8rem; color: #555;">${plan.justification}</span>
+                                </div>
+                                <div style="width: 140px; background: #fff8e1; padding: 8px; border-radius: 4px; border: 1px solid #ffe0b2; text-align: center;">
+                                    <strong>Duração Total</strong><br>
+                                    <span style="font-size: 1.2rem; font-weight: bold;">${diffDays} dias</span>
+                                </div>
+                            </div>
+                            
+                            <div id="gantt-chart" style="margin: 0; border: 1px solid #eee;"></div>
+                        </div>
+                    </div>
+
+                    <div class="planning-box">
+                        <div class="planning-box-header"><span>🛠️</span><h3>3. Como e com o que será feito?</h3></div>
+                        <div style="padding: 10px;">
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                                <div>
+                                    <h4 style="font-size: 0.8rem; font-weight: bold; margin: 0 0 5px 0; color: #00695c;">FERRAMENTAS E EQUIPAMENTOS</h4>
+                                    <ul style="margin: 0; padding-left: 15px; font-size: 0.8rem; line-height: 1.4;">
+                                        ${plan.tools.map(t => `<li>${t}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 style="font-size: 0.8rem; font-weight: bold; margin: 0 0 5px 0; color: #00695c;">EQUIPE E EPIs</h4>
+                                    <div style="font-size: 0.8rem; margin-bottom: 4px;"><strong>Dimensionamento:</strong> ${countTeam} profissionais</div>
+                                    <ul style="margin: 0; padding-left: 15px; font-size: 0.8rem; line-height: 1.4;">
+                                        ${plan.epis.slice(0, 4).map(e => `<li>${e}</li>`).join('')}
+                                        ${plan.epis.length > 4 ? `<li>e mais ${plan.epis.length - 4} itens...</li>` : ''}
+                                    </ul>
                                 </div>
                             </div>
 
-                        </div>
-                    </div>
-
-                    <div class="planning-box">
-                        <div class="planning-box-header" style="padding: 4px 10px;"><span>📋</span><h3>2. Cronograma</h3></div>
-                        <div style="padding: 8px;">
-                            <div style="background:#f9f9f9; padding: 5px 8px; border-radius: 4px; font-size: 0.85rem; margin-bottom: 5px;">
-                                <strong>${plan.interventionType}</strong> (${diffDays}d) • Equipe: ${countTeam} • <em>"${safeJustification}"</em>
-                            </div>
-                            <div id="gantt-chart" style="margin: 0;"></div>
-                        </div>
-                    </div>
-
-                    <div class="planning-box">
-                        <div class="planning-box-header" style="padding: 4px 10px;"><span>🛠️</span><h3>3. Recursos</h3></div>
-                        <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 8px;">
                             <div>
-                                <h4 style="font-size: 0.8rem; margin: 0; font-weight: bold;">Ferramentas</h4>
-                                <ul style="margin: 0; padding-left: 1rem; font-size: 0.8rem;">${plan.tools.map(t => `<li>${t}</li>`).join('')}</ul>
-                            </div>
-                            <div>
-                                <h4 style="font-size: 0.8rem; margin: 0; font-weight: bold;">EPIs</h4>
-                                <ul style="margin: 0; padding-left: 1rem; font-size: 0.8rem;">${plan.epis.map(e => `<li>${e}</li>`).join('')}</ul>
+                                <h4 style="font-size: 0.8rem; font-weight: bold; margin: 0 0 5px 0; color: #2e7d32;">PROCEDIMENTO OPERACIONAL PADRÃO (${plan.interventionType.toUpperCase()})</h4>
+                                <ol style="margin: 0; padding-left: 15px; font-size: 0.85rem; line-height: 1.3; color: #333;">
+                                    ${steps.map(s => `<li style="margin-bottom: 2px;">${s}</li>`).join('')}
+                                </ol>
                             </div>
                         </div>
                     </div>
 
-                    <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: center; page-break-inside: avoid;">
-                        <div>
-                            <div style="border-bottom: 1px solid #000; margin-bottom: 2px;"></div>
-                            <strong style="font-size: 0.85rem;">${plan.responsible}</strong><br>
-                            <span style="font-size: 0.7rem; color: #555;">Engenheiro Responsável</span>
+                    <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; page-break-inside: avoid;">
+                        <div style="text-align: center;">
+                            <div style="border-bottom: 1px solid #333; margin-bottom: 4px;"></div>
+                            <strong style="font-size: 0.8rem;">${plan.responsible}</strong><br>
+                            <span style="font-size: 0.7rem; color: #666;">${plan.responsibleTitle}</span>
                         </div>
-                        <div>
-                            <div style="border-bottom: 1px solid #000; margin-bottom: 2px;"></div>
-                            <strong style="font-size: 0.85rem;">Segurança do Trabalho</strong><br>
-                            <span style="font-size: 0.7rem; color: #555;">Visto / Aprovação</span>
+                        <div style="text-align: center;">
+                            <div style="border-bottom: 1px solid #333; margin-bottom: 4px;"></div>
+                            <strong style="font-size: 0.8rem;">Segurança do Trabalho (SMS)</strong><br>
+                            <span style="font-size: 0.7rem; color: #666;">Liberação do Serviço</span>
                         </div>
                     </div>
 
@@ -671,6 +745,31 @@
             dateInputs.forEach(input => input.addEventListener('input', calculateEndDate)); // Para atualizar enquanto digita
             // Roda uma vez para inicializar
             calculateEndDate();
+
+            // Lógica de Preview de Procedimento
+            const interventionSelect = $('#interventionType');
+            const techChecks = $$('input[name="techniques"]');
+            const previewDiv = $('#procedure-preview');
+
+            function updateProcedurePreview() {
+                if (!interventionSelect || !previewDiv) return;
+                
+                const type = interventionSelect.value;
+                const techs = [];
+                $$('input[name="techniques"]:checked').forEach(c => techs.push(c.value));
+                
+                // Usa a mesma função helper criada anteriormente
+                const steps = getOperationalSteps(type, techs);
+                
+                previewDiv.innerHTML = `<ol style="margin-left: 15px;">${steps.map(s => `<li>${s}</li>`).join('')}</ol>`;
+            }
+
+            if (interventionSelect) {
+                interventionSelect.addEventListener('change', updateProcedurePreview);
+                techChecks.forEach(ch => ch.addEventListener('change', updateProcedurePreview));
+                // Inicializa
+                updateProcedurePreview();
+            }
         }
 
         if (state.view === 'DOCUMENT') {
