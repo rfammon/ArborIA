@@ -80,3 +80,17 @@ ul.compact-list li { margin-bottom: 2px; }
     border: none !important;
     padding: 0 !important;
 }
+
+/* --- Correções Visuais (CSS) --- */
+.hud-step input[type="number"] {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: #1a202c !important;
+    border: 2px solid #00e676 !important;
+}
+
+.hud-capture-btn {
+    margin-top: 20px !important;
+    margin-bottom: 10px !important;
+    display: block !important;
+    position: relative !important;
+}

@@ -30,10 +30,6 @@ export async function startDAPEstimator() {
     resetMeasurement();
     showStep('distance'); 
 
-    const mainDistInput = document.getElementById('risk-distancia-obs');
-    if (mainDistInput && mainDistInput.value && parseFloat(mainDistInput.value) > 0) {
-        distance = parseFloat(mainDistInput.value);
-    }
     if (els.distInput) els.distInput.value = distance;
 
     if (typeof DeviceOrientationEvent !== 'undefined') {
@@ -46,7 +42,7 @@ export async function startDAPEstimator() {
                     showToast("Permissão de sensores negada.", "error");
                 }
             } catch (e) {
-                console.warn("Erro permissão iOS DAP:", e);
+                
                 window.addEventListener('deviceorientation', handleOrientation);
             }
         } else {
@@ -64,10 +60,10 @@ export async function startDAPEstimator() {
         if (els.videoEl) {
             els.videoEl.srcObject = stream;
             els.videoEl.setAttribute("playsinline", true);
-            els.videoEl.play().catch(e => console.warn(e));
+            els.videoEl.play().catch(e => {});
         }
     } catch (err) {
-        console.error(err);
+        
         showToast("Erro na câmera. Verifique HTTPS.", "error");
     }
 }
@@ -126,9 +122,6 @@ export function initDAPEstimatorListeners() {
                 return;
             }
             distance = val;
-            
-            const formDist = document.getElementById('risk-distancia-obs');
-            if(formDist) formDist.value = distance;
 
             showStep('left');
             showToast("Mire na borda ESQUERDA.", "info");
@@ -172,6 +165,31 @@ export function initDAPEstimatorListeners() {
     }
 }
 
+function _calculateDAPInternal(distance, angleLeft, angleRight) {
+    // Convert angles from degrees to radians
+    const radLeft = angleLeft * (Math.PI / 180);
+    const radRight = angleRight * (Math.PI / 180);
+
+    // Calculate the angular width in radians
+    const angularWidthRad = Math.abs(radRight - radLeft);
+
+    // If the angular width is very small, it's effectively zero.
+    // This helps avoid issues with tan(0) being 0 but very small angles
+    // might lead to imprecise results if not handled.
+    if (angularWidthRad < 0.0001) { // ~0.0057 degrees
+        return 0;
+    }
+
+    // Apply the simplified trigonometric formula
+    const widthMetros = 2 * distance * Math.tan(angularWidthRad / 2);
+
+    // Convert meters to centimeters
+    const dapCentimetros = widthMetros * 100;
+
+    return dapCentimetros;
+}
+
+
 function calculateDAP() {
     let delta = Math.abs(angleRightCapture - angleLeftCapture);
 
@@ -180,9 +198,7 @@ function calculateDAP() {
         return;
     }
 
-    const radDelta = delta * (Math.PI / 180);
-    const widthMetros = 2 * distance * Math.tan(radDelta / 2);
-    const dapCentimetros = widthMetros * 100;
+    const dapCentimetros = _calculateDAPInternal(distance, angleLeftCapture, angleRightCapture);
 
     document.getElementById('dap-estimated-result').textContent = dapCentimetros.toFixed(1) + " cm";
     showStep('result');

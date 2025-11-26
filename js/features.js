@@ -165,11 +165,10 @@ function setupFlashCardListeners() {
  */
 export function initChecklistFlashCard(retry = 0) {
     const els = getFlashCardElements();
-    console.log("initChecklistFlashCard called. els:", els, "dataRows length:", els ? els.dataRows.length : 'N/A');
     
     // 1. Verificação Crítica: Garante que as linhas da tabela oculta existem
     if (!els || !els.dataRows || els.dataRows.length === 0) {
-        console.warn("initChecklistFlashCard: elements not ready or dataRows is empty. Retrying...", { els: els, dataRowsLength: els && els.dataRows ? els.dataRows.length : 'N/A' });
+        
         if (retry < 5) {
             // Tenta novamente a cada 150ms para esperar o DOM renderizar a tabela
             setTimeout(() => initChecklistFlashCard(retry + 1), 150);
@@ -284,7 +283,7 @@ export async function handleGetGPS() {
 
   watchId = navigator.geolocation.watchPosition(
       (pos) => { if (pos.coords.accuracy < 150) readings.push(pos.coords); },
-      (err) => console.warn("GPS:", err),
+      (err) => {},
       options
   );
   timerInterval = setInterval(updateUI, 1000);
@@ -536,19 +535,17 @@ export function handleMapMarkerClick(id) {
   }, 300);
 }
 
-export function handleZoomToExtent() {}
-
 // === IMPORTAÇÃO / EXPORTAÇÃO ===
 function getCSVData() {
   if (state.registeredTrees.length === 0) return null;
-  const headers = ["ID", "Data", "Especie", "CoordX", "CoordY", "ZonaN", "ZonaL", "DAP", "Altura", "Distancia", "Local", "Avaliador", "Pontos", "Risco", "Obs", "Fatores", "Foto"];
-  let csv = "\uFEFF" + headers.join(";") + "\n";
+  const headers = ["ID", "Data", "Especie", "CoordX", "CoordY", "ZonaN", "ZonaL", "DAP", "Altura", "Local", "Avaliador", "Pontos", "Risco", "Obs", "Fatores", "Foto"];
+  let csv = "﻿" + headers.join(";") + "\n";
   state.registeredTrees.forEach(t => {
     const c = (s) => (s || '').toString().replace(/[\n;]/g, ' ');
     const rf = (t.riskFactors || []).join(',');
     const r = [
       t.id, t.data, c(t.especie), t.coordX, t.coordY, t.utmZoneNum, t.utmZoneLetter, 
-      t.dap, t.altura, t.distancia, c(t.local), c(t.avaliador), t.pontuacao, t.risco, c(t.observacoes), rf, t.hasPhoto?'Sim':'Nao'
+      t.dap, t.altura, c(t.local), c(t.avaliador), t.pontuacao, t.risco, c(t.observacoes), rf, t.hasPhoto?'Sim':'Nao'
     ];
     csv += r.join(";") + "\n";
   });
@@ -610,7 +607,7 @@ export function exportActionZip() {
         });
     });
   } catch (e) { 
-      console.error(e); 
+       
       if(zipStatus) zipStatus.style.display = 'none'; 
   }
 }
@@ -666,12 +663,9 @@ export async function handleImportZip(event) {
     utils.showToast("Importação concluída!", "success");
     
   } catch (e) {
-      console.error(e);
+      
       utils.showToast("Erro na importação.", "error");
   } finally {
       event.target.value = null;
   }
 }
-
-export async function handleChatSend() {}
-export function handleContactForm(e) { e.preventDefault(); }

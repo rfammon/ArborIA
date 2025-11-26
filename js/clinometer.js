@@ -29,10 +29,6 @@ export async function startClinometer() {
     const els = getElements();
     resetMeasurement();
 
-    const mainDistInput = document.getElementById('risk-distancia-obs');
-    if (mainDistInput && mainDistInput.value && parseFloat(mainDistInput.value) > 0) {
-        distance = parseFloat(mainDistInput.value);
-    }
     if (els.distInput) els.distInput.value = distance;
 
     if (typeof DeviceOrientationEvent !== 'undefined') {
@@ -45,7 +41,7 @@ export async function startClinometer() {
                     showToast("Permissão de sensores negada. O ângulo não funcionará.", "error");
                 }
             } catch (e) {
-                console.warn("Erro ao solicitar permissão iOS:", e);
+                
                 window.addEventListener('deviceorientation', handleOrientation);
             }
         } else {
@@ -65,10 +61,10 @@ export async function startClinometer() {
         if (els.videoEl) {
             els.videoEl.srcObject = stream;
             els.videoEl.setAttribute("playsinline", true);
-            els.videoEl.play().catch(e => console.warn("Erro ao iniciar vídeo:", e));
+            els.videoEl.play().catch(e => {});
         }
     } catch (err) {
-        console.error("Erro na câmera:", err);
+        
         showToast("Erro ao acessar câmera. Verifique se é HTTPS.", "error");
     }
 }
@@ -127,9 +123,6 @@ export function initClinometerListeners() {
             }
             distance = val;
             
-            const mainDistInput = document.getElementById('risk-distancia-obs');
-            if(mainDistInput) mainDistInput.value = distance;
-            
             showStep('base');
             showToast("Aponte para a base do tronco.", "info");
         });
@@ -173,12 +166,20 @@ export function initClinometerListeners() {
     }
 }
 
-function calculateHeight() {
+function calculateTreeHeight(distance, angleBase, angleTop) {
     const radTop = angleTop * (Math.PI / 180);
     const radBase = angleBase * (Math.PI / 180);
     
+    // A fórmula tan(Top) - tan(Base) lida corretamente com casos onde o ângulo da base é negativo
+    // (abaixo da linha do horizonte), pois tan(ângulo_negativo) é negativo, efetivamente somando as magnitudes.
     let height = distance * (Math.tan(radTop) - Math.tan(radBase));
-    height = Math.abs(height); 
+    
+    // Retorna a altura absoluta, pois a altura deve ser um valor positivo neste contexto.
+    return Math.abs(height);
+}
+
+function calculateHeight() {
+    let height = calculateTreeHeight(distance, angleBase, angleTop);
     
     document.getElementById('tree-height-result').textContent = height.toFixed(1) + " m";
     showStep('result');

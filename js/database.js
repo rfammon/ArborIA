@@ -17,10 +17,10 @@ let dbInstance = null;
  * Inicializa o banco de dados IndexedDB para imagens.
  */
 export function initImageDB() {
-    console.log("📂 Iniciando ImageDB...");
+    
     
     if (!window.indexedDB) {
-        console.error("Seu navegador não suporta IndexedDB.");
+        
         showToast("Erro: Navegador incompatível com banco de imagens.", "error");
         return;
     }
@@ -28,7 +28,7 @@ export function initImageDB() {
     const request = indexedDB.open(DB_NAME, DB_VERSION); 
 
     request.onerror = (event) => {
-        console.error("Erro ao abrir IndexedDB:", event.target.error);
+        
         showToast("Erro crítico ao carregar banco de imagens.", "error");
     };
 
@@ -41,10 +41,10 @@ export function initImageDB() {
 
     request.onsuccess = (event) => {
         dbInstance = event.target.result; // Armazena a conexão localmente
-        console.log("✅ Banco de imagens (IndexedDB) pronto.");
+        
         
         dbInstance.onerror = (event) => {
-            console.error("Erro genérico no IndexedDB: ", event.target.error);
+            
         };
     };
 }
@@ -56,7 +56,7 @@ export function initImageDB() {
  */
 export function saveImageToDB(id, blob) {
     if (!dbInstance) {
-        console.warn("Tentativa de salvar imagem sem conexão com DB. Tentando reconectar...");
+        
         // Se por acaso a conexão caiu ou não iniciou, tenta abrir de novo (fallback)
         // Mas idealmente o initImageDB já rodou no main.js
         return;
@@ -69,15 +69,15 @@ export function saveImageToDB(id, blob) {
         
         request.onsuccess = () => {
             // Silencioso no sucesso para não spammar o usuário, logs apenas se necessário
-            // console.log(`Imagem ${id} salva.`);
+            // 
         };
 
         request.onerror = (event) => {
-            console.error("Erro ao salvar imagem:", event.target.error);
+            
             showToast("Erro ao salvar a foto no banco local.", "error");
         };
     } catch (e) {
-        console.error("Erro na transação saveImage:", e);
+        
     }
 }
 
@@ -88,7 +88,7 @@ export function saveImageToDB(id, blob) {
  */
 export function getImageFromDB(id, callback) {
     if (!dbInstance) {
-        console.warn("DB fechado ao tentar ler imagem.");
+        
         callback(null);
         return;
     }
@@ -106,7 +106,7 @@ export function getImageFromDB(id, callback) {
         };
         request.onerror = () => callback(null);
     } catch (e) {
-        console.error("Erro transaction getImage:", e);
+        
         callback(null);
     }
 }
@@ -121,7 +121,7 @@ export function deleteImageFromDB(id) {
         const objectStore = transaction.objectStore(STORE_NAME);
         objectStore.delete(id);
     } catch (e) {
-        console.error("Erro deleteImage:", e);
+        
     }
 }
 

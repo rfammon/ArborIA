@@ -84,7 +84,7 @@ export async function handleGetGPS() {
 
   watchId = navigator.geolocation.watchPosition(
       (pos) => { if (pos.coords.accuracy < 150) readings.push(pos.coords); },
-      (err) => console.warn("GPS:", err),
+      (err) => {},
       options
   );
   timerInterval = setInterval(updateUI, 1000);

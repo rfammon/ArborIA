@@ -293,7 +293,7 @@ function _setupPhotoListeners() {
         removeBtn.style.display = 'block';
 
       } catch (error) {
-        console.error('Erro ao otimizar imagem:', error);
+        
         showToast('Erro ao processar a foto. Tente outra imagem.', 'error');
         state.setCurrentTreePhoto(null);
         features.clearPhotoPreview();
@@ -319,7 +319,7 @@ export function showMobileQuestion(index) {
 
   // Validação defensiva
   if (!questionRow.cells || questionRow.cells.length < 4) {
-    console.error('showMobileQuestion: A linha da tabela (tr) está malformada.', questionRow);
+    
     return;
   }
 
@@ -329,7 +329,7 @@ export function showMobileQuestion(index) {
   const realCheckbox = questionRow.cells[3].querySelector('.risk-checkbox');
 
   if (!realCheckbox) {
-    console.error('showMobileQuestion: Checkbox não encontrado na linha.', questionRow);
+    
     return;
   }
 
@@ -366,7 +366,7 @@ export function setupMobileChecklist() {
 
   // Validação
   if (mobileChecklist.questions.length === 0 || !mobileChecklist.card || !mobileChecklist.navPrev) {
-    console.warn('setupMobileChecklist: Elementos do carrossel não encontrados.');
+    
     return;
   }
 

@@ -152,7 +152,7 @@
                                 <div>
                                     <label for="risk-altura">Altura Total (m):</label>
                                     <div style="display: flex; gap: 8px;">
-                                        <input type="number" id="risk-altura" name="risk-altura" min="0" step="0.1" placeholder="0.0">
+                                        <input type="number" id="risk-altura" name="risk-altura" min="0" step="0.1" placeholder="0.0" required>
                                         <button type="button" id="btn-measure-height-form" class="btn btn-primary" style="width: auto; padding: 0 12px;" title="Abrir Clinômetro"><img src="img/icons/clinometro.png" alt="Clinômetro" class="button-icon"></button>
                                     </div>
                                 </div>
@@ -233,6 +233,7 @@
                 <div id="tab-content-summary" class="sub-tab-content" style="display: none;">
                     <fieldset class="risk-fieldset">
                         <legend>Inventário</legend>
+                        <div class="table-controls-wrapper"></div>
                         <div class="table-filter-container"><input type="text" id="table-filter-input" placeholder="Buscar por espécie ou local..." autocomplete="off"></div>
                         
                         <div id="summary-table-container">
@@ -461,7 +462,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://unpkg.com/jsgantt-improved@latest/dist/jsgantt.js"></script>
     
     <script type="module" src="js/arboria-module.js?v=2.0"></script>
     <script type="module" src="js/main.js?v=2.0"></script>

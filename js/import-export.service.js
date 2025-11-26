@@ -76,7 +76,7 @@ export function exportActionZip() {
             });
         });
     } catch (e) {
-        console.error(e);
+        
         if (zipStatus) zipStatus.style.display = 'none';
     }
 }
@@ -130,7 +130,7 @@ export async function handleImportZip(event) {
                     const blob = await imgFile.async("blob");
                     db.saveImageToDB(newId, blob);
                 } else {
-                    console.warn(`Foto para a árvore com ID antigo ${oldId} não encontrada no ZIP.`);
+                    
                     tree.hasPhoto = false; // Corrige o estado se a foto não for encontrada
                 }
             }
@@ -143,7 +143,7 @@ export async function handleImportZip(event) {
         utils.showToast("Importação concluída!", "success");
 
     } catch (e) {
-        console.error(e);
+        
         utils.showToast("Erro na importação.", "error");
     } finally {
         event.target.value = null;
