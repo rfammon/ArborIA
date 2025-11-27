@@ -319,3 +319,82 @@
 .item-risk-info .badge {
   font-size: 0.7rem;
 }
+
+/* --- LAYOUT DE BOTÕES EM GRID (2 COLUNAS) --- */
+
+/* 1. O Container Grid */
+fieldset.target-selection-desktop .target-options-container {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* 2 colunas forçadas */
+    gap: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. Reset dos wrappers internos */
+fieldset.target-selection-desktop .form-group-radio {
+    display: flex !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    width: 100% !important;
+}
+
+/* 3. Esconde o input nativo */
+fieldset.target-selection-desktop input[type="radio"] {
+    display: none;
+}
+
+/* 4. O BOTÃO (Label) - Estado Normal (Azul/Verde) */
+fieldset.target-selection-desktop label {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;     /* Centraliza horizontalmente */
+    justify-content: center; /* Centraliza verticalmente */
+    text-align: center;
+
+    /* Identidade Visual (Igual botão GPS) */
+    background: linear-gradient(90deg, #1565c0 0%, #2e7d32 100%) !important;
+    color: #ffffff !important;
+
+    border: none !important;
+    border-radius: 25px !important; /* Borda arredondada estilo botão */
+    padding: 12px 15px !important;  /* Mais compacto */
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* 5. Estado SELECIONADO (Laranja) */
+fieldset.target-selection-desktop input[type="radio"]:checked + label {
+    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%) !important;
+    transform: scale(1.02);
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 5px #f57c00; /* Anel de foco */
+    z-index: 2;
+}
+
+/* 6. Tipografia */
+fieldset.target-selection-desktop label strong {
+    font-size: 1rem;
+    display: block;
+    margin-bottom: 2px;
+    color: #fff !important;
+}
+
+fieldset.target-selection-desktop label small {
+    font-size: 0.75rem;
+    opacity: 0.9;
+    font-weight: 300;
+    color: #fff !important;
+    line-height: 1.2;
+}
+
+/* Mobile: Volta para 1 coluna */
+@media (max-width: 768px) {
+    fieldset.target-selection-desktop .target-options-container {
+        grid-template-columns: 1fr !important;
+    }
+}

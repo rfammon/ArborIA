@@ -246,6 +246,11 @@
     border-left: 5px solid var(--risk-high);
 }
 
+.summary-list-item.badge-extreme {
+    background-color: rgba(106, 0, 0, 0.1); /* Dark Red (transparente) */
+    border-left: 5px solid var(--risk-extreme);
+}
+
 .summary-list-item {
     border-radius: 8px;
     margin-bottom: 10px;
@@ -441,4 +446,75 @@
     margin-top: 16px;
     gap: 12px;
   }
+}
+
+/* --- [NOVO] Estilos para o Card de Seleção de Alvo --- */
+.target-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.form-group-radio {
+    display: flex;
+    align-items: center;
+    border: 2px solid #005a4f;
+    border-radius: 10px;
+    padding: 15px;
+    background-color: #00796b;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.form-group-radio:hover {
+    background-color: #00695c;
+}
+
+.form-group-radio input[type="radio"] {
+    display: none;
+}
+
+.form-group-radio input[type="radio"]:checked + label {
+    font-weight: bold;
+}
+
+.form-group-radio input[type="radio"]:checked + label::before {
+    content: '✔';
+    font-size: 1.2rem;
+    color: #a7ffeb;
+    margin-right: 15px;
+    font-weight: bold;
+}
+
+.form-group-radio label {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    cursor: pointer;
+}
+
+.form-group-radio label small {
+    display: block;
+    margin-top: 4px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 300;
+}
+
+.form-group-radio:has(input[type="radio"]:checked) {
+    background-color: #004d40;
+    border-color: #a7ffeb;
+}
+
+/* Adicione isso ao final do CSS */
+#mitigation-action {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    border: 1px solid #ccc;
+}
+#mitigation-action option {
+    color: #333333 !important;
+    background-color: #ffffff !important;
 }

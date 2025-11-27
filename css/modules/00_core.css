@@ -27,6 +27,7 @@
   --risk-high: #d32f2f;
   --risk-medium: #f57c00;
   --risk-low: #388e3c;
+  --risk-extreme: #6a0000; /* Vermelho escuro e severo para risco extremo */
 
   /* Cores RGB para opacidade */
   --color-tech-rgb: 2, 119, 189; /* Componentes RGB de --color-tech */

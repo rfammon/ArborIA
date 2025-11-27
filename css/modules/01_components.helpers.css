@@ -16,3 +16,10 @@
 .glow-effect {
   animation: glow 1.5s ease-out;
 }
+
+/* Helper class to hide elements on mobile screens */
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+}

@@ -94,3 +94,9 @@ ul.compact-list li { margin-bottom: 2px; }
     display: block !important;
     position: relative !important;
 }
+
+/* Cores de Risco para a borda lateral dos cards */
+.risk-low { border-left: 6px solid #2e7d32 !important; } /* Verde */
+.risk-medium { border-left: 6px solid #f57c00 !important; } /* Laranja */
+.risk-high { border-left: 6px solid #d32f2f !important; } /* Vermelho */
+.risk-extreme { border-left: 6px solid #000000 !important; } /* Preto */

@@ -187,3 +187,22 @@ export function convertLatLonToUtm(lat, lon) {
         return null;
     }
 }
+
+/**
+ * [NOVO] Dispara o download de um arquivo Blob pelo navegador.
+ * @param {Blob} blob - O conteúdo do arquivo.
+ * @param {string} fileName - O nome do arquivo a ser salvo (ex: 'backup.zip').
+ */
+export function downloadBlob(blob, fileName) {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    
+    // Limpeza
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}

@@ -59,6 +59,9 @@
 .modal-dialog.risk-low { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
 .modal-dialog.risk-low #modal-title { color: var(--risk-low); }
 
+.modal-dialog.risk-extreme { background: linear-gradient(135deg, #fbe9e7, #ffccbc); }
+.modal-dialog.risk-extreme #modal-title { color: var(--risk-extreme); }
+
 
 /* --- CONTEÚDO DO MODAL --- */
 #modal-title {

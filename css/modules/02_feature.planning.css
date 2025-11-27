@@ -59,6 +59,10 @@
     background-color: var(--color-success);
 }
 
+.risk-extreme {
+    background-color: var(--risk-extreme);
+}
+
 .tree-card-info {
     flex-grow: 1;
 }

@@ -188,14 +188,51 @@
                             </div>
                         </fieldset>
                         
+                        <fieldset class="risk-fieldset target-selection-desktop hide-on-mobile">
+                            <legend>2. Taxa de Ocupação do Alvo</legend>
+                            <p class="instruction-text" style="margin-bottom: 1rem;">Com que frequência o alvo (pessoas ou propriedades) está na zona de impacto da árvore?</p>
+                            <div class="target-options-container-desktop">
+                                <div class="form-group-radio">
+                                    <input type="radio" id="target_desktop_1" name="target_category_desktop" value="1">
+                                    <label for="target_desktop_1"><div><strong>Raro</strong><small>Área raramente usada (ex: trilha de mata nativa).</small></div></label>
+                                </div>
+                                <div class="form-group-radio">
+                                    <input type="radio" id="target_desktop_2" name="target_category_desktop" value="2">
+                                    <label for="target_desktop_2"><div><strong>Ocasional</strong><small>Trânsito irregular (ex: estacionamento de um parque).</small></div></label>
+                                </div>
+                                <div class="form-group-radio">
+                                    <input type="radio" id="target_desktop_3" name="target_category_desktop" value="3">
+                                    <label for="target_desktop_3"><div><strong>Frequente</strong><small>Ocupado boa parte do dia (ex: pátio de escola, via coletora).</small></div></label>
+                                </div>
+                                <div class="form-group-radio">
+                                    <input type="radio" id="target_desktop_4" name="target_category_desktop" value="4">
+                                    <label for="target_desktop_4"><div><strong>Constante</strong><small>Ocupação contínua (ex: residências, vias arteriais).</small></div></label>
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="risk-fieldset mitigation-selection-desktop hide-on-mobile">
+                            <legend>3. Mitigação de Risco</legend>
+                            <div class="form-group-select">
+                                <label for="mitigation-action-desktop">Ação de Mitigação Sugerida:</label>
+                                <select id="mitigation-action-desktop" name="mitigation-action-desktop" class="form-control">
+                                    <option value="nenhuma">Nenhuma</option>
+                                    <option value="poda_limpeza">Poda de Limpeza</option>
+                                    <option value="poda_reducao">Poda de Redução</option>
+                                    <option value="supressao">Supressão</option>
+                                    <option value="isolamento">Isolamento da Área</option>
+                                </select>
+                            </div>
+                        </fieldset>
+
                         <div class="risk-buttons-area" style="justify-content: center; margin-bottom: 20px;">
                             <button type="button" id="open-flashcard-btn" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 1rem;">
-                                Avaliar Fatores de Risco (16 Itens)
+                                Avaliar Fatores de Risco (15 Itens)
                             </button>
                         </div>
 
                         <fieldset class="risk-fieldset" id="checklist-data-table-fieldset">
-                            <legend>2. Fatores de Risco</legend>
+                            <legend>4. Fatores de Risco</legend>
                             
                             <table class="risk-table" id="checklist-data-table">
                                 <thead><tr><th>Nº</th><th>Critério de Avaliação</th><th>Peso</th><th>Sim</th></tr></thead>
@@ -207,15 +244,14 @@
                                     <tr><td>5</td><td>Há <span class="checklist-term" data-term-key="galhos-cruzados">galhos cruzados</span>?</td><td>2</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="2"><span class="slider"></span></label></td></tr>
                                     <tr><td>6</td><td>A árvore apresenta <span class="checklist-term" data-term-key="copa-assimetrica">copa assimétrica</span>?</td><td>2</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="2"><span class="slider"></span></label></td></tr>
                                     <tr><td>7</td><td>Há sinais de <span class="checklist-term" data-term-key="inclinacao">inclinação anormal</span>?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
-                                    <tr><td>8</td><td>A árvore está próxima a vias públicas?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
-                                    <tr><td>9</td><td>Há risco de queda sobre edificações?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
-                                    <tr><td>10</td><td>A árvore interfere em redes elétricas?</td><td>4</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="4"><span class="slider"></span></label></td></tr>
-                                    <tr><td>11</td><td>A espécie é conhecida por falhas?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
-                                    <tr><td>12</td><td>Há <span class="checklist-term" data-term-key="brotacao-intensa">brotação epicórmica intensa</span>?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
-                                    <tr><td>13</td><td>Há calçadas rachadas na base?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
-                                    <tr><td>14</td><td>Há <span class="checklist-term" data-term-key="perda-raizes">perda visível de raízes</span>?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
-                                    <tr><td>15</td><td>Há sinais de <span class="checklist-term" data-term-key="compactacao">compactação</span> do solo?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
-                                    <tr><td>16</td><td>Há <span class="checklist-term" data-term-key="apodrecimento">apodrecimento em raízes</span>?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
+                                    <tr><td>8</td><td>Há risco de queda sobre edificações?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
+                                    <tr><td>9</td><td>A árvore interfere em redes elétricas?</td><td>4</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="4"><span class="slider"></span></label></td></tr>
+                                    <tr><td>10</td><td>A espécie é conhecida por falhas?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
+                                    <tr><td>11</td><td>Há <span class="checklist-term" data-term-key="brotacao-intensa">brotação epicórmica intensa</span>?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
+                                    <tr><td>12</td><td>Há calçadas rachadas na base?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
+                                    <tr><td>13</td><td>Há <span class="checklist-term" data-term-key="perda-raizes">perda visível de raízes</span>?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
+                                    <tr><td>14</td><td>Há sinais de <span class="checklist-term" data-term-key="compactacao">compactação</span> do solo?</td><td>3</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="3"><span class="slider"></span></label></td></tr>
+                                    <tr><td>15</td><td>Há <span class="checklist-term" data-term-key="apodrecimento">apodrecimento em raízes</span>?</td><td>5</td><td><label class="form-switch"><input type="checkbox" class="risk-checkbox" data-weight="5"><span class="slider"></span></label></td></tr>
                                 </tbody>
                             </table>
                         </fieldset>
@@ -438,7 +474,7 @@
         <div class="mobile-checklist-wrapper-fullscreen">
             <button id="close-checklist-btn" class="hud-close-btn" aria-label="Fechar Checklist">✕</button>
 
-            <div class="mobile-checklist-card">
+            <div id="question-card" class="mobile-checklist-card">
                 <p id="flashcard-counter">Fator de Risco 1 / 16</p>
                 <h3 id="flashcard-question-text">Há <span class="checklist-term" data-term-key="galhos-mortos">galhos mortos</span> > 5cm?</h3>
 
@@ -449,6 +485,59 @@
                         <span class="toggle-slider"></span>
                     </label>
                     <span style="color: rgba(255,255,255,0.7);">SIM</span>
+                </div>
+            </div>
+
+            <div id="target-card" class="mobile-checklist-card" style="display: none;">
+                <h3>Etapa 2/3: Taxa de Ocupação do Alvo</h3>
+                <p>Com que frequência o alvo (pessoas ou propriedades) está na zona de impacto da árvore?</p>
+                <div class="target-options-container">
+                    <div class="form-group-radio">
+                        <input type="radio" id="target_1" name="target_category" value="1">
+                        <label for="target_1">
+                            <strong>Raro</strong>
+                            <small>Área raramente usada (ex: trilha de mata nativa).</small>
+                        </label>
+                    </div>
+                    <div class="form-group-radio">
+                        <input type="radio" id="target_2" name="target_category" value="2">
+                        <label for="target_2">
+                            <strong>Ocasional</strong>
+                            <small>Trânsito irregular (ex: estacionamento de um parque).</small>
+                        </label>
+                    </div>
+                    <div class="form-group-radio">
+                        <input type="radio" id="target_3" name="target_category" value="3">
+                        <label for="target_3">
+                            <strong>Frequente</strong>
+                            <small>Ocupado boa parte do dia (ex: pátio de escola, via coletora).</small>
+                        </label>
+                    </div>
+                    <div class="form-group-radio">
+                        <input type="radio" id="target_4" name="target_category" value="4">
+                        <label for="target_4">
+                            <strong>Constante</strong>
+                            <small>Ocupação contínua (ex: residências, vias arteriais).</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="residual-risk-card" class="mobile-checklist-card" style="display: none;">
+                <h3>Etapa 3/3: Risco Residual</h3>
+                <p>Selecione uma ação mitigadora para simular o risco após a intervenção.</p>
+                <div class="form-group-select" style="width: 100%; margin-top: 1rem;">
+                    <label for="mitigation-action" style="text-align: left; display: block; margin-bottom: 8px; color: rgba(255,255,255,0.8);">Ação de Mitigação Sugerida:</label>
+                    <select id="mitigation-action" name="mitigation-action" class="form-control">
+                        <option value="nenhuma">Nenhuma</option>
+                        <option value="poda_limpeza">Poda de Limpeza</option>
+                        <option value="poda_reducao">Poda de Redução</option>
+                        <option value="supressao">Supressão</option>
+                        <option value="isolamento">Isolamento da Área</option>
+                    </select>
+                </div>
+                <div style="margin-top: 1.5rem; font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+                    <p>O risco residual será calculado com base na redução da probabilidade de falha que esta ação proporciona.</p>
                 </div>
             </div>
 

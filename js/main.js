@@ -98,7 +98,10 @@ async function openPlanningModule(treeId = null) {
         riskScore: tree.pontuacao,
         date: tree.data,
         dap: tree.dap,
-        height: tree.altura
+        height: tree.altura,
+        
+        // NOVO: Mapeia a mitigação escolhida no form para o plano
+        suggestedIntervention: tree.mitigation || 'Avaliar'
     }));
 
     // 4. Carrega imagens (Assíncrono)
