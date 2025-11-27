@@ -100,3 +100,24 @@ ul.compact-list li { margin-bottom: 2px; }
 .risk-medium { border-left: 6px solid #f57c00 !important; } /* Laranja */
 .risk-high { border-left: 6px solid #d32f2f !important; } /* Vermelho */
 .risk-extreme { border-left: 6px solid #000000 !important; } /* Preto */
+
+/* Correções de visibilidade e layout */
+#clear-all-btn, .btn-danger-filled {
+    background-color: #c62828 !important;
+    color: white !important;
+    opacity: 1 !important;
+}
+
+#import-export-controls {
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.summary-list-item {
+    cursor: pointer;
+}
+
+.summary-list-item:hover {
+    background-color: #f0f0f0;
+}

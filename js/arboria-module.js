@@ -136,193 +136,103 @@ return `
 }
 
 function renderForm(tree) {
-const isHighRisk = (tree.riskLevel || '').includes('Alto');
-const defaultIntervention = isHighRisk ? 'Supressão (Corte)' : 'Poda';
-const today = new Date().toISOString().split('T')[0];
-
-const preSelectedTools = [];
-if (parseFloat(tree.dap) > 15) preSelectedTools.push('Motosserra (Sabre > 30cm)');
-if (parseFloat(tree.height) > 4) preSelectedTools.push('Motopoda (Haste telescópica)');
-
-const renderChecks = (list, name, preSelected = []) => list.map(item => `
-    <label class="checkbox-group">
-        <input type="checkbox" name="${name}" value="${item}" ${preSelected.includes(item) ? 'checked' : ''}>
-        <span>${item}</span>
-    </label>
-`).join('');
-
-return `
-    <div style="padding: 1rem;">
-        <div id="back-btn-container" style="display: flex; margin-bottom: 1rem;">
-            <button type="button" id="btn-back" class="btn-back" style="display: inline-flex; align-items: center; gap: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                Voltar à Lista
-            </button>
-        </div>
-        <form id="planning-form" style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <div class="planning-box">
-                <div class="planning-box-header">
-                    <span class="icon">⚠️</span>
-                    <h3>Avaliação de Risco: ${tree.species} (ID: ${tree.id})</h3>
-                </div>
-                <div style="background: ${isHighRisk ? 'var(--risk-high)' : 'var(--risk-medium)'}; padding: 1rem; border-radius: var(--radius-md); color: white;">
-                    <h4 style="font-weight: bold; margin: 0;">
-                        Nível de Risco: ${tree.riskLevel} (Pontuação: ${tree.riskScore})
-                    </h4>
-                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">
-                        <strong>Observações:</strong> ${tree.defects && tree.defects.length ? tree.defects.join(', ') : 'Nenhuma.'}
-                    </p>
-                </div>
-            </div>
-
-            <div class="planning-box green">
-                <div class="planning-box-header">
-                    <span class="icon">🎯</span>
-                    <h3>1. Definição da Intervenção</h3>
-                </div>
-                <div class="form-grid">
-                    <div>
-                        <label for="interventionType">Tipo de Intervenção</label>
-                        <select name="interventionType" id="interventionType">
-                            <option value="Poda" ${defaultIntervention === 'Poda' ? 'selected' : ''}>Poda</option>
-                            <option value="Supressão (Corte)" ${defaultIntervention !== 'Poda' ? 'selected' : ''}>Supressão (Corte)</option>
-                            <option value="Monitoramento">Monitoramento</option>
-                        </select>
-                    </div>
-                    <div id="techniques-container" style="${defaultIntervention !== 'Poda' ? 'display: none;' : ''}">
-                        <label>Técnicas de Poda</label>
-                        <div class="checkbox-container">
-                            ${renderChecks(['Limpeza', 'Elevação', 'Redução', 'Correção'], 'techniques')}
-                        </div>
-                    </div>
-                </div>
-                <div style="margin-top: 1.5rem;">
-                    <label for="justification">Justificativa Técnica</label>
-                    <textarea name="justification" id="justification" required placeholder="Descreva o motivo da intervenção..."></textarea>
-                </div>
-            </div>
-
-            <div class="planning-box">
-                <div class="planning-box-header">
-                    <span class="icon">👷</span>
-                    <h3>2. Recursos e SMS</h3>
-                </div>
-                <div class="form-grid">
-                    <div>
-                        <label>Ferramentas</label>
-                        <div class="checkbox-container-box">
-                            ${renderChecks(CONSTANTS.TOOLS, 'tools', preSelectedTools)}
-                        </div>
-                        <input type="text" name="toolsJustification" placeholder="Outras ferramentas..." style="margin-top: 1rem;">
-                    </div>
-                    <div>
-                        <label>EPIs Obrigatórios</label>
-                        <div class="checkbox-container-box">
-                            ${renderChecks(CONSTANTS.EPIS, 'epis', CONSTANTS.EPIS.slice(0, 6))}
-                        </div>
-                        <input type="text" name="episJustification" placeholder="Outros EPIs..." style="margin-top: 1rem;">
-                    </div>
-                </div>
-                <div style="margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1.5rem;">
-                    <label style="margin-bottom: 0.5rem; display: block;">Equipe de Campo (Estimada)</label>
-                    <div class="form-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1rem;">
-                        <div>
-                            <label for="foremen" style="font-size: 0.8rem; color: #666;">Encarregados</label>
-                            <input type="number" id="foremen" name="foremen" value="1" min="0" class="team-input" style="width: 100%;">
-                        </div>
-                        <div>
-                            <label for="chainsawOperators" style="font-size: 0.8rem; color: #666;">Operadores Motosserra</label>
-                            <input type="number" id="chainsawOperators" name="chainsawOperators" value="1" min="0" class="team-input" style="width: 100%;">
-                        </div>
-                        <div>
-                            <label for="auxiliaries" style="font-size: 0.8rem; color: #666;">Auxiliares</label>
-                            <input type="number" id="auxiliaries" name="auxiliaries" value="2" min="0" class="team-input" style="width: 100%;">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-<div class="planning-box" style="background: #f1f8e9; border: 1px solid #c5e1a5;">
-<div class="planning-box-header">
-    <span class="icon">📜</span>
-    <h3>Procedimento Padrão (Pré-visualização)</h3>
-</div>
-<div style="padding: 1rem;">
-    <p style="font-size: 0.9rem; color: #558b2f; margin-bottom: 0.5rem;">
-        O procedimento abaixo será incluído automaticamente no relatório com base na sua seleção de intervenção (Poda/Supressão).
-    </p>
-    <div id="procedure-preview" style="font-size: 0.85rem; background: #fff; padding: 10px; border-radius: 4px; border: 1px dashed #aaa;">
-        Selecione o tipo de intervenção acima para visualizar o passo-a-passo.
-    </div>
-</div>
-</div>
-
-<div class="planning-box">
-<div class="planning-box-header">
-    <span class="icon">⏱️</span>
-    <h3>3. Cronograma Operacional</h3>
-</div>
-<div class="form-grid">
-    <div>
-        <label for="startDate">Data de Início</label>
-        <input type="date" id="startDate" name="startDate" value="${today}" required>
-    </div>
+    const isHighRisk = (tree.riskLevel || '').includes('Alto') || (tree.riskLevel || '').includes('Extremo');
     
-    <div>
-        <label>Mobilização (dias)</label>
-        <input type="number" id="dur_mob" name="durationMobilization" value="1" min="0" class="duration-input">
-    </div>
-    <div>
-        <label>Execução (dias)</label>
-        <input type="number" id="dur_exec" name="durationExecution" value="1" min="1" class="duration-input">
-    </div>
-    <div>
-        <label>Desmobilização (dias)</label>
-        <input type="number" id="dur_demob" name="durationDemobilization" value="1" min="0" class="duration-input">
-    </div>
+    // Lógica de Mapeamento: Sugestão TRAQ -> Opção do Select
+    let defaultIntervention = 'Monitoramento';
+    const mit = (tree.mitigation || '').toLowerCase();
+    
+    if (mit.includes('supressao')) defaultIntervention = 'Supressão (Corte)';
+    else if (mit.includes('poda')) defaultIntervention = 'Poda';
+    else if (mit.includes('isolamento')) defaultIntervention = 'Monitoramento'; // Isolamento geralmente implica monitorar
+    
+    const today = new Date().toISOString().split('T')[0];
+    const preSelectedTools = [];
+    if (parseFloat(tree.dap) > 15) preSelectedTools.push('Motosserra (Sabre > 30cm)');
+    if (parseFloat(tree.height) > 4) preSelectedTools.push('Motopoda (Haste telescópica)');
 
-    <div>
-        <label for="endDate">Previsão de Término</label>
-        <input type="date" id="endDate" name="endDate" value="${today}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
-    </div>
-</div>
-</div>
+    const renderChecks = (list, name, preSelected = []) => list.map(item => `
+        <label class="checkbox-group">
+            <input type="checkbox" name="${name}" value="${item}" ${preSelected.includes(item) ? 'checked' : ''}>
+            <span>${item}</span>
+        </label>
+    `).join('');
 
-            <div class="planning-box">
-                <div class="planning-box-header">
-                    <span class="icon">🏁</span>
-                    <h3>4. Encerramento</h3>
-                </div>
-                <div>
-                    <label for="wasteSelect">Destinação de Resíduos</label>
-                    <select name="wasteDestination" id="wasteSelect">
-                        ${CONSTANTS.WASTE.map(w => `<option value="${w}">${w}</option>`).join('')}
-                    </select>
-                    <input type="text" id="customWaste" name="customWaste" placeholder="Especifique o destino..." style="display: none; margin-top: 1rem;">
-                </div>
-                <div class="form-grid" style="margin-top: 1.5rem;">
-                    <div>
-                        <label for="responsible">Responsável Técnico</label>
-                        <input type="text" id="responsible" name="responsible" value="${state.config.currentUser}">
-                    </div>
-                    <div>
-                        <label for="responsibleTitle">Cargo</label>
-                        <input type="text" id="responsibleTitle" name="responsibleTitle" value="Engenheiro Responsável">
-                    </div>
-                </div>
-                <div style="margin-top: 1.5rem;">
-                    <label for="executionInstructions">Orientações de Execução</label>
-                    <textarea id="executionInstructions" name="executionInstructions" placeholder="Instruções adicionais para a equipe de campo..."></textarea>
-                </div>
+    return `
+        <div style="padding: 1rem;">
+            <div id="back-btn-container" style="display: flex; margin-bottom: 1rem;">
+                <button type="button" id="btn-back" class="btn-back" style="display: inline-flex; align-items: center; gap: 8px;">
+                    Voltar à Lista
+                </button>
             </div>
+            <form id="planning-form" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                
+                <div class="planning-box">
+                    <div class="planning-box-header">
+                        <span class="icon">⚠️</span>
+                        <h3>Diagnóstico TRAQ (ID: ${tree.id})</h3>
+                    </div>
+                    <div style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: var(--radius-md);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <div style="text-align:center; padding: 10px; background: ${isHighRisk ? '#ffebee' : '#f1f8e9'}; border-radius: 6px;">
+                                <small style="display:block; color: #666;">Risco Atual</small>
+                                <strong style="font-size: 1.2rem; color: ${isHighRisk ? '#d32f2f' : '#2e7d32'};">${tree.riskLevel}</strong>
+                            </div>
+                            <div style="text-align:center; padding: 10px; background: #e3f2fd; border-radius: 6px;">
+                                <small style="display:block; color: #666;">Risco Projetado</small>
+                                <strong style="font-size: 1.2rem; color: #1565c0;">${tree.residualRisk || '-'}</strong>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.9rem; color: #555; border-top: 1px solid #eee; padding-top: 10px;">
+                            <p style="margin:0;"><strong>Falha Provável:</strong> ${tree.failureProb}</p>
+                            <p style="margin:5px 0 0 0;"><strong>Alvo:</strong> ${tree.targetType}</p>
+                            <p style="margin:5px 0 0 0;"><strong>Recomendação:</strong> ${tree.mitigation || 'Não especificada'}</p>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="risk-buttons-area" style="justify-content: flex-end; padding: 0 1rem 1rem 1rem;">
-                <button type="button" id="btn-cancel" class="btn btn-clear">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Gerar Plano de Intervenção</button>
-            </div>
-        </form>
-    </div>
-`;
+                <div class="planning-box green">
+                    <div class="planning-box-header">
+                        <span class="icon">🎯</span>
+                        <h3>1. Definição da Intervenção</h3>
+                    </div>
+                    <div class="form-grid">
+                        <div>
+                            <label for="interventionType">Tipo de Intervenção</label>
+                            <select name="interventionType" id="interventionType">
+                                <option value="Poda" ${defaultIntervention === 'Poda' ? 'selected' : ''}>Poda</option>
+                                <option value="Supressão (Corte)" ${defaultIntervention === 'Supressão (Corte)' ? 'selected' : ''}>Supressão (Corte)</option>
+                                <option value="Monitoramento" ${defaultIntervention === 'Monitoramento' ? 'selected' : ''}>Monitoramento</option>
+                            </select>
+                        </div>
+                        <div id="techniques-container" style="${defaultIntervention !== 'Poda' ? 'display: none;' : ''}">
+                            <label>Técnicas de Poda</label>
+                            <div class="checkbox-container">
+                                ${renderChecks(['Limpeza', 'Elevação', 'Redução', 'Correção'], 'techniques')}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem;">
+                        <label for="justification">Justificativa Técnica</label>
+                        <textarea name="justification" id="justification" required>${tree.mitigation ? `Intervenção recomendada para redução de risco (TRAQ). Alvo: ${tree.targetType}.` : ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="planning-box">
+                    <div class="planning-box-header"><span class="icon">👷</span><h3>2. Recursos e SMS</h3></div>
+                    <div class="form-grid">
+                        <div><label>Ferramentas</label><div class="checkbox-container-box">${renderChecks(CONSTANTS.TOOLS, 'tools', preSelectedTools)}</div><input type="text" name="toolsJustification" placeholder="Outras..." style="margin-top: 1rem;"></div>
+                        <div><label>EPIs Obrigatórios</label><div class="checkbox-container-box">${renderChecks(CONSTANTS.EPIS, 'epis', CONSTANTS.EPIS.slice(0, 6))}</div><input type="text" name="episJustification" placeholder="Outros..." style="margin-top: 1rem;"></div>
+                    </div>
+                    <div style="margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1.5rem;"><label style="margin-bottom: 0.5rem; display: block;">Equipe de Campo</label><div class="form-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1rem;"><div><label for="foremen" style="font-size: 0.8rem; color: #666;">Encarregados</label><input type="number" id="foremen" name="foremen" value="1" min="0" class="team-input" style="width: 100%;"></div><div><label for="chainsawOperators" style="font-size: 0.8rem; color: #666;">Operadores</label><input type="number" id="chainsawOperators" name="chainsawOperators" value="1" min="0" class="team-input" style="width: 100%;"></div><div><label for="auxiliaries" style="font-size: 0.8rem; color: #666;">Auxiliares</label><input type="number" id="auxiliaries" name="auxiliaries" value="2" min="0" class="team-input" style="width: 100%;"></div></div></div>
+                </div>
+                <div class="planning-box" style="background: #f1f8e9; border: 1px solid #c5e1a5;"><div class="planning-box-header"><span class="icon">📜</span><h3>Procedimento Padrão (Pré-visualização)</h3></div><div style="padding: 1rem;"><p style="font-size: 0.9rem; color: #558b2f; margin-bottom: 0.5rem;">O procedimento abaixo será incluído automaticamente no relatório.</p><div id="procedure-preview" style="font-size: 0.85rem; background: #fff; padding: 10px; border-radius: 4px; border: 1px dashed #aaa;">Selecione o tipo de intervenção acima.</div></div></div>
+                <div class="planning-box"><div class="planning-box-header"><span class="icon">⏱️</span><h3>3. Cronograma Operacional</h3></div><div class="form-grid"><div><label for="startDate">Data de Início</label><input type="date" id="startDate" name="startDate" value="${today}" required></div><div><label>Mobilização (dias)</label><input type="number" id="dur_mob" name="durationMobilization" value="1" min="0" class="duration-input"></div><div><label>Execução (dias)</label><input type="number" id="dur_exec" name="durationExecution" value="1" min="1" class="duration-input"></div><div><label>Desmobilização (dias)</label><input type="number" id="dur_demob" name="durationDemobilization" value="1" min="0" class="duration-input"></div><div><label for="endDate">Previsão de Término</label><input type="date" id="endDate" name="endDate" value="${today}" readonly style="background-color: #f5f5f5; cursor: not-allowed;"></div></div></div>
+                <div class="planning-box"><div class="planning-box-header"><span class="icon">🏁</span><h3>4. Encerramento</h3></div><div><label for="wasteSelect">Destinação de Resíduos</label><select name="wasteDestination" id="wasteSelect">${CONSTANTS.WASTE.map(w => `<option value="${w}">${w}</option>`).join('')}</select><input type="text" id="customWaste" name="customWaste" placeholder="Especifique..." style="display: none; margin-top: 1rem;"></div><div class="form-grid" style="margin-top: 1.5rem;"><div><label for="responsible">Responsável Técnico</label><input type="text" id="responsible" name="responsible" value="${state.config.currentUser}"></div><div><label for="responsibleTitle">Cargo</label><input type="text" id="responsibleTitle" name="responsibleTitle" value="Engenheiro Responsável"></div></div><div style="margin-top: 1.5rem;"><label for="executionInstructions">Orientações de Execução</label><textarea id="executionInstructions" name="executionInstructions" placeholder="Instruções adicionais..."></textarea></div></div>
+                <div class="risk-buttons-area" style="justify-content: flex-end; padding: 0 1rem 1rem 1rem;"><button type="button" id="btn-cancel" class="btn btn-clear">Cancelar</button><button type="submit" class="btn btn-primary">Gerar Plano de Intervenção</button></div>
+            </form>
+        </div>
+    `;
 }
 
 // Helper: Gera o procedimento baseado no tipo de intervenção (Manual Técnico)
@@ -421,28 +331,36 @@ return `
                         <span>📍</span> Identificação e Diagnóstico
                     </div>
                     <div class="arb-card-body">
-                        <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 10px; margin-bottom: 10px; font-size: 0.9rem;">
-                            <div><strong>Espécie:</strong> ${tree.species} <small>(#${tree.id})</small></div>
-                            <div><strong>DAP:</strong> ${tree.dap}cm • <strong>Alt:</strong> ${tree.height}m</div>
-                            <div style="text-align: right;"><strong>Risco:</strong> <span style="color:${tree.riskLevel.includes('Alto') ? '#d32f2f' : '#2e7d32'}">${tree.riskLevel}</span></div>
-                        </div>
+    <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 0.9rem;">
+        <div><strong>Espécie:</strong> ${tree.species} <small>(#${tree.id})</small></div>
+        <div><strong>Dimensões:</strong> DAP ${tree.dap}cm / Alt ${tree.height}m</div>
+    </div>
 
-                        <div style="background: #fff5f5; border: 1px solid #ffcdd2; border-radius: 4px; padding: 6px 10px; margin-bottom: 15px;">
-                            <strong style="font-size: 0.75rem; color: #b71c1c; text-transform: uppercase;">FATORES DE RISCO IDENTIFICADOS:</strong>
-                            <div style="font-size: 0.8rem; margin-top: 2px;">${riskListHTML}</div>
-                        </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; text-align: center;">
+        <div style="background: #f5f5f5; border-radius: 4px; padding: 5px;">
+            <div style="font-size: 0.65rem; color: #666; text-transform: uppercase;">Prob. Falha</div>
+            <div style="font-weight: bold;">${tree.failureProb}</div>
+        </div>
+        <div style="background: #f5f5f5; border-radius: 4px; padding: 5px;">
+            <div style="font-size: 0.65rem; color: #666; text-transform: uppercase;">Alvo</div>
+            <div style="font-weight: bold;">${tree.targetType}</div>
+        </div>
+        <div style="background: ${tree.riskLevel.includes('Alto') ? '#ffebee' : '#f1f8e9'}; border-radius: 4px; padding: 5px; border: 1px solid ${tree.riskLevel.includes('Alto') ? '#ef9a9a' : '#c5e1a5'};">
+            <div style="font-size: 0.65rem; color: #666; text-transform: uppercase;">Risco Inicial</div>
+            <div style="font-weight: 800; color: ${tree.riskLevel.includes('Alto') ? '#c62828' : '#2e7d32'};">${tree.riskLevel}</div>
+        </div>
+    </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start;">
-                            <div style="text-align: center;">
-                                ${photoHTML}
-                                <div style="font-size:0.7rem; color:#666; margin-top:4px;">Registro Fotográfico</div>
-                            </div>
-                            <div style="text-align: center;">
-                                <div id="planning-map-container" style="width: ${size}; height: ${size}; background: #eee; border: 1px solid #ccc; border-radius: 4px; margin: 0 auto;"></div>
-                                <div style="font-size:0.7rem; color:#666; margin-top:4px;">Localização: ${tree.location}</div>
-                            </div>
-                        </div>
-                    </div>
+    <div style="margin-bottom: 15px;">
+        <strong style="font-size: 0.75rem; color: #555; text-transform: uppercase;">Fatores de Risco:</strong>
+        <div style="font-size: 0.8rem; margin-top: 2px; color: #d32f2f;">${riskListHTML}</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start;">
+        <div style="text-align: center;">${photoHTML}<div style="font-size:0.7rem; color:#666; margin-top:4px;">Registro Fotográfico</div></div>
+        <div style="text-align: center;"><div id="planning-map-container" style="width: ${size}; height: ${size}; background: #eee; border: 1px solid #ccc; border-radius: 4px; margin: 0 auto;"></div><div style="font-size:0.7rem; color:#666; margin-top:4px;">Localização: ${tree.location}</div></div>
+    </div>
+</div>
                 </div>
 
                 <div class="arb-card">

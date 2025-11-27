@@ -49,28 +49,24 @@
   transform: scale(1) translateY(0);
 }
 
-/* --- ESTILOS DE RISCO --- */
-.modal-dialog.risk-high { background: linear-gradient(135deg, #ffebee, #ffcdd2); }
-.modal-dialog.risk-high #modal-title { color: var(--risk-high); }
-
-.modal-dialog.risk-medium { background: linear-gradient(135deg, #fff3e0, #ffe0b2); }
-.modal-dialog.risk-medium #modal-title { color: var(--risk-medium); }
-
-.modal-dialog.risk-low { background: linear-gradient(135deg, #e8f5e9, #c8e6c9); }
-.modal-dialog.risk-low #modal-title { color: var(--risk-low); }
-
-.modal-dialog.risk-extreme { background: linear-gradient(135deg, #fbe9e7, #ffccbc); }
-.modal-dialog.risk-extreme #modal-title { color: var(--risk-extreme); }
+/* --- ESTILOS DE RISCO (CABEÇALHO) --- */
+.modal-dialog.dialog-risk-low #modal-title { background-color: #388e3c; }
+.modal-dialog.dialog-risk-medium #modal-title { background-color: #f57c00; }
+.modal-dialog.dialog-risk-high #modal-title { background-color: #d32f2f; }
+.modal-dialog.dialog-risk-extreme #modal-title { background-color: #212121; }
 
 
 /* --- CONTEÚDO DO MODAL --- */
 #modal-title {
-  padding: 16px 24px;
+  padding: 15px 24px;
   margin: 0;
-  font-size: 1.3rem;
-  color: var(--color-text-primary);
-  background: rgba(255,255,255,0.2);
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  font-size: 1.2rem;
+  color: white;
+  background: #00796b; /* Cor padrão (Verde ArborIA) */
+  text-align: center;
+  border-bottom: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  transition: background-color 0.3s ease;
 }
 
 #modal-description {

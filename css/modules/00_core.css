@@ -29,6 +29,14 @@
   --risk-low: #388e3c;
   --risk-extreme: #6a0000; /* Vermelho escuro e severo para risco extremo */
 
+  /* --- SISTEMA DE CORES DE RISCO (CLEAN UI) --- */
+
+  /* Variáveis de Cor (Texto/Borda) */
+  --color-risk-low: #2e7d32;
+  --color-risk-medium: #f57c00;
+  --color-risk-high: #d32f2f;
+  --color-risk-extreme: #212121;
+
   /* Cores RGB para opacidade */
   --color-tech-rgb: 2, 119, 189; /* Componentes RGB de --color-tech */
   --color-forest-rgb: 0, 121, 107; /* Componentes RGB de --color-forest */
@@ -183,4 +191,52 @@ img { max-width: 100%; display: block; }
 .button-icon {
     height: 1.2em;
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); /* Adiciona uma sombra para fazer o ícone "saltar" */
+}
+
+/* --- SISTEMA DE CORES DE RISCO (CLEAN UI) --- */
+
+/* Badges (Pílulas) para Tabela e Cards */
+.risk-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.risk-badge.risk-low { background-color: #e8f5e9; color: var(--color-risk-low); }
+.risk-badge.risk-medium { background-color: #fff3e0; color: var(--color-risk-medium); }
+.risk-badge.risk-high { background-color: #ffebee; color: var(--color-risk-high); }
+.risk-badge.risk-extreme { background-color: var(--color-risk-extreme); color: #fff; }
+
+/* Cards da Lista (Mobile) - Estilo Clean */
+.tree-card {
+    background: #ffffff !important; /* Força branco */
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Bordas Laterais Indicativas */
+.tree-card.risk-low { border-left: 5px solid var(--color-risk-low) !important; }
+.tree-card.risk-medium { border-left: 5px solid var(--color-risk-medium) !important; }
+.tree-card.risk-high { border-left: 5px solid var(--color-risk-high) !important; }
+.tree-card.risk-extreme { border-left: 5px solid var(--color-risk-extreme) !important; }
+
+/* Modal de Detalhes - Limpeza */
+.photo-viewer-content {
+    background: #ffffff !important;
+    color: #333 !important;
+}
+.photo-viewer-content h2 {
+    /* O título herda a cor do risco via JS inline ou classe, se preferir */
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
 }

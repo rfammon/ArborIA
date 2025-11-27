@@ -92,16 +92,22 @@ async function openPlanningModule(treeId = null) {
         ...tree,
         species: tree.especie,
         location: tree.local,
-        riskLevel: tree.risco,
+        
+        // --- DADOS TRAQ ---
+        riskLevel: tree.riskLevel || 'Não Avaliado', // Ex: "Alto"
+        residualRisk: tree.residualRisk || tree.riskLevel, // Ex: "Baixo"
+        failureProb: tree.failureProb || '-',
+        targetType: tree.targetType || '-',
+        mitigation: tree.mitigation || 'nenhuma',
+        // ------------------
+
         riskFactorsCode: tree.riskFactors ? tree.riskFactors.join(',') : '',
         defects: tree.observacoes ? [tree.observacoes] : [],
         riskScore: tree.pontuacao,
         date: tree.data,
         dap: tree.dap,
         height: tree.altura,
-        
-        // NOVO: Mapeia a mitigação escolhida no form para o plano
-        suggestedIntervention: tree.mitigation || 'Avaliar'
+        suggestedIntervention: tree.mitigation // Mapeamento para automação
     }));
 
     // 4. Carrega imagens (Assíncrono)

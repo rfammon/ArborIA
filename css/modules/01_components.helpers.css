@@ -23,3 +23,14 @@
     display: none !important;
   }
 }
+
+/* --- TOAST NOTIFICATION (FIX z-index) --- */
+#toast-notification {
+    z-index: 99999 !important;
+    visibility: hidden; /* Garantir estado padrão */
+}
+
+#toast-notification.show {
+    visibility: visible !important;
+    opacity: 1 !important;
+}

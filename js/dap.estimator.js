@@ -151,11 +151,19 @@ export function initDAPEstimatorListeners() {
     const saveBtn = document.getElementById('btn-dap-save');
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
-            const resultText = document.getElementById('dap-estimated-result').textContent;
+            // Read from the new manual input field
+            const manualInput = document.getElementById('dap-manual-input');
+            const dapValue = manualInput ? manualInput.value : '0';
+
             const dapInput = document.getElementById('risk-dap');
             
             if (dapInput) {
-                dapInput.value = parseFloat(resultText).toFixed(1);
+                const finalValue = parseFloat(dapValue);
+                if (isNaN(finalValue) || finalValue <= 0) {
+                    showToast("Valor de DAP inválido.", "error");
+                    return;
+                }
+                dapInput.value = finalValue.toFixed(1);
                 showToast("DAP salvo!", "success");
                 stopDAPEstimator();
                 const calcBtn = document.querySelector('.topico-btn[data-target="calculadora-view"]');
@@ -200,7 +208,12 @@ function calculateDAP() {
 
     const dapCentimetros = _calculateDAPInternal(distance, angleLeftCapture, angleRightCapture);
 
-    document.getElementById('dap-estimated-result').textContent = dapCentimetros.toFixed(1) + " cm";
+    const resultEl = document.getElementById('dap-estimated-result');
+    const manualInputEl = document.getElementById('dap-manual-input');
+
+    if(resultEl) resultEl.textContent = dapCentimetros.toFixed(1) + " cm";
+    if(manualInputEl) manualInputEl.value = dapCentimetros.toFixed(1);
+    
     showStep('result');
 }
 

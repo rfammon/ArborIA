@@ -99,15 +99,12 @@ export const TableUI = {
 
         // Utiliza um array para construir o HTML e junta no final para melhor performance
         const rowsHtml = sortedTrees.map(tree => {
-            let badgeClass = 'badge-low'; 
-            if (tree.riscoClass === 'risk-high' || tree.risco === 'Alto Risco') badgeClass = 'badge-high';
-            else if (tree.riscoClass === 'risk-medium' || tree.risco === 'Médio Risco') badgeClass = 'badge-medium';
-
+            const riskClass = tree.riscoClass || 'risk-low';
             const photoIcon = tree.hasPhoto ? '📷' : '';
             const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
 
             return `
-                <tr id="row-${tree.id}">
+                <tr id="row-${tree.id}" class="${riskClass}">
                     <td class="col-id"><strong>${tree.id}</strong></td>
                     <td>
                         <div style="font-weight: 700; color: #333;">${tree.especie}</div>
@@ -128,7 +125,7 @@ export const TableUI = {
                     
                     <td class="col-secondary" style="font-size:0.8rem;">${tree.avaliador}</td>
                     
-                    <td><span class="badge ${badgeClass}" style="font-size:0.7rem;">${tree.risco}</span></td>
+                    <td><span class="badge ${riskClass}" style="font-size:0.7rem;">${tree.risco}</span></td>
                     
                     <td style="text-align: center;">
                         <div style="display: flex; gap: 5px; justify-content: center;">
@@ -162,23 +159,18 @@ export const TableUI = {
      */
     renderMobileList(trees) {
         const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
-        
-        const listItemsHtml = sortedTrees.map(tree => {
-            let badgeClass = 'badge-low';
-            if (tree.risco === 'Alto Risco') badgeClass = 'badge-high';
-            else if (tree.risco === 'Médio Risco') badgeClass = 'badge-medium';
 
+        const listItemsHtml = sortedTrees.map(tree => {
+            const riskClass = tree.riscoClass || 'risk-low';
             const photoIcon = tree.hasPhoto ? '📷' : '';
 
             return `
-                <div class="summary-list-item ${badgeClass}" data-tree-id="${tree.id}">
+                <div class="tree-card ${riskClass}" data-id="${tree.id}">
+                    <div style="position:absolute; top:15px; right:15px;"><span class="risk-badge ${riskClass}">${tree.risco}</span></div>
                     <div class="item-main-info">
                         <span class="item-id">ID: ${tree.id}</span>
                         <strong class="item-species">${tree.especie}</strong>
                         <p class="item-location">${tree.local || 'N/A'} ${photoIcon}</p>
-                    </div>
-                    <div class="item-risk-info">
-                        <span class="badge ${badgeClass}">${tree.risco}</span>
                     </div>
                 </div>
             `;
@@ -216,7 +208,7 @@ export const TableUI = {
     filterTable(filterText) {
         const isMobile = window.innerWidth <= 768;
         const items = isMobile 
-            ? this.container.querySelectorAll('.summary-list-item')
+            ? this.container.querySelectorAll('.tree-card')
             : this.container.querySelectorAll('tbody tr');
 
         items.forEach(item => {
@@ -269,9 +261,9 @@ export const TableUI = {
             }
 
             // Clique na lista de mobile
-            const listItem = target.closest('.summary-list-item');
+            const listItem = target.closest('.tree-card');
             if (listItem) {
-                const treeId = parseInt(listItem.dataset.treeId, 10);
+                const treeId = parseInt(listItem.dataset.id, 10);
                 if (!isNaN(treeId)) {
                     this.showTreeDetailsModal(treeId);
                 }
@@ -371,9 +363,16 @@ export const TableUI = {
             });
         }
         
-        const riskClass = tree.risco === 'Alto Risco' ? 'risk-high' : tree.risco === 'Médio Risco' ? 'risk-medium' : 'risk-low';
+        // Determina a classe de risco para o diálogo
+        let dialogRiskClass = 'dialog-risk-low'; // Padrão
+        if (tree.riscoClass) {
+            if (tree.riscoClass.includes('medium')) dialogRiskClass = 'dialog-risk-medium';
+            else if (tree.riscoClass.includes('high')) dialogRiskClass = 'dialog-risk-high';
+            else if (tree.riscoClass.includes('extreme')) dialogRiskClass = 'dialog-risk-extreme';
+        }
 
-        showDetailsModal(`${tree.especie} (ID: ${tree.id})`, content, actions, riskClass);
+        // Passa a classe para o modal
+        showDetailsModal(`${tree.especie} (ID: ${tree.id})`, content, actions, dialogRiskClass);
     },
 
     renderControls() {

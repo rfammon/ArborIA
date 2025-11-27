@@ -263,90 +263,86 @@ function closeChecklistFlashCard() {
 // ============================================================ 
 
 export async function handleGetGPS() {
-  const gpsStatus = document.getElementById('gps-status');
-  const coordXField = document.getElementById('risk-coord-x');
-  const coordYField = document.getElementById('risk-coord-y');
-  const getGpsBtn = document.getElementById('get-gps-btn');
+    const gpsStatus = document.getElementById('gps-status');
+    const coordXField = document.getElementById('risk-coord-x');
+    const coordYField = document.getElementById('risk-coord-y');
+    const getGpsBtn = document.getElementById('get-gps-btn');
 
-  if (!navigator.geolocation) {
-    if(gpsStatus) { 
-        gpsStatus.textContent = "Sem GPS disponível."; 
-        gpsStatus.className = 'instruction-text text-center error'; 
+    if (!navigator.geolocation) {
+        if (gpsStatus) {
+            gpsStatus.textContent = "Sem GPS disponível.";
+            gpsStatus.className = 'instruction-text text-center error';
+        }
+        return;
     }
-    return;
-  }
-  
-  const CAPTURE_TIME_MS = 10000;
-  const options = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
-  let readings = [];
-  let watchId = null;
-  let timerInterval = null;
-  let startTime = Date.now();
-  
-  if(getGpsBtn) getGpsBtn.disabled = true;
 
-  const cleanup = () => {
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-      if (timerInterval !== null) clearInterval(timerInterval);
-      const btn = document.getElementById('get-gps-btn'); 
-      if (btn) { btn.disabled = false; btn.innerHTML = 'Capturar GPS Preciso'; }
-  };
+    const TIMEOUT_MS = 20000; // 20 segundos de timeout
+    const options = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
+    let watchId = null;
+    let bestAccuracy = Infinity;
+    let timeoutId = null;
 
-  const updateUI = () => {
-      const btn = document.getElementById('get-gps-btn');
-      if (!btn) { cleanup(); return; } 
+    if (getGpsBtn) {
+        getGpsBtn.disabled = true;
+        getGpsBtn.innerHTML = 'Buscando GPS...';
+    }
+    if (gpsStatus) gpsStatus.innerHTML = 'Aguardando sinal < 5m...';
 
-      const elapsed = Date.now() - startTime;
-      const remaining = Math.ceil((CAPTURE_TIME_MS - elapsed) / 1000);
-      
-      btn.innerHTML = `Calibrando... ${remaining}s`;
-      
-      if (elapsed >= CAPTURE_TIME_MS) finishCapture();
-  };
+    const cleanup = () => {
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        if (timeoutId !== null) clearTimeout(timeoutId);
+        const btn = document.getElementById('get-gps-btn');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Capturar GPS Preciso';
+        }
+    };
+    
+    timeoutId = setTimeout(() => {
+        cleanup();
+        utils.showToast(`Precisão < 5m não atingida em 20s. Melhor: ${bestAccuracy.toFixed(1)}m`, "error");
+        if (gpsStatus) gpsStatus.innerHTML = `Falha. Melhor precisão: ${bestAccuracy.toFixed(1)}m`;
+    }, TIMEOUT_MS);
 
-  const finishCapture = () => {
-      cleanup();
-      if (readings.length === 0) {
-          utils.showToast("Sem sinal de satélite.", "error");
-          return;
-      }
+    const processCoord = (coords) => {
+        const utmCoords = utils.convertLatLonToUtm(coords.latitude, coords.longitude);
+        if (utmCoords) {
+            if (coordXField) coordXField.value = utmCoords.easting.toFixed(0);
+            if (coordYField) coordYField.value = utmCoords.northing.toFixed(0);
 
-      let sumLat = 0, sumLon = 0, sumAcc = 0;
-      readings.forEach(r => { sumLat += r.latitude; sumLon += r.longitude; sumAcc += r.accuracy; });
-      
-      const avgLat = sumLat / readings.length;
-      const avgLon = sumLon / readings.length;
-      const avgAcc = sumAcc / readings.length;
+            if (state.setLastUtmZone) state.setLastUtmZone(utmCoords.zoneNum, utmCoords.zoneLetter);
 
-      const utmCoords = utils.convertLatLonToUtm(avgLat, avgLon); 
+            const dz = document.getElementById('default-utm-zone');
+            if (dz) dz.value = `${utmCoords.zoneNum}${utmCoords.zoneLetter}`;
 
-      if (utmCoords) {
-          if(coordXField) coordXField.value = utmCoords.easting.toFixed(0);
-          if(coordYField) coordYField.value = utmCoords.northing.toFixed(0);
-          
-          if(state.setLastUtmZone) state.setLastUtmZone(utmCoords.zoneNum, utmCoords.zoneLetter);
-          
-          const dz = document.getElementById('default-utm-zone');
-          if (dz) dz.value = `${utmCoords.zoneNum}${utmCoords.zoneLetter}`;
-          
-          const gs = document.getElementById('gps-status');
-          if(gs) {
-              const color = avgAcc <= 5 ? 'var(--color-forest)' : '#E65100';
-              gs.innerHTML = `Precisão: <span style="color:${color}">±${avgAcc.toFixed(1)}m</span>`;
-          }
-          utils.showToast("Coordenadas capturadas!", "success");
-      } else {
-          utils.showToast("Erro na conversão UTM.", "error");
-      }
-  };
+            const gs = document.getElementById('gps-status');
+            if (gs) {
+                gs.innerHTML = `Precisão: <span style="color:var(--color-forest)">±${coords.accuracy.toFixed(1)}m</span>`;
+            }
+            utils.showToast("Coordenadas capturadas com sucesso!", "success");
+        } else {
+            utils.showToast("Erro na conversão de coordenadas UTM.", "error");
+        }
+        cleanup();
+    };
 
-  watchId = navigator.geolocation.watchPosition(
-      (pos) => { if (pos.coords.accuracy < 150) readings.push(pos.coords); },
-      (err) => {}, // Error callback
-      options
-  );
-  timerInterval = setInterval(updateUI, 1000);
-  updateUI();
+    watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+            bestAccuracy = Math.min(bestAccuracy, pos.coords.accuracy);
+            if (gpsStatus) {
+                gpsStatus.innerHTML = `Aguardando... (precisão: ±${pos.coords.accuracy.toFixed(1)}m)`;
+            }
+
+            if (pos.coords.accuracy < 5) {
+                processCoord(pos.coords);
+            }
+        },
+        (err) => {
+            cleanup();
+            utils.showToast("Erro no GPS: " + err.message, "error");
+        },
+        options
+    );
 }
 
 // ============================================================ 
@@ -439,6 +435,7 @@ export function handleAddTreeSubmit(event) {
     riskLevel: initialRisk,
     residualRisk: residualRisk,
     mitigation: currentRiskAssessment.mitigationAction,
+    targetCategory: currentRiskAssessment.targetCategory,
     // Campo legado para compatibilidade de cores
     risco: initialRisk, // 'risco' agora reflete o risco inicial
     riscoClass: classificationClass,
@@ -531,10 +528,25 @@ export function handleEditTree(id) {
   document.querySelector('.sub-nav-btn[data-target="tab-content-register"]').click();
   utils.showToast(`Editando ID ${id}...`, "info");
   
-  // Força o usuário a reavaliar o risco no checklist.
-  currentRiskAssessment = { targetCategory: null, mitigationAction: 'nenhuma' }; 
-  document.querySelectorAll('input[name="target_category_desktop"]').forEach(radio => radio.checked = false);
-  utils.showToast("Risco resetado. Reavalie no checklist ou no formulário.", "info");
+  // Popula a avaliação de risco atual para permitir a edição sem refazer o checklist
+  currentRiskAssessment = {
+    targetCategory: t.targetCategory || null,
+    mitigationAction: t.mitigation || 'nenhuma'
+  };
+
+  // Sincroniza o radio button do formulário desktop
+  if (t.targetCategory) {
+    const targetRadio = document.querySelector(`input[name="target_category_desktop"][value="${t.targetCategory}"]`);
+    if (targetRadio) targetRadio.checked = true;
+  }
+  
+  // Sincroniza o select de mitigação
+  const mitigationSelect = document.getElementById('mitigation-action-desktop');
+  if (mitigationSelect && t.mitigation) {
+    mitigationSelect.value = t.mitigation;
+  }
+
+  utils.showToast(`Editando ID ${id}.`, "info");
 
   return t;
 }
