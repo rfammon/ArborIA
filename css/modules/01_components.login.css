@@ -1,0 +1,238 @@
+/* CSS for ArborIA Login Screen */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+:root {
+    --teal-dark: #004d40;
+    --teal-light: #00897b;
+    --cyan-vibrant: #00bcd4;
+    --navy-dark: #0a2540;
+    --grey-light: #e6e6e6;
+    --grey-dark: #525f7f;
+    --white: #ffffff;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: 'Poppins', sans-serif;
+    overflow: hidden; /* Evita barras de rolagem na visualização principal */
+}
+
+.login-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* Painel Esquerdo (Marca/Showcase) */
+.login-panel-left {
+    flex: 1;
+    background: linear-gradient(135deg, var(--teal-dark), var(--cyan-vibrant));
+    color: var(--white);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.brand-content {
+    text-align: left;
+    max-width: 400px;
+}
+
+.brand-content .logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.brand-content .logo i {
+    font-size: 48px;
+}
+
+.brand-content .logo h1 {
+    font-size: 48px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.brand-content .tagline {
+    font-size: 20px;
+    margin-bottom: 40px;
+    font-weight: 400;
+}
+
+.brand-content .feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.brand-content .feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.brand-content .feature-list i {
+    font-size: 24px;
+    width: 30px; /* Alinhamento dos ícones */
+}
+
+/* Painel Direito (Formulário de Login) */
+.login-panel-right {
+    flex: 1;
+    background-color: var(--white);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.login-form-container {
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+}
+
+.login-form-container h2 {
+    color: var(--navy-dark);
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 30px;
+}
+
+.login-form-container .input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.login-form-container .input-group i {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 20px;
+    color: var(--grey-dark);
+}
+
+.login-form-container .input-group input {
+    width: 100%;
+    padding: 15px 20px 15px 50px; /* Espaço para o ícone */
+    border: 1px solid var(--grey-light);
+    border-radius: 999px; /* rounded-full */
+    font-size: 16px;
+    color: var(--grey-dark);
+    box-sizing: border-box; /* Garante que padding não afete a largura total */
+}
+
+.login-form-container .input-group input::placeholder {
+    color: var(--grey-dark);
+    opacity: 0.7;
+}
+
+.login-form-container .input-group #togglePassword {
+    left: auto;
+    right: 20px;
+    cursor: pointer;
+}
+
+.login-form-container .login-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 999px; /* rounded-full */
+    background-color: var(--cyan-vibrant);
+    color: var(--white);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    box-shadow: 0 4px 15px rgba(0, 188, 212, 0.4);
+    transition: all 0.3s ease;
+}
+
+.login-form-container .login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 188, 212, 0.5);
+}
+
+.login-form-container .forgot-password-link {
+    display: block;
+    margin-top: 20px;
+    color: var(--navy-dark);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.login-form-container .forgot-password-link:hover {
+    text-decoration: underline;
+}
+
+/* --- Estilos para o botão de visitante --- */
+
+.login-form-container .form-separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--grey-dark);
+    margin: 20px 0;
+}
+
+.login-form-container .form-separator::before,
+.login-form-container .form-separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--grey-light);
+}
+
+.login-form-container .form-separator:not(:empty)::before {
+    margin-right: .5em;
+}
+
+.login-form-container .form-separator:not(:empty)::after {
+    margin-left: .5em;
+}
+
+.login-form-container .guest-btn {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid var(--grey-light);
+    border-radius: 999px;
+    background-color: var(--white);
+    color: var(--grey-dark);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.login-form-container .guest-btn:hover {
+    background-color: #f7f7f7;
+    border-color: #ccc;
+}
+
+
+/* Responsividade */
+@media (max-width: 900px) {
+    .login-container {
+        flex-direction: column;
+    }
+
+    .login-panel-left, .login-panel-right {
+        flex: 1;
+        min-height: 50vh; /* Garante que cada painel tenha uma altura mínima */
+    }
+
+    body, html {
+        overflow: auto; /* Permite rolagem em telas menores */
+    }
+}

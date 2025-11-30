@@ -84,30 +84,66 @@ export function saveImageToDB(id, blob) {
 /**
  * Recupera uma imagem do banco.
  * @param {number} id - ID da árvore.
- * @param {function} callback - Função que recebe o blob (ou null).
+ * @param {function} callback - (OPCIONAL) Função que recebe o blob (ou null). DEPRECATED: use Promise.
+ * @returns {Promise<Blob|null>} - Promise que resolve com o blob ou null.
  */
 export function getImageFromDB(id, callback) {
-    if (!dbInstance) {
-        
-        callback(null);
-        return;
-    }
-    try {
-        const transaction = dbInstance.transaction([STORE_NAME], "readonly");
-        const objectStore = transaction.objectStore(STORE_NAME);
-        const request = objectStore.get(id);
+    // Se callback foi passado (modo legado), usa callback
+    // Senão, retorna Promise (modo moderno)
+    
+    if (callback && typeof callback === 'function') {
+        // Modo legado com callback
+        if (!dbInstance) {
+            
+            callback(null);
+            return;
+        }
+        try {
+            const transaction = dbInstance.transaction([STORE_NAME], "readonly");
+            const objectStore = transaction.objectStore(STORE_NAME);
+            const request = objectStore.get(id);
 
-        request.onsuccess = (event) => {
-            if (event.target.result) {
-                callback(event.target.result.imageBlob);
-            } else {
-                callback(null);
+            request.onsuccess = (event) => {
+                if (event.target.result) {
+                    callback(event.target.result.imageBlob);
+                } else {
+                    callback(null);
+                }
+            };
+            request.onerror = () => callback(null);
+        } catch (e) {
+            
+            callback(null);
+        }
+    } else {
+        // Modo moderno com Promise
+        return new Promise((resolve, reject) => {
+            if (!dbInstance) {
+                
+                resolve(null);
+                return;
             }
-        };
-        request.onerror = () => callback(null);
-    } catch (e) {
-        
-        callback(null);
+            try {
+                const transaction = dbInstance.transaction([STORE_NAME], "readonly");
+                const objectStore = transaction.objectStore(STORE_NAME);
+                const request = objectStore.get(id);
+
+                request.onsuccess = (event) => {
+                    if (event.target.result) {
+                        resolve(event.target.result.imageBlob);
+                    } else {
+                        resolve(null);
+                    }
+                };
+                request.onerror = (event) => {
+                    
+                    resolve(null); // Resolve com null em vez de rejeitar
+                };
+            } catch (e) {
+                
+                resolve(null);
+            }
+        });
     }
 }
 

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArborIA - Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/modules/01_components.login.css">
+</head>
+<body>
+    <div class="login-container">
+        <!-- Painel Esquerdo (Marca/Showcase) -->
+        <div class="login-panel-left">
+            <div class="brand-content">
+                <div class="logo">
+                    <i class="fa-solid fa-tree"></i> <!-- Ícone provisório de árvore -->
+                    <h1>ArborIA</h1>
+                </div>
+                <p class="tagline">Gestão Arbórea Inteligente</p>
+                <ul class="feature-list">
+                    <li><i class="fa-solid fa-map-location-dot"></i> <span>Inventário Geoespacial</span></li>
+                    <li><i class="fa-solid fa-shield-halved"></i> <span>Análise de Risco VTA</span></li>
+                    <li><i class="fa-solid fa-file-signature"></i> <span>Conformidade & Laudos</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Painel Direito (Formulário de Login) -->
+        <div class="login-panel-right">
+            <div class="login-form-container">
+                <h2>Acesse sua Conta</h2>
+                <form action="#">
+                    <div class="input-group">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" placeholder="E-mail" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" placeholder="Senha" required>
+                        <i class="fa-solid fa-eye-slash" id="togglePassword"></i>
+                    </div>
+                    <div id="login-error-msg" class="auth-error-msg" style="display: none; color: red; margin-bottom: 15px;"></div>
+                    <button type="submit" class="login-btn">ENTRAR</button>
+                    <a href="#" class="forgot-password-link">Esqueci minha senha</a>
+
+                    <div class="form-separator">
+                        <span>ou</span>
+                    </div>
+
+                    <button type="button" id="guest-login-btn" class="guest-btn">
+                        <i class="fa-solid fa-user-secret"></i>
+                        Entrar como Visitante
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Módulos JavaScript -->
+    <script type="module" src="js/supabase-client.js"></script>
+    <script type="module" src="js/auth.guard.js"></script>
+    <script type="module" src="js/login.js"></script>
+</body>
+</html>

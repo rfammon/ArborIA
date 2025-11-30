@@ -199,17 +199,36 @@ img { max-width: 100%; display: block; }
 .risk-badge {
     display: inline-block;
     padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-align: center;
+    min-width: 80px;
 }
 
-.risk-badge.risk-low { background-color: #e8f5e9; color: var(--color-risk-low); }
-.risk-badge.risk-medium { background-color: #fff3e0; color: var(--color-risk-medium); }
-.risk-badge.risk-high { background-color: #ffebee; color: var(--color-risk-high); }
-.risk-badge.risk-extreme { background-color: var(--color-risk-extreme); color: #fff; }
+.risk-badge.risk-low {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.risk-badge.risk-medium {
+    background: #fff3e0;
+    color: #ef6c00;
+    border: 1px solid #ffe0b2;
+}
+
+.risk-badge.risk-high {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+.risk-badge.risk-extreme {
+    background: #263238;
+    color: #ffffff;
+    border: 2px solid #d50000;
+}
 
 /* Cards da Lista (Mobile) - Estilo Clean */
 .tree-card {

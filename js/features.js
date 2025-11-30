@@ -7,6 +7,7 @@ import * as state from './state.js';
 import * as utils from './utils.js';
 import * as db from './database.js';
 import { TableUI } from './table.ui.js';
+import { ApiService } from './supabase-client.js';
 
 // ============================================================ 
 // NOVA LÓGICA DE RISCO (METODOLOGIA TRAQ/ISA)
@@ -83,8 +84,7 @@ function runTraqMatrices(failureProb, impactProb, targetCategory) {
 }
 
 /**
- * Reduz a probabilidade de falha em um nível para cálculo de risco residual.
- * @param {string} failureProb - A probabilidade de falha inicial.
+ * Reduz a probabilidade de falha em um nível para cálculo de risco residual.\n * @param {string} failureProb - A probabilidade de falha inicial.
  * @returns {string} A probabilidade de falha reduzida.
  */
 function getReducedFailureProb(failureProb) {
@@ -370,7 +370,7 @@ export function clearPhotoPreview() {
   TableUI.render();
 }
 
-export function handleAddTreeSubmit(event) {
+export async function handleAddTreeSubmit(event) {
   event.preventDefault();
   const form = event.target;
   
@@ -378,7 +378,6 @@ export function handleAddTreeSubmit(event) {
   form.querySelectorAll('.risk-checkbox:checked').forEach(cb => totalScore += parseInt(cb.dataset.weight, 10));
   const checkedRiskFactors = Array.from(form.querySelectorAll('.risk-checkbox')).map(cb => cb.checked ? 1 : 0);
   
-  // Sincroniza o target do desktop, se disponível
   const desktopTargetInput = document.querySelector('input[name="target_category_desktop"]:checked');
   if (desktopTargetInput) {
       currentRiskAssessment.targetCategory = desktopTargetInput.value;
@@ -389,21 +388,16 @@ export function handleAddTreeSubmit(event) {
       return { success: false };
   }
 
-  // --- INÍCIO DA LÓGICA DE CÁLCULO DE RISCO TRAQ ---
   const failureProb = getFailureProb(totalScore);
   const impactProb = getImpactProb(currentRiskAssessment.targetCategory);
-  
-  // 1. Cálculo do Risco Inicial
   const initialRisk = runTraqMatrices(failureProb, impactProb, currentRiskAssessment.targetCategory);
 
-  // Unifica a captura da mitigação (desktop ou mobile)
   let mitigationVal = document.getElementById('mitigation-action-desktop')?.value || 'nenhuma';
   if (mitigationVal === 'nenhuma' && currentRiskAssessment.mitigationAction) {
       mitigationVal = currentRiskAssessment.mitigationAction;
   }
-  currentRiskAssessment.mitigationAction = mitigationVal; // Garante consistência
+  currentRiskAssessment.mitigationAction = mitigationVal;
 
-  // 2. Cálculo do Risco Residual
   let residualRisk = initialRisk;
   if (currentRiskAssessment.mitigationAction !== 'nenhuma') {
       const reducedFailureProb = getReducedFailureProb(failureProb);
@@ -411,35 +405,76 @@ export function handleAddTreeSubmit(event) {
   }
 
   const classificationClass = riskProfile[initialRisk] ? riskProfile[initialRisk].class : 'risk-low';
-  // --- FIM DA LÓGICA DE CÁLCULO DE RISCO TRAQ ---
-
   const especie = document.getElementById('risk-especie').value.trim();
   if (!especie) { utils.showToast("Nome da espécie é obrigatório.", 'error'); return { success: false }; }
+
+  // --- INÍCIO DA CORREÇÃO PARA numeric field overflow ---
+  const sanitizeCoordinate = (coordValue) => {
+    if (coordValue && coordValue.toLowerCase() !== 'n/a') {
+        let num = parseFloat(coordValue);
+        if (!isNaN(num)) {
+            // 1. Arredondar para a escala permitida (6 casas decimais)
+            num = parseFloat(num.toFixed(6));
+
+            // 2. Limitar o valor absoluto para ser menor que 1000
+            if (Math.abs(num) >= 1000) {
+                console.warn(`Atenção: O valor ${coordValue} excede o limite de 1000. Ajustando.`);
+                num = num > 0 ? 999.999999 : -999.999999;
+            }
+            return num;
+        }
+    }
+    return coordValue; // Retorna o original ('N/A' ou outro) se não for um número válido
+  };
+
+  const coordX_sanitized = sanitizeCoordinate(document.getElementById('risk-coord-x').value);
+  const coordY_sanitized = sanitizeCoordinate(document.getElementById('risk-coord-y').value);
+  // --- FIM DA CORREÇÃO ---
 
   const treeData = {
     data: document.getElementById('risk-data').value || new Date().toISOString().split('T')[0],
     especie: especie,
+    nome: especie, // Adicionado para resolver 'null value in column "nome"'
     local: document.getElementById('risk-local').value || 'N/A',
-    coordX: document.getElementById('risk-coord-x').value || 'N/A',
-    coordY: document.getElementById('risk-coord-y').value || 'N/A',
+    coordX: coordX_sanitized,
+    coordY: coordY_sanitized,
     utmZoneNum: (state.lastUtmZone && state.lastUtmZone.num) ? state.lastUtmZone.num : 0,
     utmZoneLetter: (state.lastUtmZone && state.lastUtmZone.letter) ? state.lastUtmZone.letter : 'Z',
     dap: document.getElementById('risk-dap').value || 'N/A',
-    altura: document.getElementById('risk-altura').value || '0.0', 
+    // [FIX-SUPABASE-ERROR]: A coluna 'altura' não foi encontrada no esquema da tabela 'arvores' no Supabase.
+    // Esta linha foi comentada para resolver o erro PGRST204.
+    // Se 'altura' for uma coluna intencional, adicione-a à tabela 'arvores' no Supabase
+    // (com o tipo de dado correto, ex: NUMERIC(10,2) ou TEXT) e então descomente esta linha.
+    // altura: document.getElementById('risk-altura').value || '0.0', 
     avaliador: document.getElementById('risk-avaliador').value || 'N/A',
     observacoes: document.getElementById('risk-obs').value || 'N/A',
     pontuacao: totalScore,
     riskFactors: checkedRiskFactors,
     hasPhoto: (state.currentTreePhoto !== null),
-    // Novos campos TRAQ
     riskLevel: initialRisk,
     residualRisk: residualRisk,
     mitigation: currentRiskAssessment.mitigationAction,
     targetCategory: currentRiskAssessment.targetCategory,
-    // Campo legado para compatibilidade de cores
-    risco: initialRisk, // 'risco' agora reflete o risco inicial
+    risco: initialRisk,
     riscoClass: classificationClass,
   };
+
+  // --- [NEW] SUPABASE INTEGRATION ---
+  try {
+      // FIX: Changed saveTree to upsertTree to match Supabase Client API
+      const { data: supabaseData, error: supabaseError } = await ApiService.upsertTree(treeData);
+      if (supabaseError) {
+          throw new Error(supabaseError.message);
+      }
+      utils.showToast("Dados sincronizados com o servidor.", "success");
+      if (supabaseData && supabaseData.length > 0) {
+          treeData.id_supabase = supabaseData[0].id;
+      }
+  } catch (e) {
+      console.error("Falha ao salvar no Supabase:", e);
+      utils.showToast("Falha ao sincronizar. Salvando localmente.", "error");
+  }
+  // --- END SUPABASE INTEGRATION ---
 
   if(state.setLastEvaluatorName) state.setLastEvaluatorName(treeData.avaliador);
   
@@ -631,9 +666,9 @@ export function handleMapMarkerClick(id) {
 function getCSVData() {
   if (state.registeredTrees.length === 0) return null;
   const headers = ["ID", "Data", "Especie", "CoordX", "CoordY", "ZonaN", "ZonaL", "DAP", "Altura", "Local", "Avaliador", "Pontos", "Risco_Inicial", "Risco_Residual", "Acao_Mitigadora", "Obs", "Fatores", "Foto"];
-  let csv = "﻿" + headers.join(";") + "\n";
+  let csv = "\\uFEFF" + headers.join(";") + "\\n";
   state.registeredTrees.forEach(t => {
-    const c = (s) => (s || '').toString().replace(/[\n;]/g, ' ');
+    const c = (s) => (s || '').toString().replace(/[\\n;]/g, ' ');
     const rf = (t.riskFactors || []).join(',');
     const r = [
       t.id, t.data, c(t.especie), t.coordX, t.coordY, t.utmZoneNum, t.utmZoneLetter, 
@@ -641,7 +676,7 @@ function getCSVData() {
       t.riskLevel, t.residualRisk, t.mitigation, // Novos campos TRAQ
       c(t.observacoes), rf, t.hasPhoto?'Sim':'Nao'
     ];
-    csv += r.join(";") + "\n";
+    csv += r.join(";") + "\\n";
   });
   return csv;
 }
@@ -653,7 +688,7 @@ export function sendEmailReport() {
         return;
     }
     const subject = "Laudo de Avaliação Arbórea - ArborIA (TRAQ)";
-    const body = `Segue o laudo gerado pelo aplicativo ArborIA.\n\n${csvData}`;
+    const body = `Segue o laudo gerado pelo aplicativo ArborIA.\\n\\n${csvData}`;
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     const link = document.createElement('a');
     link.href = mailtoLink;
@@ -728,10 +763,10 @@ export async function handleImportZip(event) {
     }
     
     const csvContent = await csvFile.async("string");
-    const lines = csvContent.split('\n').filter(l => l.trim() !== '');
+    const lines = csvContent.split('\\n').filter(l => l.trim() !== '');
     
-    // Remove o BOM (\uFEFF) se existir e pega os cabeçalhos
-    const headers = lines[0].replace(/^\uFEFF/, '').split(';').map(h => h.trim());
+    // Remove o BOM (\\uFEFF) se existir e pega os cabeçalhos
+    const headers = lines[0].replace(/^\\uFEFF/, '').split(';').map(h => h.trim());
     
     // Validação extra de formato baseada nos cabeçalhos
     if (!isTraqFormat && headers.includes('Risco_Inicial')) {

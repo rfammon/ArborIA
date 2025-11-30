@@ -1,12 +1,12 @@
-/* service-worker.js (v5.0 - ArborIA Final) */
+/* service-worker.js (v6.0 - ArborIA Final) */
 
-const CACHE_NAME = 'arboria-v5';
+const CACHE_NAME = 'arboria-v6';
 
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './style.css?v=72.0', // Atualizado para a versão do HTML
+  './style.css?v=3.0',
   
   // CSS Modules
   './css/modules/00_core.css',
@@ -15,6 +15,7 @@ const ASSETS_TO_CACHE = [
   './css/modules/01_components.tooltip.css',
   './css/modules/01_components.modal.css',
   './css/modules/01_components.helpers.css',
+  './css/modules/01_components.auth.css',
   './css/modules/02_feature.manual_nav.css',
   './css/modules/02_feature.manual_content.css',
   './css/modules/02_feature.calculator.css',
@@ -23,11 +24,12 @@ const ASSETS_TO_CACHE = [
   './css/modules/03_feature.clinometer.css',
 
   // JS Modules
-  './js/main.js?v=72.0',
+  './js/main.js?v=2.0',
   './js/state.js',
   './js/ui.js',
   './js/map.ui.js',
   './js/modal.ui.js',
+  './js/auth.ui.js',
   './js/features.js',
   './js/database.js',
   './js/utils.js',
@@ -35,20 +37,13 @@ const ASSETS_TO_CACHE = [
   './js/pdf.generator.js',
   './js/clinometer.js',
   './js/dap.estimator.js',
+  './js/supabase-client.js',
+  './js/arboria-module.js',
 
   // Ícones e Imagens
   './img/icons/favicon.png',
   './img/icons/icon-192x192.png',
-  './img/icons/icon-512x512.png',
-
-  // Libs
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+  './img/icons/icon-512x512.png'
 ];
 
 self.addEventListener('install', (event) => {

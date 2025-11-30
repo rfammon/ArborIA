@@ -8,7 +8,7 @@ import * as features from './features.js'; // Importação correta
 import { showConfirmModal, openPhotoViewer, showDetailsModal } from './modal.ui.js'; // Adiciona showDetailsModal
 import { getImageFromDB } from './database.js';
 import { debounce } from './utils.js'; // Importa a função debounce
-import { generateSingleTreePDF } from './pdf.generator.js';
+import { generateIndividualReport } from './pdf.generator.js';
 
 export const TableUI = {
     
@@ -17,12 +17,18 @@ export const TableUI = {
     filterInput: null, // Adiciona referência ao input de filtro
     _containerClickHandler: null, // Armazena o handler de clique para remoção
     _currentFilterHandler: null, // Armazena o handler do filtro para remoção
+    _lastRenderedTrees: [], // [MODIFICATION-SEQ-ID] Cache for display IDs
     
     // Callbacks from main.js
     onNavigateToPlanningForm: null,
 
     // [MUDANÇA] isCompactMode agora é apenas para desktop. Mobile terá sua própria renderização.
     isCompactMode: window.innerWidth <= 768,
+
+    sortState: {
+        column: 'id',
+        direction: 'desc'
+    },
 
     render(callbacks = {}) {
         this.container = document.getElementById('summary-table-container');
@@ -67,15 +73,93 @@ export const TableUI = {
         this.bindContainerEvents(); // Otimizado com delegação de eventos
     },
 
+    sortData(trees) {
+        const { column, direction } = this.sortState;
+        if (!column) return trees;
+
+        return trees.sort((a, b) => {
+            let valA = a[column];
+            let valB = b[column];
+
+            // Define a mapping for risk levels to allow sorting
+            const riskOrder = { 'Baixo': 1, 'Moderado': 2, 'Alto': 3, 'Extremo': 4 };
+
+            if (column === 'risco') {
+                valA = riskOrder[valA] || 0;
+                valB = riskOrder[valB] || 0;
+            } else if (typeof valA === 'string' && (column === 'dap' || column === 'altura' || column === 'id')) {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+            } else if (typeof valA === 'string') {
+                valA = valA.toLowerCase();
+                valB = b[column] ? b[column].toString().toLowerCase() : '';
+                return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+
+            // Handle numbers and other types
+             if (typeof valA === 'number' || !isNaN(valA)) {
+                valA = parseFloat(valA) || 0;
+                valB = parseFloat(valB) || 0;
+            }
+
+            if (valA < valB) {
+                return direction === 'asc' ? -1 : 1;
+            }
+            if (valA > valB) {
+                return direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
+    },
+
+
     /**
      * [NOVO] Renderiza a tabela completa para desktop.
      */
     renderDesktopTable(trees) {
-        const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
+        const sortedTrees = this.sortData([...trees]);
+
+        // [MODIFICATION-SEQ-ID] Add a sequential display ID after sorting
+        const treesWithDisplayId = sortedTrees.map((tree, index) => ({
+            ...tree,
+            displayId: index + 1
+        }));
+        this._lastRenderedTrees = treesWithDisplayId; // Cache for modal
 
         // Aplica classe de modo compacto
         let tableClass = 'summary-table';
         if (this.isCompactMode) tableClass += ' compact-mode';
+
+        const renderHeader = () => {
+            const headers = [
+                { key: 'id', label: 'ID', style: 'width: 40px;' },
+                { key: 'especie', label: 'Espécie' },
+                { key: 'data', label: 'Data', class: 'col-secondary' },
+                { key: 'coordX', label: 'Coord. UTM', class: 'col-secondary' },
+                { key: 'dap', label: 'DAP/Alt', class: 'col-secondary' },
+                { key: 'local', label: 'Local' },
+                { key: 'avaliador', label: 'Avaliador', class: 'col-secondary' },
+                { key: 'risco', label: 'Risco' },
+                { key: null, label: 'Ações', class: 'no-sort', style: 'text-align: center;' }
+            ];
+
+            return headers.map(h => {
+                if (!h.key) {
+                    return `<th class="${h.class || ''}" style="${h.style || ''}">${h.label}</th>`;
+                }
+                const isActive = this.sortState.column === h.key;
+                const sortIcon = isActive ? (this.sortState.direction === 'asc' ? '▲' : '▼') : '';
+                return `
+                    <th 
+                        class="${h.class || ''} ${isActive ? 'sort-active' : ''}"
+                        style="${h.style || ''}" 
+                        data-sort-key="${h.key}"
+                    >
+                        ${h.label} <span class="sort-icon">${sortIcon}</span>
+                    </th>
+                `;
+            }).join('');
+        };
 
         // Colunas com 'col-secondary' são ocultadas no modo compacto
         let html = `
@@ -83,29 +167,21 @@ export const TableUI = {
             <table class="${tableClass}">
                 <thead>
                     <tr>
-                        <th style="width: 40px;">ID</th>
-                        <th>Espécie</th>
-                        <th class="col-secondary">Data</th>
-                        <th class="col-secondary">Coord. UTM</th>
-                        <th class="col-secondary">DAP/Alt</th>
-                        <th>Local</th>
-                        <th class="col-secondary">Avaliador</th>
-                        <th>Risco</th>
-                        <th style="text-align: center;">Ações</th>
+                        ${renderHeader()}
                     </tr>
                 </thead>
                 <tbody>
         `;
 
         // Utiliza um array para construir o HTML e junta no final para melhor performance
-        const rowsHtml = sortedTrees.map(tree => {
+        const rowsHtml = treesWithDisplayId.map(tree => {
             const riskClass = tree.riscoClass || 'risk-low';
             const photoIcon = tree.hasPhoto ? '📷' : '';
             const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
 
             return `
                 <tr id="row-${tree.id}" class="${riskClass}">
-                    <td class="col-id"><strong>${tree.id}</strong></td>
+                    <td class="col-id"><strong>${tree.displayId}</strong></td>
                     <td>
                         <div style="font-weight: 700; color: #333;">${tree.especie}</div>
                         <div class="col-mobile-summary">${dateSimple} &nbsp; | &nbsp; ${tree.local} ${photoIcon}</div>
@@ -123,27 +199,18 @@ export const TableUI = {
                     
                     <td style="font-size:0.85rem;">${tree.local}</td>
                     
-                    <td class="col-secondary" style="font-size:0.8rem;">${tree.avaliador}</td>
+                    <td style="font-size:0.8rem;">${tree.avaliador}</td>
                     
-                    <td><span class="badge ${riskClass}" style="font-size:0.7rem;">${tree.risco}</span></td>
+                    <td><span class="risk-badge ${riskClass}">${tree.risco}</span></td>
                     
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 5px; justify-content: center;">
-                            <button class="action-btn-icon btn-map" data-id="${tree.id}" title="Mapa" 
-                                style="background:#e3f2fd; color:#0277BD; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">📍</button>
-                            
-                            <button class="action-btn-icon btn-plan-intervencion" data-id="${tree.id}" title="Plano de Intervenção" 
-                                style="background:#d7f3e0; color:#4CAF50; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">📋</button>
-                            
-                            ${tree.hasPhoto ? `
-                            <button class="action-btn-icon btn-photo" data-id="${tree.id}" title="Foto" 
-                                style="background:#e8f5e9; color:#2e7d32; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">📷</button>` : ''}
-
-                            <button class="action-btn-icon btn-edit" data-id="${tree.id}" title="Editar" 
-                                style="background:#fff3e0; color:#f57c00; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">✏️</button>
-                            
-                            <button class="action-btn-icon btn-delete" data-id="${tree.id}" title="Excluir" 
-                                style="background:#ffebee; color:#d32f2f; border-radius:50%; width:30px; height:30px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;">🗑️</button>
+                    <td class="col-actions">
+                        <div class="action-btn-group">
+                            <button class="action-btn btn-map" data-id="${tree.id}" title="Ver no Mapa">📍</button>
+                            <button class="action-btn btn-details" data-id="${tree.id}" title="Ver Ficha Técnica">📋</button>
+                            <button class="action-btn btn-pdf" data-id="${tree.id}" title="Gerar Laudo Individual">📄</button>
+                            ${tree.hasPhoto ? `<button class="action-btn btn-photo" data-id="${tree.id}" title="Foto">📷</button>` : ''}
+                            <button class="action-btn btn-edit" data-id="${tree.id}" title="Editar">✏️</button>
+                            <button class="action-btn btn-delete" data-id="${tree.id}" title="Excluir">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -160,7 +227,14 @@ export const TableUI = {
     renderMobileList(trees) {
         const sortedTrees = [...trees].sort((a, b) => b.id - a.id);
 
-        const listItemsHtml = sortedTrees.map(tree => {
+        // [MODIFICATION-SEQ-ID] Add a sequential display ID after sorting
+        const treesWithDisplayId = sortedTrees.map((tree, index) => ({
+            ...tree,
+            displayId: index + 1
+        }));
+        this._lastRenderedTrees = treesWithDisplayId; // Cache for modal
+
+        const listItemsHtml = treesWithDisplayId.map(tree => {
             const riskClass = tree.riscoClass || 'risk-low';
             const photoIcon = tree.hasPhoto ? '📷' : '';
 
@@ -168,7 +242,7 @@ export const TableUI = {
                 <div class="tree-card ${riskClass}" data-id="${tree.id}">
                     <div style="position:absolute; top:15px; right:15px;"><span class="risk-badge ${riskClass}">${tree.risco}</span></div>
                     <div class="item-main-info">
-                        <span class="item-id">ID: ${tree.id}</span>
+                        <span class="item-id">ID: ${tree.displayId}</span>
                         <strong class="item-species">${tree.especie}</strong>
                         <p class="item-location">${tree.local || 'N/A'} ${photoIcon}</p>
                     </div>
@@ -236,28 +310,44 @@ export const TableUI = {
 
         this._containerClickHandler = (event) => {
             const target = event.target;
+
+            // Handle sorting clicks
+            const header = target.closest('th[data-sort-key]');
+            if (header) {
+                const key = header.dataset.sortKey;
+                if (this.sortState.column === key) {
+                    this.sortState.direction = this.sortState.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sortState.column = key;
+                    this.sortState.direction = 'asc';
+                }
+                this.render(); // Re-render the whole UI
+                return;
+            }
             
             // Ações da tabela de desktop
-            const actionBtn = target.closest('.action-btn-icon');
+            const actionBtn = target.closest('.action-btn-group .action-btn');
             if (actionBtn) {
                 const id = parseInt(actionBtn.dataset.id, 10);
                 if (isNaN(id)) return;
 
-                            if (actionBtn.classList.contains('btn-map')) {
-                                features.handleZoomToPoint(id);
-                            } else if (actionBtn.classList.contains('btn-edit')) {
-                                features.handleEditTree(id);
-                            } else if (actionBtn.classList.contains('btn-delete')) {
-                                showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${id}?`, () => features.handleDeleteTree(id));
-                            } else if (actionBtn.classList.contains('btn-photo')) {
-                                getImageFromDB(id, blob => {
-                                    if (blob) openPhotoViewer(URL.createObjectURL(blob));
-                                });
-                            } else if (actionBtn.classList.contains('btn-plan-intervencion')) {
-                                if (this.onNavigateToPlanningForm) {
-                                    this.onNavigateToPlanningForm(id);
-                                }
-                            }                return;
+                if (actionBtn.classList.contains('btn-map')) {
+                    features.handleZoomToPoint(id);
+                } else if (actionBtn.classList.contains('btn-details')) {
+                    this.showTreeDetailsModal(id);
+                } else if (actionBtn.classList.contains('btn-pdf')) {
+                    const tree = State.registeredTrees.find(t => t.id === id);
+                    if (tree) generateIndividualReport(tree);
+                } else if (actionBtn.classList.contains('btn-edit')) {
+                    features.handleEditTree(id);
+                } else if (actionBtn.classList.contains('btn-delete')) {
+                    showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${id}?`, () => features.handleDeleteTree(id));
+                } else if (actionBtn.classList.contains('btn-photo')) {
+                    getImageFromDB(id, blob => {
+                        if (blob) openPhotoViewer(URL.createObjectURL(blob));
+                    });
+                }
+                return;
             }
 
             // Clique na lista de mobile
@@ -277,9 +367,14 @@ export const TableUI = {
      * [NOVO] Exibe o modal com os detalhes da árvore.
      */
     showTreeDetailsModal(treeId) {
-        const tree = State.registeredTrees.find(t => t.id === treeId);
-        if (!tree) return;
+        const treeFromState = State.registeredTrees.find(t => t.id === treeId);
+        if (!treeFromState) return;
 
+        // [MODIFICATION-SEQ-ID] Find the rendered tree to get the displayId
+        const renderedTree = this._lastRenderedTrees.find(t => t.id === treeId);
+        const displayId = renderedTree ? renderedTree.displayId : treeId; // Fallback to original ID
+
+        const tree = treeFromState; // Use the full object from state
         const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : 'N/A';
         
         // Mapeia os fatores de risco para uma lista legível
@@ -351,7 +446,7 @@ export const TableUI = {
             {
                 text: '📄 Laudo',
                 className: 'action-btn',
-                onClick: () => generateSingleTreePDF(tree)
+                onClick: () => generateIndividualReport(tree)
             }
         ];
 
@@ -372,7 +467,7 @@ export const TableUI = {
         }
 
         // Passa a classe para o modal
-        showDetailsModal(`${tree.especie} (ID: ${tree.id})`, content, actions, dialogRiskClass);
+        showDetailsModal(`${tree.especie} (ID: ${displayId})`, content, actions, dialogRiskClass);
     },
 
     renderControls() {

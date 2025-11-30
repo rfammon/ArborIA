@@ -121,3 +121,296 @@ ul.compact-list li { margin-bottom: 2px; }
 .summary-list-item:hover {
     background-color: #f0f0f0;
 }
+
+/* --- UI DE PREVIEW (TELA) --- */
+.report-overlay {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background: #525659; 
+    z-index: 99999;
+    overflow-y: auto; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center;
+    padding-top: 0 !important; /* Remove padding do container */
+}
+
+.report-controls {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    background: rgba(0,0,0,0.8);
+    padding: 15px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    z-index: 100000; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+
+.a4-paper {
+    background: white; 
+    width: 210mm; 
+    min-height: 297mm;
+    height: auto !important; /* Correção definitiva de altura */
+    display: block; /* Garante comportamento de bloco */
+    overflow: visible; /* Previne que o conteúdo seja cortado */
+    margin: 80px auto 30px auto !important;
+    padding: 15mm !important; /* Padding reduzido e garantido */
+    box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+    box-sizing: border-box;
+}
+
+/* --- CABEÇALHOS DE SEÇÃO COM GRADIENTE --- */
+.section-header {
+    background: linear-gradient(90deg, #1565c0 0%, #2e7d32 100%);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px 6px 0 0;
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-top: 20px;
+    margin-bottom: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --- LINHAS DA TABELA (CORES SUAVES) --- */
+tr.row-risk-low { background-color: rgba(46, 125, 50, 0.08) !important; }
+tr.row-risk-medium { background-color: rgba(245, 124, 0, 0.08) !important; }
+tr.row-risk-high { background-color: rgba(211, 47, 47, 0.08) !important; }
+tr.row-risk-extreme { background-color: rgba(33, 33, 33, 0.08) !important; }
+
+/* --- CARD DETALHADO NO RELATÓRIO GERAL --- */
+.detail-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.detail-card-header {
+    padding: 10px 15px;
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-card-body {
+    padding: 15px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 15px;
+    align-items: start;
+}
+
+.detail-card-photo {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.detail-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-card-info p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.detail-card-info strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.detail-card-factors {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.detail-card-factors ul {
+    margin: 5px 0 0 0;
+    padding-left: 20px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    columns: 2;
+    column-gap: 15px;
+}
+
+.detail-card-factors li {
+    margin-bottom: 3px;
+    break-inside: avoid;
+}
+
+/* --- ESTILO DOS RELATÓRIOS (REUTILIZANDO ARB-CARD) --- */
+.report-header {
+    border-bottom: 4px solid; 
+    border-image: linear-gradient(90deg, #1565c0 0%, #2e7d32 100%) 1;
+    margin-bottom: 20px; 
+    padding-bottom: 10px;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-end;
+}
+
+.report-table {
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 9pt;
+    margin-bottom: 20px;
+}
+
+.report-table th { 
+    background: linear-gradient(90deg, #1565c0 0%, #2e7d32 100%);
+    color: white; 
+    padding: 10px 8px; 
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.report-table td { 
+    border-bottom: 1px solid #eee; 
+    padding: 8px; 
+    vertical-align: middle;
+}
+
+.report-table tr:hover {
+    background-color: rgba(21, 101, 192, 0.03);
+}
+
+/* Badge de Risco na Tabela */
+.risk-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.risk-badge.low { background-color: #2e7d32; }
+.risk-badge.medium { background-color: #f57c00; }
+.risk-badge.high { background-color: #d32f2f; }
+.risk-badge.extreme { background-color: #212121; }
+
+/* --- REGRAS DE IMPRESSÃO (O QUE VAI PARA O PDF) --- */
+@media print {
+    /* Define margens da página na impressão */
+    @page {
+        margin: 10mm;
+    }
+
+    body {
+        margin: 0;
+    }
+    
+    body > *:not(#report-preview-overlay) { display: none !important; }
+    .no-print { display: none !important; }
+    
+    #report-preview-overlay {
+        position: static; 
+        background: none;
+        overflow: visible; 
+        display: block !important;
+    }
+    
+    .a4-paper {
+        margin: 0 !important; 
+        box-shadow: none !important; 
+        width: 100%; 
+        min-height: unset;
+        height: auto;
+        padding: 0;
+        border: none;
+    }
+    
+    .arb-card, .detail-card, tr { 
+        break-inside: avoid; 
+        page-break-inside: avoid; 
+    }
+    
+    * { 
+        -webkit-print-color-adjust: exact !important; 
+        print-color-adjust: exact !important; 
+    }
+    
+    .section-header {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+
+/* --- TOAST NOTIFICATION --- */
+#toast-notification {
+    visibility: hidden;
+    min-width: 250px;
+    margin-left: -125px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    padding: 16px;
+    position: fixed;
+    z-index: 9999;
+    left: 50%;
+    bottom: 30px;
+    font-size: 1rem;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
+    opacity: 0;
+    transition: opacity 0.3s, bottom 0.3s;
+}
+
+#toast-notification.show {
+    visibility: visible;
+    opacity: 1;
+    bottom: 50px;
+}
+
+#toast-notification.success {
+    background-color: #2e7d32;
+    border-left: 6px solid #1b5e20;
+}
+
+#toast-notification.error {
+    background-color: #c62828;
+    border-left: 6px solid #b71c1c;
+}
+
+#toast-notification.info {
+    background-color: #0277bd;
+    border-left: 6px solid #01579b;
+}
+
+/* Animation for Sync Button */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.rotating {
+    animation: spin 1s linear infinite;
+}

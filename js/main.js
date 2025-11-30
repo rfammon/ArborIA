@@ -1,9 +1,12 @@
-// js/main.js (v2.5 - Maestro do ArborIA 2.0 - Flash Card Integration)
+// js/main.js (v2.8 - Robust Init & Sync Event Fix)
 
 import * as state from './state.js';
 import { UI } from './ui.js'; 
 import { TooltipUI } from './tooltip.ui.js';
 import { TableUI } from './table.ui.js';
+import { AuthUI } from './auth.ui.js'; 
+import { ApiService } from './supabase-client.js';
+import { SyncService } from './sync.service.js'; 
 
 import * as features from './features.js';
 import { initImageDB, getImageFromDB } from './database.js'; 
@@ -16,7 +19,6 @@ import * as clinometer from './clinometer.js';
 import * as dapEstimator from './dap.estimator.js';
 import { PlanningModule } from './arboria-module.js';
 
-// Tenta importar o gerador de PDF dinamicamente
 let pdfGenerator = null;
 
 // === 1. SELETORES GLOBAIS ===
@@ -72,13 +74,8 @@ function handleMainNavigation(event, treeId = null) {
 }
 
 async function openPlanningModule(treeId = null) {
-    console.log("🦫 Beaver Log: Iniciando módulo de planejamento...");
-    
-    // 1. Verifica estado
     let treesToProcess = state.registeredTrees;
-    console.log("🦫 Beaver Log: Árvores no State:", treesToProcess); 
 
-    // 2. Filtra se houver ID
     if (treeId) {
         treesToProcess = state.registeredTrees.filter(tree => tree.id === treeId);
         if (treesToProcess.length === 0) {
@@ -87,30 +84,24 @@ async function openPlanningModule(treeId = null) {
         }
     }
 
-    // 3. Mapeia dados para o formato do módulo
     const trees = treesToProcess.map(tree => ({
         ...tree,
         species: tree.especie,
         location: tree.local,
-        
-        // --- DADOS TRAQ ---
-        riskLevel: tree.riskLevel || 'Não Avaliado', // Ex: "Alto"
-        residualRisk: tree.residualRisk || tree.riskLevel, // Ex: "Baixo"
+        riskLevel: tree.riskLevel || 'Não Avaliado',
+        residualRisk: tree.residualRisk || tree.riskLevel,
         failureProb: tree.failureProb || '-',
         targetType: tree.targetType || '-',
         mitigation: tree.mitigation || 'nenhuma',
-        // ------------------
-
         riskFactorsCode: tree.riskFactors ? tree.riskFactors.join(',') : '',
         defects: tree.observacoes ? [tree.observacoes] : [],
         riskScore: tree.pontuacao,
         date: tree.data,
         dap: tree.dap,
         height: tree.altura,
-        suggestedIntervention: tree.mitigation // Mapeamento para automação
+        suggestedIntervention: tree.mitigation 
     }));
 
-    // 4. Carrega imagens (Assíncrono)
     const treesWithImages = await Promise.all(trees.map(async (tree) => {
         if (tree.hasPhoto) {
             return new Promise((resolve) => {
@@ -122,17 +113,12 @@ async function openPlanningModule(treeId = null) {
         return tree;
     }));
 
-    console.log("🦫 Beaver Log: Dados finais enviados:", treesWithImages);
-
-    // 5. Verificação Crítica do DOM
     const container = document.getElementById('planning-module-root');
     if (!container) {
-        console.error("🦫 ERRO CRÍTICO: Container 'planning-module-root' não encontrado no DOM!");
         utils.showToast("Erro interno: Elemento de visualização não encontrado.", "error");
         return;
     }
 
-    // 6. Montagem
     PlanningModule.mount('planning-module-root', {
         trees: treesWithImages,
         currentUser: document.getElementById('risk-avaliador')?.value || 'Usuário',
@@ -148,7 +134,6 @@ async function openPlanningModule(treeId = null) {
         }
     }, treeId);
 }
-
 
 function loadManualContent(topicId) {
     if (!detailView) return;
@@ -166,15 +151,23 @@ function loadManualContent(topicId) {
 // === 3. CONEXÃO DOS BOTÕES DE AÇÃO ===
 function setupActionButtons() {
 
+    // --- NAVEGAÇÃO INTERNA ---
+    const backToSummaryBtn = document.getElementById('back-to-summary-btn');
+    if (backToSummaryBtn) {
+        backToSummaryBtn.addEventListener('click', () => {
+            const summaryNavBtn = document.querySelector('.topico-btn[data-target="calculadora-view"]');
+            if (summaryNavBtn) summaryNavBtn.click();
+        });
+    }
+
     // --- FORMULÁRIO DE RISCO ---
     const riskForm = document.getElementById('risk-calculator-form');
     if (riskForm) {
-        riskForm.addEventListener('submit', (e) => {
-            const result = features.handleAddTreeSubmit(e); 
+        riskForm.addEventListener('submit', async (e) => {
+            const result = await features.handleAddTreeSubmit(e); 
             if (result && result.success) {
                 TableUI.render(); 
                 mapUI.updateMapData(true); 
-                
                 const summaryTab = document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]');
                 if (summaryTab) summaryTab.click();
             }
@@ -187,30 +180,25 @@ function setupActionButtons() {
         });
     }
 
-    // --- [NOVO] CHECKLIST FLASH CARD ---
+    // --- CHECKLIST FLASH CARD ---
     const openFlashcardBtn = document.getElementById('open-flashcard-btn');
     if (openFlashcardBtn) {
       openFlashcardBtn.addEventListener('click', () => {
         const checklistView = document.getElementById('checklist-flashcard-view');
         if (checklistView) {
-          checklistView.classList.add('active'); // Use classList.add
+          checklistView.classList.add('active'); 
           if (typeof features.initChecklistFlashCard === 'function') {
             features.initChecklistFlashCard();
-          } else {
-            
           }
-        } else {
-          
         }
       });
     }
 
-    // Adiciona o listener para o botão de fechar o checklist
     const closeChecklistBtn = document.getElementById('close-checklist-btn');
     if (closeChecklistBtn) {
       closeChecklistBtn.addEventListener('click', () => {
         const checklistView = document.getElementById('checklist-flashcard-view');
-        if (checklistView) checklistView.classList.remove('active'); // Use classList.remove
+        if (checklistView) checklistView.classList.remove('active');
       });
     }
 
@@ -221,7 +209,6 @@ function setupActionButtons() {
     // --- IMPORTAÇÃO / EXPORTAÇÃO ---
     const btnImport = document.getElementById('import-data-btn');
     const inputZip = document.getElementById('zip-importer');
-    
     if (btnImport && inputZip) {
         btnImport.addEventListener('click', () => inputZip.click()); 
         inputZip.addEventListener('change', async (e) => {
@@ -232,26 +219,22 @@ function setupActionButtons() {
     }
 
     const btnExport = document.getElementById('export-data-btn');
-    if (btnExport) {
-        btnExport.addEventListener('click', features.exportActionZip); 
-    }
+    if (btnExport) btnExport.addEventListener('click', features.exportActionZip); 
 
     // --- GERAR PDF ---
     const btnPdf = document.getElementById('generate-pdf-btn');
     if (btnPdf) {
         btnPdf.addEventListener('click', () => {
-            if (pdfGenerator && typeof pdfGenerator.generatePDF === 'function') {
-                pdfGenerator.generatePDF(state.registeredTrees);
+            if (pdfGenerator && typeof pdfGenerator.generateGeneralReport === 'function') {
+                pdfGenerator.generateGeneralReport(state.registeredTrees);
             } else {
-                features.sendEmailReport(); 
+                utils.showToast("Módulo de relatório não carregado. Recarregue a página.", "error");
             }
         });
     }
 
     const btnEmail = document.getElementById('send-email-btn');
-    if (btnEmail) {
-        btnEmail.addEventListener('click', features.sendEmailReport);
-    }
+    if (btnEmail) btnEmail.addEventListener('click', features.sendEmailReport);
 
     // --- LIMPAR BANCO ---
     const btnClear = document.getElementById('clear-all-btn');
@@ -259,7 +242,7 @@ function setupActionButtons() {
         btnClear.addEventListener('click', () => {
             modalUI.showConfirmModal(
                 "Excluir Tudo?", 
-                "Esta ação apagará todas as árvores e fotos. Confirma?", 
+                "Esta ação apagará todas as árvores e fotos localmente.", 
                 () => {
                     features.handleClearAll();
                     TableUI.render();
@@ -269,11 +252,10 @@ function setupActionButtons() {
         });
     }
 
-    // --- FILTRO DA TABELA ---
+    // --- FILTRO E FOTO ---
     const filterInput = document.getElementById('table-filter-input');
     if(filterInput) filterInput.addEventListener('keyup', features.handleTableFilter);
 
-    // --- LÓGICA DE UPLOAD E PREVIEW DE FOTO ---
     const photoInput = document.getElementById('tree-photo-input');
     const removePhotoBtn = document.getElementById('remove-photo-btn');
 
@@ -282,7 +264,7 @@ function setupActionButtons() {
             const file = event.target.files[0];
             if (!file) return;
 
-            features.clearPhotoPreview(); // Limpa qualquer preview anterior
+            features.clearPhotoPreview(); 
             try {
                 utils.showToast('Otimizando foto...', 'success');
                 const optimizedBlob = await utils.optimizeImage(file, 800, 0.7);
@@ -292,11 +274,10 @@ function setupActionButtons() {
                 const preview = document.createElement('img');
                 preview.id = 'photo-preview';
                 preview.src = URL.createObjectURL(optimizedBlob);
-                previewContainer.prepend(preview); // Adiciona a imagem antes do botão
+                previewContainer.prepend(preview); 
                 if(removePhotoBtn) removePhotoBtn.style.display = 'block';
 
             } catch (error) {
-                
                 utils.showToast('Erro ao processar a foto.', 'error');
             }
         });
@@ -305,9 +286,61 @@ function setupActionButtons() {
     if (removePhotoBtn) {
         removePhotoBtn.addEventListener('click', features.clearPhotoPreview);
     }
+    
+    // NOTA: A lógica do botão sync foi movida para attachSyncListener()
+    // para ser chamada dinamicamente quando o AuthUI atualizar a interface.
 }
 
-// === 4. ATALHOS DE FERRAMENTAS ===
+// === 4. LÓGICA DE SINCRONIZAÇÃO DINÂMICA ===
+function attachSyncListener() {
+    const btnSync = document.getElementById('btn-sync-data');
+    if (!btnSync) return; // Se não estiver logado, o botão não existe
+
+    // Remove listeners antigos para evitar duplicação (cloneNode hack ou apenas cuidado)
+    const newBtn = btnSync.cloneNode(true);
+    btnSync.parentNode.replaceChild(newBtn, btnSync);
+
+    newBtn.addEventListener('click', async () => {
+        const session = await ApiService.getSession();
+        if (!session) {
+            utils.showToast("Sessão expirada. Faça login novamente.", "error");
+            return;
+        }
+
+        const icon = newBtn.querySelector('i');
+        if(icon) icon.classList.add('rotating');
+        
+        try {
+            utils.showToast("Sincronizando...", "info");
+            
+            const result = await SyncService.synchronize(state.registeredTrees);
+            
+            if (result.success) {
+                state.setRegisteredTrees(result.updatedTrees);
+                TableUI.render();
+                mapUI.updateMapData(true);
+                utils.showToast(`Concluído! (+${result.stats.downloaded} / ^${result.stats.uploaded})`, "success");
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error("Sync Error:", error);
+            utils.showToast("Erro na sincronização.", "error");
+        } finally {
+            if(icon) icon.classList.remove('rotating');
+        }
+    });
+}
+
+// Escuta o evento disparado pelo AuthUI quando o usuário loga/desloga
+document.addEventListener('auth-ui-updated', (e) => {
+    // Se usuário logou (e.detail.user existe), o botão sync deve estar lá
+    if (e.detail && e.detail.user) {
+        attachSyncListener();
+    }
+});
+
+// === 5. ATALHOS ===
 function setupToolShortcuts() {
     const btnHeight = document.getElementById('btn-measure-height-form');
     const btnDap = document.getElementById('btn-measure-dap-form');
@@ -338,7 +371,6 @@ function setupBackToTop() {
 function setupWelcomeScreen() {
     const welcomeScreen = document.getElementById('welcome-screen');
     const closeBtn = document.getElementById('close-welcome-btn');
-
     if (!welcomeScreen || !closeBtn) return;
 
     const closeWelcome = () => {
@@ -366,79 +398,112 @@ function initFormDefaults() {
     } catch(e) { }
 }
 
-// === 5. INICIALIZAÇÃO PRINCIPAL ===
+function applyGuestRestrictions() {
+    const isGuest = sessionStorage.getItem('arboria_guest_mode') === 'true';
+    if (!isGuest) return;
+
+    console.log("Applying guest restrictions...");
+
+    const importBtn = document.getElementById('import-data-btn');
+    const emailBtn = document.getElementById('send-email-btn');
+
+    if (importBtn) {
+        importBtn.style.display = 'none';
+        console.log("Import button hidden for guest.");
+    }
+    if (emailBtn) {
+        emailBtn.style.display = 'none';
+        console.log("Email button hidden for guest.");
+    }
+}
+
+// === 6. INICIALIZAÇÃO PRINCIPAL ===
 async function initApp() {
-  try {
+    console.log("🚀 Initializing ArborIA 2.0...");
+
+    // 1. Inicializa UI Base (Sync)
+    try {
+        UI.init();
+        TooltipUI.init();
+    } catch (e) {
+        console.error("UI Init Error:", e);
+    }
+
+    // 2. Carrega PDF Module (Async)
     try {
         pdfGenerator = await import('./pdf.generator.js');
     } catch (e) {
+        console.warn("PDF Module failed to load:", e);
+    }
+
+    // 3. Inicializa Autenticação (Async)
+    // AuthUI.init() chama checkInitialSession que pode falhar se rede offline, 
+    // mas já tratamos lá.
+    try {
+        AuthUI.init();
+    } catch (e) {
+        console.error("Auth Init Error:", e);
+    }
+
+    // 4. Inicializa Banco de Imagens (Async)
+    try {
+        if (typeof initImageDB === 'function') await initImageDB();
+        if (modalUI && typeof modalUI.initPhotoViewer === 'function') modalUI.initPhotoViewer();
+    } catch(e) {
+        console.error("DB Init Error:", e);
+    }
+
+    // 5. Configura Listeners e Estado
+    try {
+        state.loadDataFromStorage();
         
-    }
+        if (topNavContainer) topNavContainer.addEventListener('click', handleMainNavigation);
+        
+        setupActionButtons(); 
+        setupToolShortcuts();
+        setupBackToTop();
+        setupWelcomeScreen();
+        initFormDefaults();
+        applyGuestRestrictions(); // Aplica restrições se for visitante
+        
+        mapUI.setupMap();
+        mapUI.setupMapListeners();
+        
+        clinometer.initClinometerListeners();
+        dapEstimator.initDAPEstimatorListeners();
 
-    // 1. Inicializa UI Base
-    UI.init();
-    TooltipUI.init();
-    if (modalUI && typeof modalUI.initPhotoViewer === 'function') modalUI.initPhotoViewer();
+        // 6. Renderiza Tabela
+        TableUI.render({
+            onNavigateToPlanningForm: (treeId) => {
+                handleMainNavigation({ target: { closest: () => ({ dataset: { target: 'plano-intervencao-view' } }) } }, treeId);
+            }
+        });
 
-    // 2. Carrega Dados
-    state.loadDataFromStorage();
-    if (typeof initImageDB === 'function') await initImageDB(); 
+        window.addEventListener('resize', () => {
+            const mapContainer = document.getElementById('map-container');
+            if (mapContainer && mapContainer.offsetParent !== null) {
+                mapUI.updateMapData(false); 
+                if (state.mapInstance) state.mapInstance.invalidateSize();
+            }
+        });
 
-    // 3. Configura Listeners
-    if (topNavContainer) topNavContainer.addEventListener('click', handleMainNavigation);
-    setupActionButtons(); 
-    setupToolShortcuts();
-    setupBackToTop();
-    setupWelcomeScreen();
-    initFormDefaults();
-    
-    // 4. Inicializa Componentes Complexos
-    mapUI.setupMap();
-    mapUI.setupMapListeners();
-    
-    clinometer.initClinometerListeners();
-    dapEstimator.initDAPEstimatorListeners();
-
-    // [NOTA] Não iniciamos mais o checklist automaticamente aqui.
-    // Ele é iniciado apenas pelo clique do botão #open-checklist-btn
-
-    // 5. Renderiza Tabela Inicial
-    TableUI.render({
-        onNavigateToPlanningForm: (treeId) => {
-            handleMainNavigation({ target: { closest: () => ({ dataset: { target: 'plano-intervencao-view' } }) } }, treeId);
+        // 7. Navegação Inicial
+        const calcViewButton = document.querySelector('.topico-btn[data-target="calculadora-view"]');
+        if (window.innerWidth > 768 && calcViewButton) {
+            UI.navigateTo('calculadora-view');
         }
-    });
 
-    // 6. Listener Global de Resize (Mapa)
-    window.addEventListener('resize', () => {
-        const mapContainer = document.getElementById('map-container');
-        if (mapContainer && mapContainer.offsetParent !== null) {
-            mapUI.updateMapData(false); 
-            if (state.mapInstance) state.mapInstance.invalidateSize();
-        }
-    });
-
-    // 7. Restaura Estado
-    // [MUDANÇA] Força o início na calculadora/painel, em vez de restaurar a última aba.
-    // A UI já exibe o painel por padrão, então não precisamos clicar em nada.
-    const calcViewButton = document.querySelector('.topico-btn[data-target="calculadora-view"]');
-    if (window.innerWidth > 768 && calcViewButton) {
-      UI.navigateTo('calculadora-view');
+    } catch (error) {
+        console.error("Main Logic Error:", error);
+        UI.showToast("Erro parcial na inicialização.", "error");
     }
-    
-  } catch (error) {
-    
-    try { UI.showToast("Erro ao carregar aplicação.", "error"); } catch(e){}
-  }
 }
 
-// === 6. SERVICE WORKER (PWA) ===
+// === 7. SERVICE WORKER ===
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js')
-      .catch((err) => {});
+    navigator.serviceWorker.register('./service-worker.js').catch((err) => {});
   });
 }
 
-// Executa a aplicação
 document.addEventListener('DOMContentLoaded', initApp);

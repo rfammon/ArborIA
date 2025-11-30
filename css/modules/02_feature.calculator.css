@@ -398,3 +398,26 @@ fieldset.target-selection-desktop label small {
         grid-template-columns: 1fr !important;
     }
 }
+
+/* --- Table Sorting --- */
+.summary-table th:not(.no-sort) {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.summary-table th:not(.no-sort):hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sort-icon {
+    font-size: 0.8em;
+    margin-left: 5px;
+    opacity: 0.5;
+    display: inline-block;
+}
+
+.sort-active .sort-icon {
+    opacity: 1;
+    color: #00e676; /* Green accent */
+}

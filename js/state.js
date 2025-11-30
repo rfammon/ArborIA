@@ -146,3 +146,41 @@ export function getActiveTab() {
     return null;
   }
 }
+
+/**
+ * [NOVO] Realiza uma limpeza completa do estado da aplicação em memória.
+ * Chamada durante o logout para garantir que nenhum dado de sessão residual permaneça.
+ */
+export function resetApplicationState() {
+    console.log("Cleaning up application state...");
+
+    // Dados Principais
+    registeredTrees = [];
+
+    // Mapa e Visualização
+    if (mapInstance) {
+        mapInstance.remove();
+        mapInstance = null;
+    }
+    mapMarkerGroup = null;
+    zoomTargetCoords = null;
+    highlightTargetId = null;
+    openInfoBoxId = null;
+
+    // Rastreamento de Localização
+    if (userLocationWatchId) {
+        navigator.geolocation.clearWatch(userLocationWatchId);
+        userLocationWatchId = null;
+    }
+    userLocationMarker = null;
+
+    // Estado de UI e Edição
+    sortState = { key: 'id', direction: 'asc' };
+    lastEvaluatorName = '';
+    lastUtmZone = { num: 0, letter: 'Z' };
+    currentTreePhoto = null;
+    editingTreeId = null;
+    currentTooltip = null;
+
+    console.log("Application state has been reset.");
+}

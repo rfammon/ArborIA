@@ -1,427 +1,684 @@
-// js/pdf.generator.js (v80.0 - Rebranding ArborIA Final)
+// js/pdf.generator.js - Gerador de HTML para Impressão Nativa (Premium Edition)
 
-import * as state from './state.js';
-import { getActiveTab } from './state.js';
+import { openReportPreview } from './utils.js';
 import { getImageFromDB } from './database.js';
-import { showToast } from './utils.js';
-import { UI } from './ui.js'; 
-import { prepareMapForScreenshot, initializeMap, currentLayerType, toggleMapLayer } from './map.ui.js'; 
 import { RISK_LABELS } from './constants.js';
 
+/**
+ * Converte coordenadas UTM para Latitude e Longitude (WGS84).
+ * @param {number} easting - Coordenada X (Leste).
+ * @param {number} northing - Coordenada Y (Norte).
+ * @param {number} zoneNum - O fuso UTM (ex: 23).
+ * @param {string} hemisphere - 'N' para Norte ou 'S' para Sul.
+ * @returns {{lat: number, lon: number}} Objeto com latitude e longitude.
+ */
+function utmToLatLon(easting, northing, zoneNum, hemisphere) {
+    const k0 = 0.9996;
+    const a = 6378137; // Raio equatorial
+    const eccSquared = 0.00669438; // Excentricidade ao quadrado
+    const e1 = (1 - Math.sqrt(1 - eccSquared)) / (1 + Math.sqrt(1 - eccSquared));
+
+    let x = easting - 500000.0;
+    let y = northing;
+    
+    if (hemisphere === 'S') {
+        y -= 10000000.0;
+    }
+
+    const zoneLetter = "N"; // Fixo para o cálculo, o hemisfério já foi tratado.
+    const lonOrigin = (zoneNum - 1) * 6 - 180 + 3;
+
+    const eccPrimeSquared = (eccSquared) / (1 - eccSquared);
+
+    const M = y / k0;
+    const mu = M / (a * (1 - eccSquared / 4 - 3 * eccSquared * eccSquared / 64 - 5 * eccSquared * eccSquared * eccSquared / 256));
+
+    const phi1Rad = mu + (3 * e1 / 2 - 27 * e1 * e1 * e1 / 32) * Math.sin(2 * mu) 
+                   + (21 * e1 * e1 / 16 - 55 * e1 * e1 * e1 * e1 / 32) * Math.sin(4 * mu)
+                   + (151 * e1 * e1 * e1 / 96) * Math.sin(6 * mu);
+    
+    const N1 = a / Math.sqrt(1 - eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad));
+    const T1 = Math.tan(phi1Rad) * Math.tan(phi1Rad);
+    const C1 = eccPrimeSquared * Math.cos(phi1Rad) * Math.cos(phi1Rad);
+    const R1 = a * (1 - eccSquared) / Math.pow(1 - eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad), 1.5);
+    const D = x / (N1 * k0);
+
+    let lat = phi1Rad - (N1 * Math.tan(phi1Rad) / R1) * (D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * eccPrimeSquared) * D * D * D * D / 24
+            + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * eccPrimeSquared - 3 * C1 * C1) * D * D * D * D * D * D / 720);
+    lat = lat * 180 / Math.PI;
+
+    let lon = (D - (1 + 2 * T1 + C1) * D * D * D / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * eccPrimeSquared + 24 * T1 * T1) * D * D * D * D * D / 120) / Math.cos(phi1Rad);
+    lon = lonOrigin + lon * 180 / Math.PI;
+
+    return { lat: lat, lon: lon };
+}
+
+
+/**
+ * Converte um Blob de imagem para uma URL de dados Base64.
+ * Retorna null se o blob for nulo.
+ * @param {Blob|null} blob O blob da imagem.
+ * @returns {Promise<string|null>} A URL de dados ou null.
+ */
 const blobToDataURL = (blob) => {
     return new Promise((resolve, reject) => {
+        if (!blob) {
+            return resolve(null);
+        }
         const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
+        reader.onload = e => resolve(e.target.result);
         reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
 };
 
-export async function generatePDF() {
-    if (state.registeredTrees.length === 0) {
-        showToast("Sem dados para gerar relatório.", "error");
-        return;
+/**
+ * Retorna uma cor hexadecimal com base no nível de risco.
+ * @param {string} riskLevel - O texto do nível de risco (ex: "Alto Risco").
+ * @returns {string} A cor correspondente.
+ */
+const getRiskColor = (riskLevel) => {
+    if (riskLevel.includes('Alto')) return '#c62828';
+    if (riskLevel.includes('Médio')) return '#f57c00';
+    if (riskLevel.includes('Extremo')) return '#212121';
+    return '#2e7d32';
+};
+
+/**
+ * Retorna a classe CSS para a linha da tabela baseada no risco.
+ * @param {string} riskLevel - O texto do nível de risco.
+ * @returns {string} A classe CSS.
+ */
+const getRiskRowClass = (riskLevel) => {
+    if (riskLevel.includes('Extremo')) return 'row-risk-extreme';
+    if (riskLevel.includes('Alto')) return 'row-risk-high';
+    if (riskLevel.includes('Médio')) return 'row-risk-medium';
+    return 'row-risk-low';
+};
+
+/**
+ * Retorna a classe CSS para o badge de risco.
+ * @param {string} riskLevel - O texto do nível de risco.
+ * @returns {string} A classe CSS.
+ */
+const getRiskBadgeClass = (riskLevel) => {
+    if (riskLevel.includes('Extremo')) return 'extreme';
+    if (riskLevel.includes('Alto')) return 'high';
+    if (riskLevel.includes('Médio')) return 'medium';
+    return 'low';
+};
+
+
+/**
+ * Gera HTML para os fatores de risco de uma árvore.
+ * @param {Array<boolean>} riskFactors - Array de fatores de risco.
+ * @returns {string} HTML da lista de fatores.
+ */
+function getRiskFactorsHTML(riskFactors) {
+    if (!riskFactors || riskFactors.length === 0) {
+        return '<p style="color: #546e7a; font-style: italic; margin: 0;">Nenhum fator de risco crítico identificado.</p>';
     }
-
-    const { jsPDF } = window.jspdf;
-    if (!jsPDF || !window.html2canvas) {
-        showToast("Bibliotecas PDF não carregadas.", "error");
-        return;
-    }
-
-    showToast("Preparando mapa e gerando PDF...", "success");
-
-    // === CONFIG DA LOGO ===
-    // Cole sua string Base64 aqui entre as aspas
-    const logoBase64 = ""; 
-
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 14;
-    let cursorY = 20;
-
-    // === 1. CAPTURA DO MAPA ===
-    let mapImageParams = null;
-    const mapContainer = document.getElementById('map-container');
-    const originalActiveTab = getActiveTab();
-
-    try {
-        // Força a navegação para a visualização do mapa para a captura de tela
-        UI.navigateTo('calculadora-view');
-        document.querySelector('.sub-nav-btn[data-target="tab-content-mapa"]').click();
-
-        // Prepara o mapa para a captura de tela
-        await prepareMapForScreenshot();
-        
-        const canvas = await html2canvas(mapContainer, {
-            useCORS: true, scale: 1.5, logging: false, backgroundColor: '#ffffff'
-        });
-        
-        mapImageParams = { data: canvas.toDataURL('image/jpeg', 0.8), w: 180, h: 120 }; 
-        
-    } catch (e) {
-        
-    } finally {
-        // Restaura a visualização original da UI
-        if (originalActiveTab) {
-            UI.navigateTo(originalActiveTab);
-            // Nota: A restauração da sub-aba (Resumo/Mapa) não é feita para simplificar,
-            // mas a navegação principal é restaurada corretamente.
-        }
-        if (state.mapInstance) state.mapInstance.invalidateSize();
-    }
-
-    // === FUNÇÃO DE CABEÇALHO & RODAPÉ ARBORIA ===
-    const printHeaderFooter = (isCover) => {
-        const pageNum = doc.internal.getCurrentPageInfo().pageNumber;
-
-        // --- CABEÇALHO ---
-        // Logo
-        if (logoBase64) { 
-            try { doc.addImage(logoBase64, 'PNG', 14, 10, 25, 25); } catch(e){} 
-        }
-        
-        const textX = logoBase64 ? 45 : margin; 
-
-        if (isCover) {
-            // Capa: Título Grande
-            doc.setFontSize(22); doc.setFont(undefined, 'bold');
-            
-            // Texto colorido "ArborIA"
-            doc.setTextColor(10, 50, 137); // Azul Arbor (#0A3289)
-            doc.text("Arbor", textX, 22);
-            const widthArbor = doc.getTextWidth("Arbor");
-            doc.setTextColor(46, 125, 50); // Verde IA (#2E7D32)
-            doc.text("IA", textX + widthArbor, 22);
-
-            // Subtítulo
-            doc.setFontSize(12); doc.setTextColor(100); doc.setFont(undefined, 'normal');
-            doc.text("Sistema de Manejo Integrado Arbóreo", textX, 30);
-            
-            // Título do Relatório
-            doc.setFontSize(16); doc.setTextColor(0, 77, 64); doc.setFont(undefined, 'bold');
-            doc.text("Relatório Técnico de Vistoria", textX, 42);
-
-            doc.setLineWidth(0.5); doc.setDrawColor(0, 77, 64);
-            doc.line(margin, 48, pageWidth - margin, 48);
-            return 60; // Y inicial do conteúdo
-        } else {
-            // Páginas Seguintes: Cabeçalho Compacto
-            doc.setFontSize(12); doc.setFont(undefined, 'bold');
-            doc.setTextColor(10, 50, 137); doc.text("Arbor", textX, 20);
-            const wArbor = doc.getTextWidth("Arbor");
-            doc.setTextColor(46, 125, 50); doc.text("IA", textX + wArbor, 20);
-
-            doc.setFontSize(10); doc.setTextColor(80); doc.setFont(undefined, 'normal');
-            doc.text("Relatório de Vistoria", textX, 26);
-
-            doc.setFontSize(9); doc.setTextColor(100);
-            doc.text(`Pág. ${pageNum}`, pageWidth - margin, 20, { align: 'right' });
-            doc.text(`${new Date().toLocaleDateString('pt-BR')}`, pageWidth - margin, 26, { align: 'right' });
-
-            doc.setLineWidth(0.2); doc.setDrawColor(200);
-            doc.line(margin, 32, pageWidth - margin, 32);
-            return 40; 
-        }
-    };
     
-    // Função Rodapé (chamada ao final de cada página)
-    const printFooter = () => {
-        const totalPages = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8); doc.setTextColor(150);
-            doc.text("ArborIA - Soluções em Tecnologia Florestal", pageWidth / 2, pageHeight - 10, { align: 'center' });
-        }
-    };
-
-    // === 2. INÍCIO DO CONTEÚDO ===
-    cursorY = printHeaderFooter(true);
-
-    // Metadados da Capa
-    doc.setFontSize(11); doc.setTextColor(50);
-    doc.text(`Emissão: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, margin, 55);
-    doc.text(`Total de Indivíduos: ${state.registeredTrees.length}`, pageWidth-margin, 55, {align:'right'});
-
-    // === 3. TABELA RESUMO ===
-    const tableHeaders = [['ID', 'Data', 'Espécie', 'DAP', 'Local', 'Risco', 'Obs']];
-    const tableData = state.registeredTrees.map(t => [
-        t.id, t.data.split('-').reverse().join('/'), t.especie, 
-        t.dap, t.local, t.risco, t.observacoes || '-'
-    ]);
-
-    doc.autoTable({
-        startY: cursorY, head: tableHeaders, body: tableData, 
-        theme: 'striped', 
-        headStyles: { fillColor: [0, 121, 107] }, // Verde principal
-        styles: { fontSize: 8, cellPadding: 2 }, 
-        margin: { left: margin, right: margin },
-        columnStyles: { 0: {cellWidth: 10}, 1: {cellWidth: 20}, 2: {cellWidth: 30}, 3: {cellWidth: 12}, 4: {cellWidth: 30}, 5: {cellWidth: 20}, 6: {cellWidth: 'auto'} },
-        didParseCell: function(data) {
-            if (data.section === 'body' && data.column.index === 5) {
-                if (data.cell.text[0].includes('Alto')) data.cell.styles.textColor = [198, 40, 40];
-                else if (data.cell.text[0].includes('Médio')) data.cell.styles.textColor = [230, 81, 0];
-                else data.cell.styles.textColor = [46, 125, 50];
-            }
-        },
-        didDrawPage: function (data) { 
-            if (doc.internal.getCurrentPageInfo().pageNumber > 1) printHeaderFooter(false); 
-        }
-    });
-    cursorY = doc.lastAutoTable.finalY + 15;
-
-    // === 4. MAPA ===
-    if (mapImageParams) {
-        if (cursorY + mapImageParams.h + 25 > pageHeight - 20) { 
-            doc.addPage(); cursorY = printHeaderFooter(false); 
-        }
-        
-        doc.setFontSize(12); doc.setTextColor(0); doc.setFont(undefined, 'bold');
-        doc.text("Mapa de Localização (Satélite)", margin, cursorY);
-        cursorY += 5;
-        
-        const mapX = (pageWidth - mapImageParams.w) / 2;
-        doc.addImage(mapImageParams.data, 'PNG', mapX, cursorY, mapImageParams.w, mapImageParams.h);
-        cursorY += mapImageParams.h + 5;
-        
-        // Legenda
-        doc.setFontSize(9); doc.setFont(undefined, 'normal');
-        let lx = mapX; const dSz = 2; const spc = 25;
-        doc.setFillColor(198, 40, 40); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.setTextColor(0); doc.text("Alto Risco", lx+6, cursorY+dSz+1); lx += spc + 10;
-        doc.setFillColor(230, 81, 0); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.text("Médio Risco", lx+6, cursorY+dSz+1); lx += spc + 15;
-        doc.setFillColor(46, 125, 50); doc.circle(lx+dSz, cursorY+dSz, dSz, 'F'); doc.text("Baixo Risco", lx+6, cursorY+dSz+1);
-        cursorY += 15;
+    const factorsList = riskFactors
+        .map((checked, index) => checked ? `<li>${RISK_LABELS[index]}</li>` : '')
+        .filter(item => item !== '')
+        .join('');
+    
+    if (!factorsList) {
+        return '<p style="color: #546e7a; font-style: italic; margin: 0;">Nenhum fator de risco crítico identificado.</p>';
     }
-
-    // === 5. FICHAS INDIVIDUAIS ===
-    doc.addPage();
-    cursorY = printHeaderFooter(false);
-    doc.setFontSize(14); doc.setTextColor(0, 77, 64); doc.setFont(undefined, 'bold');
-    doc.text("Detalhamento Técnico Individual", margin, cursorY);
-    cursorY += 10;
-
-    for (let i = 0; i < state.registeredTrees.length; i++) {
-        const tree = state.registeredTrees[i];
-        
-        // Métricas
-        const alturaNum = parseFloat(tree.altura) || 0;
-        const dapNum = parseFloat(tree.dap) || 0;
-        const dapM = dapNum / 100;
-        const rcq = (alturaNum * 1.5).toFixed(1); 
-        const rcr = (dapM * 1.5).toFixed(1);       
-        
-        let bgColor, riskColor;
-        if (tree.risco === 'Alto Risco') { bgColor = [255, 235, 238]; riskColor = [198, 40, 40]; }
-        else if (tree.risco === 'Médio Risco') { bgColor = [255, 243, 224]; riskColor = [230, 81, 0]; }
-        else { bgColor = [232, 245, 233]; riskColor = [46, 125, 50]; }
-
-        const risksList = (tree.riskFactors || []).map((val, idx) => val === 1 ? RISK_LABELS[idx] : null).filter(v => v !== null);
-        
-        // Cálculo de Altura da Caixa (CORRIGIDO COM VARIÁVEL FINAL)
-        const rightColX = margin + 85; 
-        const obsWidth = pageWidth - rightColX - margin - 2; 
-        const obsLines = doc.splitTextToSize(tree.observacoes || '—', obsWidth);
-        
-        const risksHeight = risksList.length * 5;
-        const dataLines = 4 * 5; 
-        const leftHeight = dataLines + risksHeight + 20; 
-        
-        let rightHeight = 20 + 10 + (obsLines.length * 4) + 10;
-        if (tree.hasPhoto) rightHeight += 50; 
-
-        const boxHeight = Math.max(leftHeight, rightHeight, 60) + 5;
-
-        // Quebra de página
-        if (cursorY + boxHeight + 10 > pageHeight - 10) {
-            doc.addPage();
-            cursorY = printHeaderFooter(false);
-        }
-
-        const finalBoxHeight = boxHeight; // Variável segura
-
-        // Desenho Caixa
-        doc.setDrawColor(200); doc.setFillColor(...bgColor);
-        doc.rect(margin, cursorY, pageWidth - (margin*2), finalBoxHeight, 'FD');
-        doc.setFillColor(...riskColor); doc.rect(margin, cursorY, 2, finalBoxHeight, 'F');
-
-        // Cabeçalho Card
-        doc.setFontSize(11); doc.setTextColor(0); doc.setFont(undefined, 'bold');
-        doc.text(`ID: ${tree.id} - ${tree.especie}`, margin + 6, cursorY + 8);
-        doc.setTextColor(...riskColor);
-        doc.text(tree.risco.toUpperCase(), pageWidth - margin - 5, cursorY + 8, { align: 'right' });
-
-        // Coluna Esquerda
-        doc.setTextColor(50); doc.setFont(undefined, 'normal'); doc.setFontSize(9);
-        const col1X = margin + 6; let lineY = cursorY + 16;
-        
-        doc.setFont(undefined, 'bold'); doc.text(`Altura: ${alturaNum.toFixed(1)} m`, col1X, lineY);
-        doc.text(`DAP: ${tree.dap} cm`, col1X + 40, lineY); lineY += 5;
-        doc.text(`Raio Queda (RCQ): ${rcq} m`, col1X, lineY);
-        doc.text(`Raio Radicular (RCR): ${rcr} m`, col1X + 40, lineY); lineY += 7;
-
-        doc.setFont(undefined, 'normal'); doc.text(`Local: ${tree.local}`, col1X, lineY); lineY += 5;
-        doc.text(`Coord: ${tree.coordX} / ${tree.coordY}`, col1X, lineY);
-        doc.text(`Zona: ${tree.utmZoneNum}${tree.utmZoneLetter}`, col1X + 60, lineY); lineY += 8;
-
-        doc.setFont(undefined, 'bold'); doc.setTextColor(0);
-        doc.text("Fatores de Risco:", col1X, lineY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); lineY += 5;
-        if (risksList.length > 0) { risksList.forEach(risk => { doc.text(`• ${risk}`, col1X, lineY); lineY += 5; }); } 
-        else { doc.text("• Nenhum fator crítico.", col1X, lineY); }
-
-        // Coluna Direita
-        let contentY = cursorY + 16;
-        if (tree.hasPhoto) {
-            try {
-                const imageBlob = await new Promise(resolve => getImageFromDB(tree.id, resolve));
-                if (imageBlob) {
-                    const imgData = await blobToDataURL(imageBlob);
-                    const imgFormat = imageBlob.type === 'image/png' ? 'PNG' : 'JPEG';
-                    doc.addImage(imgData, imgFormat, pageWidth - margin - 48, contentY - 4, 45, 45);
-                    contentY += 50;
-                }
-            } catch (e) { }
-        }
-        doc.setFont(undefined, 'bold'); doc.setTextColor(0);
-        doc.text("Observações:", rightColX, contentY); doc.setFont(undefined, 'normal'); doc.setTextColor(50); contentY += 5;
-        doc.text(obsLines, rightColX, contentY);
-
-        cursorY += finalBoxHeight + 8; 
-    }
-
-    // Imprime rodapés em todas as páginas no final
-    printFooter();
-
-    const filename = `Relatorio_ArborIA_${new Date().toISOString().slice(0,10)}.pdf`;
-    doc.save(filename);
-    showToast("PDF Gerado com Sucesso!", "success");
+    
+    return `<ul style="margin: 0; padding-left: 20px; color: #37474f;">${factorsList}</ul>`;
 }
 
 /**
- * [NOVO] Gera um laudo PDF individual para uma árvore específica.
+ * Gera e exibe o relatório GERAL para uma lista de árvores.
+ * @param {Array<object>} trees - A lista de árvores registradas.
  */
-export async function generateSingleTreePDF(tree) {
-    if (!tree) return;
-
-    const { jsPDF } = window.jspdf;
-    if (!jsPDF) {
-        showToast("Erro: Biblioteca PDF não carregada.", "error");
+export async function generateGeneralReport(trees) {
+    if (!trees || trees.length === 0) {
+        alert("Nenhuma árvore para gerar relatório.");
         return;
     }
 
-    showToast(`Gerando laudo para ${tree.especie}...`, "info");
+    // ========== SEÇÃO 1: TABELA RESUMIDA ==========
+    let tableRowsHTML = '';
+    for (const tree of trees) {
+        const rowClass = getRiskRowClass(tree.risco);
+        const badgeClass = getRiskBadgeClass(tree.risco);
+        
+        let mainFactor = 'Nenhum';
+        if (tree.riskFactors && tree.riskFactors.length > 0) {
+            const firstIndex = tree.riskFactors.findIndex(f => f === true);
+            if (firstIndex !== -1) {
+                mainFactor = RISK_LABELS[firstIndex];
+            }
+        }
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 20;
-    let cursorY = 20;
-
-    // --- CABEÇALHO ---
-    doc.setFontSize(18); doc.setTextColor(0, 77, 64); doc.setFont(undefined, 'bold');
-    doc.text("Ficha Técnica de Indivíduo Arbóreo", pageWidth / 2, cursorY, { align: 'center' });
-    cursorY += 10;
-    
-    doc.setFontSize(10); doc.setTextColor(100);
-    doc.text(`Emissão: ${new Date().toLocaleDateString('pt-BR')} • Sistema ArborIA`, pageWidth / 2, cursorY, { align: 'center' });
-    cursorY += 15;
-
-    doc.setLineWidth(0.5); doc.setDrawColor(0, 77, 64);
-    doc.line(margin, cursorY, pageWidth - margin, cursorY);
-    cursorY += 15;
-
-    // --- DADOS PRINCIPAIS ---
-    doc.setFontSize(14); doc.setTextColor(0); doc.setFont(undefined, 'bold');
-    doc.text(`ID ${tree.id}: ${tree.especie}`, margin, cursorY);
-    
-    // Badge de Risco no PDF
-    let riskColor = [46, 125, 50]; // Verde
-    if (tree.risco === 'Alto Risco') riskColor = [198, 40, 40];
-    else if (tree.risco === 'Médio Risco') riskColor = [230, 81, 0];
-    
-    doc.setTextColor(...riskColor);
-    doc.text(tree.risco.toUpperCase(), pageWidth - margin, cursorY, { align: 'right' });
-    cursorY += 15;
-
-    // --- GRID DE DADOS ---
-    doc.setFontSize(11); doc.setTextColor(50); doc.setFont(undefined, 'normal');
-    const col1 = margin;
-    const col2 = pageWidth / 2 + 10;
-    const lineHeight = 8;
-
-    const addField = (label, value, x, y) => {
-        doc.setFont(undefined, 'bold');
-        doc.text(`${label}:`, x, y);
-        doc.setFont(undefined, 'normal');
-        doc.text(`${value}`, x + doc.getTextWidth(`${label}: `), y);
-    };
-
-    addField("Data", tree.data.split('-').reverse().join('/'), col1, cursorY);
-    addField("Avaliador", tree.avaliador, col2, cursorY); cursorY += lineHeight;
-
-    addField("Local", tree.local, col1, cursorY);
-    addField("Coordenadas", `${tree.coordX} / ${tree.coordY}`, col2, cursorY); cursorY += lineHeight;
-
-    addField("Altura", `${tree.altura} m`, col1, cursorY);
-    addField("DAP", `${tree.dap} cm`, col2, cursorY); cursorY += lineHeight;
-
-    cursorY += 5;
-
-    // --- OBSERVAÇÕES ---
-    doc.setFillColor(245, 245, 245); doc.rect(margin, cursorY, pageWidth - (margin*2), 25, 'F');
-    doc.setFont(undefined, 'bold'); doc.text("Observações de Campo:", margin + 5, cursorY + 8);
-    doc.setFont(undefined, 'normal'); doc.setFontSize(10);
-    const obsLines = doc.splitTextToSize(tree.observacoes || "Sem observações.", pageWidth - (margin*2) - 10);
-    doc.text(obsLines, margin + 5, cursorY + 16);
-    cursorY += 35;
-
-    // --- FATORES DE RISCO ---
-    doc.setFontSize(12); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
-    doc.text("Fatores de Risco Identificados", margin, cursorY); cursorY += 8;
-    
-    const activeRisks = (tree.riskFactors || []).map((val, idx) => val === 1 ? RISK_LABELS[idx] : null).filter(Boolean);
-    
-    if (activeRisks.length > 0) {
-        doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(50);
-        activeRisks.forEach(risk => {
-            doc.text(`• ${risk}`, margin + 5, cursorY);
-            cursorY += 6;
-        });
-    } else {
-        doc.setFont(undefined, 'italic'); doc.setTextColor(100);
-        doc.text("Nenhum fator de risco crítico assinalado.", margin + 5, cursorY);
-        cursorY += 6;
+        tableRowsHTML += `
+            <tr class="${rowClass}">
+                <td style="font-weight: 600;">${tree.id}</td>
+                <td>${tree.especie}</td>
+                <td style="font-size: 0.8rem;">${tree.coordY || 'N/A'}, ${tree.coordX || 'N/A'}</td>
+                <td style="text-align: center;">${tree.dap || 'N/A'} cm</td>
+                <td style="text-align: center;">${tree.altura || 'N/A'} m</td>
+                <td>${mainFactor}</td>
+                <td style="text-align: center;">
+                    <span class="risk-badge ${badgeClass}">${tree.risco}</span>
+                </td>
+            </tr>
+        `;
     }
-    cursorY += 10;
 
-    // --- FOTO (SE HOUVER) ---
-    if (tree.hasPhoto) {
-        try {
-            const imageBlob = await new Promise(resolve => getImageFromDB(tree.id, resolve));
-            if (imageBlob) {
-                const imgData = await blobToDataURL(imageBlob);
-                const imgFormat = imageBlob.type === 'image/png' ? 'PNG' : 'JPEG';
-                
-                // Verifica espaço restante
-                if (cursorY + 100 > doc.internal.pageSize.getHeight()) {
-                    doc.addPage(); cursorY = 20;
+    // ========== SEÇÃO 2: FICHAS DETALHADAS ==========
+    let detailCardsHTML = '';
+    for (const tree of trees) {
+        const imageUrl = await blobToDataURL(await getImageFromDB(tree.id));
+        const riskColor = getRiskColor(tree.risco);
+        const riskFactorsHTML = getRiskFactorsHTML(tree.riskFactors);
+
+        detailCardsHTML += `
+            <div class="detail-card">
+                <div class="detail-card-header" style="border-top: 4px solid ${riskColor}; background-color: #f8f9fa; padding: 6px 10px;">
+                    <span style="font-weight: 600; font-size: 0.9rem;">ID: ${tree.id} - ${tree.especie}</span>
+                    <span style="float: right; font-size: 0.8rem;">${tree.risco}</span>
+                </div>
+                <div class="detail-card-body">
+                    <div style="flex: 0 0 130px;">
+                        ${imageUrl 
+                            ? `<img src="${imageUrl}" alt="Foto de ${tree.especie}" class="detail-card-photo">` 
+                            : `<div class="detail-card-photo" style="display: flex; align-items: center; justify-content: center; background: #f5f5f5; color: #999; font-size: 0.8rem;">Sem imagem</div>`
+                        }
+                    </div>
+                    <div class="detail-card-info">
+                        <p><strong>Espécie:</strong> ${tree.especie}</p>
+                        <p><strong>DAP:</strong> ${tree.dap || 'N/A'} cm | <strong>Altura:</strong> ${tree.altura || 'N/A'} m</p>
+                        <p><strong>Coordenadas:</strong> ${tree.coordY || 'N/A'}, ${tree.coordX || 'N/A'}</p>
+                        <p><strong>Local:</strong> ${tree.local || 'N/A'}</p>
+                        
+                        <div class="detail-card-factors">
+                            <p style="margin: 0 0 5px 0; font-weight: 600;">Fatores de Risco:</p>
+                            ${riskFactorsHTML}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ========== MONTAGEM FINAL DO RELATÓRIO ==========
+    const reportHTML = `
+        <style>
+            /* Reset Global */
+            html, body {
+                margin: 0;
+                padding: 0;
+                background: white; /* Fundo branco para a aplicação */
+                font-family: Arial, sans-serif;
+            }
+
+            /* Configuração de Página para Impressão - Margens Estreitas 5mm */
+            @page {
+                size: A4;
+                margin: 5mm;
+            }
+
+            /* --- MODO TELA (PREVIEW WYSIWYG) --- */
+            @media screen {
+                /* Container Pai (O que envolve a folha na tela) */
+                #report-preview-overlay {
+                    background: white !important; /* Tela inteira branca */
+                    padding: 20px;
+                    display: flex;
+                    justify-content: center;
+                    overflow-y: auto;
+                }
+
+                /* Override nos estilos inline do utils.js para garantir controle total */
+                #report-paper {
+                    padding: 0 !important;
+                    width: auto !important;
+                    background: transparent !important;
+                    box-shadow: none !important;
+                    display: block !important;
+                }
+
+                /* A "Folha" na tela */
+                .report-wrapper-preview {
+                    width: 210mm; /* Largura A4 Fixa */
+                    min-height: 297mm; /* Altura A4 Mínima */
+                    margin: 0 auto;
+                    background: white;
+                    padding: 5mm; /* Simula a margem da impressão (visual apenas) */
+                    box-sizing: border-box; /* Garante que 210mm inclui o padding */
+                    /* Sem sombra ou borda conforme pedido de "fundo branco", mas útil para debug visual se o fundo fosse colorido. 
+                       Como o fundo é branco, a folha se funde. */
+                }
+            }
+
+            /* --- MODO IMPRESSÃO --- */
+            @media print {
+                body {
+                    background: white;
+                }
+
+                .report-wrapper-preview {
+                    width: 100%;
+                    padding: 0; /* Importante: A margem vem do @page */
+                    margin: 0;
+                }
+
+                /* Esconde elementos de UI da tela se vazarem */
+                .no-print, button, #btn-close-report, #btn-print-report {
+                    display: none !important;
                 }
                 
-                doc.setFontSize(12); doc.setFont(undefined, 'bold'); doc.setTextColor(0);
-                doc.text("Registro Fotográfico", margin, cursorY); cursorY += 10;
+                /* Layout de Alta Densidade */
+                .detail-card {
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
+                    display: block;
+                }
                 
-                // Centraliza imagem
-                const imgW = 120;
-                const imgH = 90;
-                const imgX = (pageWidth - imgW) / 2;
-                doc.addImage(imgData, imgFormat, imgX, cursorY, imgW, imgH);
+                tr { page-break-inside: avoid; }
+                .section-header { page-break-after: avoid; }
             }
-        } catch (e) {
-            
-        }
-    }
 
-    // Salva
-    const safeName = tree.especie.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    doc.save(`Laudo_${tree.id}_${safeName}.pdf`);
-    showToast("Laudo Individual Baixado!", "success");
+            /* --- ESTILOS DE CONTEÚDO (Compartilhado) --- */
+            
+            /* Tabela Principal */
+            .report-container {
+                width: 100%;
+                margin-top: 0; /* Topo Absoluto */
+            }
+
+            /* Cabeçalho */
+            .report-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 2px solid #0d47a1;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+
+            .section-header {
+                margin-top: 15px;
+                font-size: 1.1rem;
+                color: #222;
+                border-bottom: 1px solid #ccc;
+                padding-bottom: 4px;
+            }
+
+            /* Tabela de Dados */
+            .report-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 10px 0;
+                font-size: 9pt; /* Fonte reduzida para densidade */
+            }
+            .report-table th, .report-table td {
+                border: 1px solid #ddd;
+                padding: 4px 6px;
+                text-align: left;
+            }
+            .report-table th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+                text-transform: uppercase;
+                font-size: 8pt;
+            }
+
+            /* Mapa */
+            #rep-map-all {
+                width: 100%;
+                height: 350px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                margin-top: 10px;
+                margin-bottom: 20px;
+            }
+
+            /* Cards de Árvores (Alta Densidade) */
+            .detail-card {
+                 border: 1px solid #cfd8dc;
+                 border-radius: 4px;
+                 overflow: hidden;
+                 background: #fff;
+                 margin-bottom: 10px;
+                 font-size: 10pt; /* Fonte reduzida */
+            }
+            .detail-card-body {
+                display: flex;
+                gap: 10px;
+                padding: 8px;
+            }
+            .detail-card-photo {
+                width: 100%;
+                height: 100px;
+                object-fit: cover;
+                border-radius: 2px;
+                background: #f0f0f0;
+                border: 1px solid #eee;
+            }
+            .detail-card-info p {
+                margin: 2px 0;
+                line-height: 1.3;
+            }
+            .detail-card-factors {
+                margin-top: 5px;
+                font-size: 9pt;
+            }
+            .detail-card-factors ul {
+                padding-left: 15px;
+                margin: 0;
+            }
+
+            /* Indicadores de Risco */
+            .row-risk-extreme { border-left: 4px solid #212121; }
+            .row-risk-high { border-left: 4px solid #c62828; }
+            .row-risk-medium { border-left: 4px solid #f57c00; }
+            .row-risk-low { border-left: 4px solid #2e7d32; }
+
+            .risk-badge {
+                padding: 2px 6px;
+                border-radius: 4px;
+                color: white;
+                font-size: 8pt;
+                font-weight: bold;
+                display: inline-block;
+            }
+            .risk-badge.extreme { background-color: #212121; }
+            .risk-badge.high { background-color: #c62828; }
+            .risk-badge.medium { background-color: #f57c00; }
+            .risk-badge.low { background-color: #2e7d32; }
+
+        </style>
+
+        <div class="report-wrapper-preview">
+            <table class="report-container">
+                <thead>
+                    <tr>
+                        <td>
+                            <div class="report-header">
+                                <div>
+                                    <h2 style="color: #0d47a1; font-weight: 800; font-size: 1.6rem; margin: 0;">Arbor<span style="color: #1b5e20;">IA</span></h2>
+                                    <p style="font-size: 1rem; color: #37474f; font-weight: 500; margin: 0;">Relatório Geral de Inventário Arbóreo</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <p style="font-size: 0.8rem; color: #546e7a; margin: 0;"><strong>Emissão:</strong> ${new Date().toLocaleDateString('pt-BR', { dateStyle: 'long' })}</p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </thead>
+                
+                <tbody>
+                    <tr>
+                        <td>
+                            <h3 class="section-header">📊 Resumo Executivo</h3>
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">ID</th>
+                                        <th style="width: 20%;">Espécie</th>
+                                        <th style="width: 18%;">Coordenadas</th>
+                                        <th style="width: 8%;">DAP</th>
+                                        <th style="width: 8%;">Altura</th>
+                                        <th style="width: 21%;">Fator Principal</th>
+                                        <th style="width: 12%;">Risco</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${tableRowsHTML}</tbody>
+                            </table>
+                            
+                            <h3 class="section-header">🗺️ Distribuição Espacial das Árvores</h3>
+                            <div id="rep-map-all"></div>
+
+                            <h3 class="section-header">🌳 Fichas Técnicas Individuais</h3>
+                            ${detailCardsHTML}
+                        </td>
+                    </tr>
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td>
+                            <div class="footer" style="width: 100%; text-align: right; font-size: 10pt; padding-top: 10px; color: #555;">
+                                Página <span class="page-number"></span>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+
+    // ========== CALLBACK DO MAPA ==========
+    const mapRenderCallback = () => {
+        const L = window.L;
+        const map = L.map('rep-map-all').setView([-15.78, -47.92], 4);
+        L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+            attribution: '© Google Maps',
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        }).addTo(map);
+
+        const markers = [];
+        trees.forEach(t => {
+            if (t.coordY && t.coordX) {
+                let lat = parseFloat(t.coordY);
+                let lng = parseFloat(t.coordX);
+
+                if (!isNaN(lat) && !isNaN(lng) && (Math.abs(lat) > 90 || Math.abs(lng) > 180)) {
+                    const coords = utmToLatLon(lng, lat, 23, 'S');
+                    lat = coords.lat;
+                    lng = coords.lon;
+                }
+
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const color = getRiskColor(t.risco);
+                    const marker = L.circleMarker([lat, lng], {
+                        radius: 6,
+                        color: 'white',
+                        weight: 1,
+                        fillColor: color,
+                        fillOpacity: 0.9
+                    }).bindTooltip(`<b>ID: ${t.id}</b>`, { direction: 'top' });
+                    markers.push(marker);
+                }
+            }
+        });
+        
+        if (markers.length > 0) {
+            const featureGroup = L.featureGroup(markers).addTo(map);
+            map.fitBounds(featureGroup.getBounds(), { padding: [40, 40] });
+        }
+    };
+
+    openReportPreview(reportHTML, mapRenderCallback);
+}
+
+/**
+ * Gera e exibe o relatório INDIVIDUAL para uma única árvore.
+ * @param {object} tree - O objeto da árvore.
+ */
+export async function generateIndividualReport(tree) {
+    if (!tree) return;
+
+    const imageUrl = await blobToDataURL(await getImageFromDB(tree.id));
+    const riskColor = getRiskColor(tree.risco);
+    const riskFactorsHTML = getRiskFactorsHTML(tree.riskFactors);
+
+    const reportHTML = `
+        <style>
+            @page {
+                size: A4;
+                margin: 15mm 10mm 10mm 15mm; /* Margens Reduzidas pela Metade: Sup/Esq 1.5cm, Inf/Dir 1cm */
+            }
+
+            @media print {
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    background: white;
+                    color: black;
+                    font-family: 'Times New Roman', serif;
+                    font-size: 12pt;
+                }
+                
+                table.report-container {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+
+                thead, tfoot {
+                    display: table-header-group;
+                }
+
+                tfoot {
+                    display: table-footer-group;
+                }
+
+                .footer {
+                    position: fixed;
+                    bottom: 0;
+                    width: 100%;
+                    text-align: right;
+                    font-size: 10pt;
+                    color: #555;
+                }
+
+                .page-number::after {
+                    content: counter(page);
+                }
+                
+                .arb-card, .report-table tr {
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
+                .section-header {
+                     page-break-after: avoid;
+                }
+                .arb-card, .report-table, .a4-paper {
+                    box-shadow: none !important;
+                    border-color: #ccc;
+                }
+            }
+            body { font-family: sans-serif; }
+            .section-header { margin-top: 25px; font-size: 1.2rem; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+            .arb-card { border: 1px solid #ddd; border-radius: 6px; margin-top: 15px; }
+            .arb-card-body { padding: 15px; line-height: 1.8; }
+        </style>
+
+        <table class="report-container">
+            <thead>
+                <tr>
+                    <td>
+                        <div class="report-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0d47a1; padding-bottom: 10px;">
+                            <div>
+                                <h2 style="color: #0d47a1; font-weight: 800; font-size: 1.8rem; margin: 0;">Arbor<span style="color: #1b5e20;">IA</span></h2>
+                                <p style="font-size: 1.1rem; color: #37474f; font-weight: 500; margin: 0;">Ficha Técnica Individual - ID ${tree.id}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 0.85rem; color: #546e7a; margin: 0;"><strong>Emissão:</strong> ${new Date().toLocaleDateString('pt-BR', { dateStyle: 'long' })}</p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </thead>
+            
+            <tbody>
+                <tr>
+                    <td>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                            <div class="arb-card" style="margin: 0;">
+                                ${imageUrl 
+                                    ? `<img src="${imageUrl}" alt="Foto de ${tree.especie}" style="width: 100%; height: 300px; object-fit: cover; border-radius: 6px;">` 
+                                    : `<div style="text-align:center; padding: 20px; height: 300px; display:flex; align-items:center; justify-content:center; background: #f5f5f5; border-radius: 6px; color: #999;">Sem imagem</div>`
+                                }
+                            </div>
+                            <div id="rep-map-single" style="border: 1px solid #ccc; border-radius: 6px; min-height: 300px;"></div>
+                        </div>
+
+                        <h3 class="section-header">📋 Dados Dendrométricos e Localização</h3>
+                        <div class="arb-card" style="margin-top: 0;">
+                            <div class="arb-card-body">
+                                <p><strong>Espécie:</strong> ${tree.especie}</p>
+                                <p><strong>Local:</strong> ${tree.local || 'Não informado'}</p>
+                                <p><strong>Avaliador:</strong> ${tree.avaliador || 'Não informado'}</p>
+                                <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
+                                <p><strong>Altura Estimada:</strong> ${tree.altura || 'N/A'} m</p>
+                                <p><strong>DAP:</strong> ${tree.dap || 'N/A'} cm</p>
+                                <p><strong>Coordenadas:</strong> ${tree.coordY || 'N/A'}, ${tree.coordX || 'N/A'}</p>
+                                <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
+                                <p><strong>Nível de Risco:</strong> <span style="font-weight:bold; color:${riskColor};">${tree.risco}</span></p>
+                            </div>
+                        </div>
+
+                        <h3 class="section-header">⚠️ Fatores de Risco Identificados (TRAQ)</h3>
+                        <div class="arb-card" style="margin-top: 0;">
+                            <div class="arb-card-body">${riskFactorsHTML}</div>
+                        </div>
+                        
+                        <h3 class="section-header">📝 Observações de Campo</h3>
+                        <div class="arb-card" style="margin-top: 0;">
+                            <div class="arb-card-body">
+                                <p style="margin:0; line-height: 1.6;">${tree.observacoes || 'Nenhuma observação.'}</p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+
+            <tfoot>
+                <tr>
+                    <td>
+                        <div class="footer" style="width: 100%; text-align: right; font-size: 10pt;">
+                            Página <span class="page-number"></span>
+                        </div>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    `;
+
+    const mapRenderCallback = () => {
+        const L = window.L;
+        const mapContainer = document.getElementById('rep-map-single');
+        
+        if (tree.coordY && tree.coordX) {
+            let lat = parseFloat(tree.coordY);
+            let lng = parseFloat(tree.coordX);
+
+            if (!isNaN(lat) && !isNaN(lng) && (Math.abs(lat) > 90 || Math.abs(lng) > 180)) {
+                const coords = utmToLatLon(lng, lat, 23, 'S');
+                lat = coords.lat;
+                lng = coords.lon;
+            }
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                const map = L.map(mapContainer).setView([lat, lng], 18);
+                L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+                    attribution: '© Google Maps',
+                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+                }).addTo(map);
+                
+                const color = getRiskColor(tree.risco);
+                L.circleMarker([lat, lng], {
+                    radius: 10,
+                    color: 'white',
+                    weight: 3,
+                    fillColor: color,
+                    fillOpacity: 0.9
+                }).addTo(map)
+                    .bindPopup(`<b>${tree.especie}</b><br>ID: ${tree.id}<br>Risco: ${tree.risco}`).openPopup();
+            } else {
+                 mapContainer.innerHTML = '<p style="text-align:center; padding:20px; color: #999;">Coordenadas inválidas.</p>';
+            }
+        } else {
+            mapContainer.innerHTML = '<p style="text-align:center; padding:20px; color: #999;">Coordenadas não disponíveis.</p>';
+        }
+    };
+
+    openReportPreview(reportHTML, mapRenderCallback);
 }

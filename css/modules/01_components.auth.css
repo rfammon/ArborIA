@@ -1,0 +1,93 @@
+/* --- AUTH COMPONENTS --- */
+
+/* Header User Status */
+.user-status-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto; /* Push to right */
+    padding-right: 15px;
+}
+
+/* Botão de Auth (Logout, etc) - Adaptado para fundo CLARO */
+.btn-auth {
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted); /* Cinza para contraste no fundo branco */
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-auth:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-color: var(--color-forest);
+    color: var(--color-forest);
+}
+
+/* Indicador de Usuário (Email) - Adaptado para fundo CLARO */
+.user-email-span {
+    color: var(--color-text-main); /* Preto/Cinza escuro */
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-flex; /* Sempre visível por padrão */
+    align-items: center;
+    gap: 6px;
+}
+
+.user-email-span i {
+    color: var(--color-forest); /* Ícone verde */
+    font-size: 1.1em;
+}
+
+/* Em telas muito pequenas, oculta o texto do email mas mantém o ícone */
+@media (max-width: 480px) {
+    .user-email-span {
+        font-size: 0; /* Truque para esconder texto */
+    }
+    .user-email-span i {
+        font-size: 1.2rem; /* Aumenta ícone */
+        margin-right: 0;
+    }
+}
+
+/* Auth Modal Specifics */
+.auth-form-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.auth-form-container input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.auth-error-msg {
+    color: #d32f2f;
+    font-size: 0.9rem;
+    text-align: center;
+    min-height: 20px;
+}
+
+.auth-toggle-text {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 10px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.auth-toggle-text:hover {
+    color: var(--color-primary);
+}

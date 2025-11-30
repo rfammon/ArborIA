@@ -16,28 +16,36 @@ export function debounce(func, delay = 300) {
 }
 
 // === 2. UTILITÁRIO DE UI (TOAST E VALIDAÇÃO DE INPUTS) ===
-let toastTimer = null;
 
+/**
+ * Exibe uma notificação temporária na tela.
+ * @param {string} message - O texto a ser exibido.
+ * @param {string} type - O tipo de alerta: 'success', 'error' ou 'info'.
+ */
 export function showToast(message, type = 'info') {
-    const toast = document.getElementById('toast-notification');
+    const toast = document.getElementById("toast-notification");
     if (!toast) return;
 
-    // Limpa timer anterior se houver
-    if (toastTimer) clearTimeout(toastTimer);
-
-    // Reset de classes para evitar conflito
-    toast.className = 'toast'; 
-    void toast.offsetWidth; // Força Reflow (reinicia animação)
-    
-    // Aplica novas classes
-    toast.classList.add(`toast-${type}`, 'show');
+    // 1. Define o texto
     toast.textContent = message;
 
-    // Novo timer
-    toastTimer = setTimeout(() => {
-        toast.classList.remove('show');
-        toastTimer = null;
-    }, 3500);
+    // 2. Reseta classes antigas e adiciona a nova (tipo)
+    toast.className = ''; // Limpa tudo (incluindo 'show')
+    toast.classList.add(type);
+
+    // 3. Força um reflow (opcional, mas bom para reiniciar animações)
+    void toast.offsetWidth;
+
+    // 4. Mostra o toast
+    toast.classList.add("show");
+
+    // 5. Define o temporizador para esconder
+    // Limpa timeout anterior se houver (para não piscar se o usuário clicar rápido)
+    if (toast.timeoutId) clearTimeout(toast.timeoutId);
+    
+    toast.timeoutId = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3500); // 3.5 segundos de exibição
 }
 
 /**
@@ -205,4 +213,38 @@ export function downloadBlob(blob, fileName) {
     // Limpeza
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
+}
+
+export function openReportPreview(htmlContent, mapRenderCallback) {
+    const overlay = document.getElementById('report-preview-overlay');
+    const paper = document.getElementById('report-paper');
+    
+    // Força o estilo do papel para garantir o crescimento dinâmico
+    paper.style.minHeight = '297mm';
+    paper.style.height = 'auto';
+    paper.style.overflow = 'visible';
+    paper.style.padding = '15mm';
+    paper.style.background = 'white';
+
+    // Injeta HTML
+    paper.innerHTML = htmlContent;
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Trava scroll do app
+
+    // Renderiza Mapas (com delay para o DOM estabilizar)
+    if (mapRenderCallback) setTimeout(mapRenderCallback, 300);
+
+    // Eventos
+    document.getElementById('btn-close-report').onclick = () => {
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+        paper.innerHTML = ''; // Limpa memória
+        // Reseta estilos para evitar conflitos futuros
+        paper.style.minHeight = '';
+        paper.style.height = '';
+        paper.style.overflow = '';
+        paper.style.padding = '';
+        paper.style.background = '';
+    };
+    document.getElementById('btn-print-report').onclick = () => window.print();
 }

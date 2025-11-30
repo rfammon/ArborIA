@@ -79,8 +79,23 @@ function convertToLatLon(tree) {
 // --- TEMPLATES ---
 
 function renderTreeList(trees) {
+// Navigation Buttons (Added via update script)
+    const navHeader = `
+        <div style="padding: 1rem 1rem 0 1rem;">
+            <div class="risk-buttons-area" style="display: flex; gap: 10px; margin-bottom: 5px;">
+                <button id="btn-nav-table" class="btn btn-primary" style="flex: 1; font-size: 0.85rem; padding: 10px;">
+                    <span style="margin-right:5px;">📋</span> Tabela (Resumo)
+                </button>
+                <button id="btn-nav-calc" class="btn btn-secondary" style="flex: 1; font-size: 0.85rem; padding: 10px;">
+                    <span style="margin-right:5px;">🔙</span> Voltar ao Cadastro
+                </button>
+            </div>
+        </div>
+    `;
+
 if (!trees || trees.length === 0) {
     return `
+        ${navHeader}
         <div style="text-align: center; padding: 2rem;">
             <h3>Nenhuma árvore encontrada</h3>
             <p class="text-muted">Aguardando dados do Levantamento de Dados.</p>
@@ -88,12 +103,18 @@ if (!trees || trees.length === 0) {
     `;
 }
 
-const cards = trees.map(tree => {
+// [MODIFICATION-SEQ-ID] Add a sequential display ID
+const treesWithDisplayId = trees.map((tree, index) => ({
+    ...tree,
+    displayId: index + 1
+}));
+
+const cards = treesWithDisplayId.map(tree => {
     const riskClass = (tree.riskLevel || '').includes('Alto') ? 'risk-high' : (tree.riskLevel || '').includes('Médio') ? 'risk-medium' : 'risk-low';
     const riskFactorsCount = tree.riskFactorsCode ? tree.riskFactorsCode.split(',').filter(x => x === '1').length : 0;
 
     return `
-    <div class="tree-card" data-id="${tree.id}">
+    <div class="tree-card" data-id="${tree.id}" data-display-id="${tree.displayId}">
         <div class="tree-card-img">
             <img src="${tree.image || 'img/icons/favicon.png'}" 
                  onerror="this.src='img/icons/favicon.png'">
@@ -104,7 +125,7 @@ const cards = trees.map(tree => {
         <div class="tree-card-info">
             <div class="tree-card-header">
                 <h3>${tree.species}</h3>
-                <span class="tree-card-id">ID: ${tree.id}</span>
+                <span class="tree-card-id">ID: ${tree.displayId}</span>
             </div>
             <div class="tree-card-meta">
                 <span>
@@ -129,10 +150,11 @@ const cards = trees.map(tree => {
 }).join('');
 
 return `
-    <div style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem;">
-        ${cards}
-    </div>
-`;
+        ${navHeader}
+        <div style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem;">
+            ${cards}
+        </div>
+    `;
 }
 
 function renderForm(tree) {
@@ -170,7 +192,7 @@ function renderForm(tree) {
                 <div class="planning-box">
                     <div class="planning-box-header">
                         <span class="icon">⚠️</span>
-                        <h3>Diagnóstico TRAQ (ID: ${tree.id})</h3>
+                        <h3>Diagnóstico TRAQ (ID: ${tree.displayId})</h3>
                     </div>
                     <div style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: var(--radius-md);">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
@@ -227,7 +249,7 @@ function renderForm(tree) {
                     <div style="margin-top: 1.5rem; border-top: 1px solid #eee; padding-top: 1.5rem;"><label style="margin-bottom: 0.5rem; display: block;">Equipe de Campo</label><div class="form-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1rem;"><div><label for="foremen" style="font-size: 0.8rem; color: #666;">Encarregados</label><input type="number" id="foremen" name="foremen" value="1" min="0" class="team-input" style="width: 100%;"></div><div><label for="chainsawOperators" style="font-size: 0.8rem; color: #666;">Operadores</label><input type="number" id="chainsawOperators" name="chainsawOperators" value="1" min="0" class="team-input" style="width: 100%;"></div><div><label for="auxiliaries" style="font-size: 0.8rem; color: #666;">Auxiliares</label><input type="number" id="auxiliaries" name="auxiliaries" value="2" min="0" class="team-input" style="width: 100%;"></div></div></div>
                 </div>
                 <div class="planning-box" style="background: #f1f8e9; border: 1px solid #c5e1a5;"><div class="planning-box-header"><span class="icon">📜</span><h3>Procedimento Padrão (Pré-visualização)</h3></div><div style="padding: 1rem;"><p style="font-size: 0.9rem; color: #558b2f; margin-bottom: 0.5rem;">O procedimento abaixo será incluído automaticamente no relatório.</p><div id="procedure-preview" style="font-size: 0.85rem; background: #fff; padding: 10px; border-radius: 4px; border: 1px dashed #aaa;">Selecione o tipo de intervenção acima.</div></div></div>
-                <div class="planning-box"><div class="planning-box-header"><span class="icon">⏱️</span><h3>3. Cronograma Operacional</h3></div><div class="form-grid"><div><label for="startDate">Data de Início</label><input type="date" id="startDate" name="startDate" value="${today}" required></div><div><label>Mobilização (dias)</label><input type="number" id="dur_mob" name="durationMobilization" value="1" min="0" class="duration-input"></div><div><label>Execução (dias)</label><input type="number" id="dur_exec" name="durationExecution" value="1" min="1" class="duration-input"></div><div><label>Desmobilização (dias)</label><input type="number" id="dur_demob" name="durationDemobilization" value="1" min="0" class="duration-input"></div><div><label for="endDate">Previsão de Término</label><input type="date" id="endDate" name="endDate" value="${today}" readonly style="background-color: #f5f5f5; cursor: not-allowed;"></div></div></div>
+                <div class="planning-box"><div class="planning-box-header"><span class="icon">⏱️</span><h3>3. Cronograma Operacional</h3></div><div class="form-grid"><div><label for="startDate">Data de Início</label><input type="date" id="startDate" name="startDate" value="${today}" required></div><div><label>Mobilização (dias)</label><input type="number" id="dur_mob" name="durationMobilization" value="1" min="0" class="duration-input"></div><div><label>Execução (dias)</label><input type="number" id="dur_exec" name="durationExecution" value="1" min="0" class="duration-input"></div><div><label>Desmobilização (dias)</label><input type="number" id="dur_demob" name="durationDemobilization" value="1" min="0" class="duration-input"></div><div><label for="endDate">Previsão de Término</label><input type="date" id="endDate" name="endDate" value="${today}" readonly style="background-color: #f5f5f5; cursor: not-allowed;"></div></div></div>
                 <div class="planning-box"><div class="planning-box-header"><span class="icon">🏁</span><h3>4. Encerramento</h3></div><div><label for="wasteSelect">Destinação de Resíduos</label><select name="wasteDestination" id="wasteSelect">${CONSTANTS.WASTE.map(w => `<option value="${w}">${w}</option>`).join('')}</select><input type="text" id="customWaste" name="customWaste" placeholder="Especifique..." style="display: none; margin-top: 1rem;"></div><div class="form-grid" style="margin-top: 1.5rem;"><div><label for="responsible">Responsável Técnico</label><input type="text" id="responsible" name="responsible" value="${state.config.currentUser}"></div><div><label for="responsibleTitle">Cargo</label><input type="text" id="responsibleTitle" name="responsibleTitle" value="Engenheiro Responsável"></div></div><div style="margin-top: 1.5rem;"><label for="executionInstructions">Orientações de Execução</label><textarea id="executionInstructions" name="executionInstructions" placeholder="Instruções adicionais..."></textarea></div></div>
                 <div class="risk-buttons-area" style="justify-content: flex-end; padding: 0 1rem 1rem 1rem;"><button type="button" id="btn-cancel" class="btn btn-clear">Cancelar</button><button type="submit" class="btn btn-primary">Gerar Plano de Intervenção</button></div>
             </form>
@@ -275,167 +297,233 @@ const finalSteps = [
 return [...safetySteps, ...specificSteps, ...finalSteps];
 }
 
-function renderDocumentView(plan, tree) {
-const start = new Date(plan.schedule.startDate);
-const end = new Date(plan.schedule.endDate);
-const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+/**
+ * [REFACTOR] Generates the pure HTML content for the intervention plan document.
+ * This is now decoupled from the view's wrapper and buttons.
+ */
+function getPlanoDocumentHTML(plan, tree) {
+    const start = new Date(plan.schedule.startDate);
+    const end = new Date(plan.schedule.endDate);
+    const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-// --- Dados & Lógica ---
-const countTeam = (parseInt(plan.teamComposition?.foremen) || 0) + 
-                  (parseInt(plan.teamComposition?.chainsawOperators) || 0) + 
-                  (parseInt(plan.teamComposition?.auxiliaries) || 0);
-const steps = getOperationalSteps(plan.interventionType, plan.techniques);
+    const countTeam = (parseInt(plan.teamComposition?.foremen) || 0) +
+                      (parseInt(plan.teamComposition?.chainsawOperators) || 0) +
+                      (parseInt(plan.teamComposition?.auxiliaries) || 0);
+    const steps = getOperationalSteps(plan.interventionType, plan.techniques);
 
-// Decodifica Fatores de Risco
-let activeRisks = [];
-if (tree.riskFactorsCode) {
-    const codes = typeof tree.riskFactorsCode === 'string' ? tree.riskFactorsCode.split(',') : tree.riskFactorsCode;
-    activeRisks = codes.map((v, i) => (v == '1' || v === 1) ? RISK_LABELS[i] : null).filter(Boolean);
-}
-const riskListHTML = activeRisks.length > 0 
-    ? `<ul class="compact-list" style="columns: 2; -webkit-columns: 2; color: #d32f2f;">${activeRisks.map(r => `<li>• ${r}</li>`).join('')}</ul>`
-    : `<span style="color: #2e7d32; font-style: italic;">Nenhum fator crítico visualmente identificado.</span>`;
+    let activeRisks = [];
+    if (tree.riskFactorsCode) {
+        const codes = typeof tree.riskFactorsCode === 'string' ? tree.riskFactorsCode.split(',') : tree.riskFactorsCode;
+        activeRisks = codes.map((v, i) => (v == '1' || v === 1) ? RISK_LABELS[i] : null).filter(Boolean);
+    }
+    const riskListHTML = activeRisks.length > 0
+        ? `<ul class="compact-list" style="columns: 2; -webkit-columns: 2; color: #d32f2f;">${activeRisks.map(r => `<li>• ${r}</li>`).join('')}</ul>`
+        : `<span style="color: #2e7d32; font-style: italic;">Nenhum fator crítico visualmente identificado.</span>`;
 
-// --- CONFIGURAÇÃO VISUAL (1x1 SQUARE) ---
-const size = "220px"; // Tamanho quadrado aumentado
+    const size = "220px";
+    const photoHTML = tree.image
+        ? `<img src="${tree.image}" style="width: ${size}; height: ${size}; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; display: block; margin: 0 auto;" crossorigin="anonymous">`
+        : `<div style="width: ${size}; height: ${size}; background:#f5f5f5; display:flex; align-items:center; justify-content:center; color:#999; font-size:0.8rem; border:1px solid #ccc; border-radius:4px; margin: 0 auto;">Sem Foto</div>`;
 
-const photoHTML = tree.image 
-    ? `<img src="${tree.image}" style="width: ${size}; height: ${size}; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; display: block; margin: 0 auto;" crossorigin="anonymous">`
-    : `<div style="width: ${size}; height: ${size}; background:#f5f5f5; display:flex; align-items:center; justify-content:center; color:#999; font-size:0.8rem; border:1px solid #ccc; border-radius:4px; margin: 0 auto;">Sem Foto</div>`;
-
-return `
-    <div>
-        <div class="risk-buttons-area" style="padding: 15px; background: #fff; border-bottom: 1px solid #eee; margin-bottom: 20px; display: flex; justify-content: space-between;">
-            <button type="button" id="btn-back-edit" class="btn btn-secondary">Editar</button>
-            <button type="button" id="btn-download-pdf" class="btn btn-primary" style="background: var(--arb-green); border-color: var(--arb-green);">Baixar Relatório</button>
-        </div>
-
-        <div style="background: #555; padding: 20px; display: flex; justify-content: center;">
-            <div id="printable-area">
-                
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; border-bottom: 4px solid; border-image: var(--arb-gradient) 1;">
-                    <div style="padding-bottom: 5px;">
-                        <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; line-height: 1;">
-                            <span style="color: var(--arb-blue);">Arbor</span><span style="color: var(--arb-green);">IA</span>
-                        </h1>
-                        <div style="font-size: 0.8rem; color: #666;">Sistema de Manejo Integrado</div>
-                    </div>
-                    <div style="text-align: right; padding-bottom: 8px;">
-                        <div style="font-size: 1.1rem; font-weight: bold; color: #333;">PI-${plan.id.split('-').slice(1).join('-')}</div>
-                        <div style="font-size: 0.8rem; color: #666;">Expedição: ${new Date().toLocaleDateString('pt-BR')}</div>
-                    </div>
-                </div>
-
-                <div class="arb-card">
-                    <div class="arb-card-header" style="border-color: var(--arb-blue);">
-                        <span>📍</span> Identificação e Diagnóstico
-                    </div>
-                    <div class="arb-card-body">
-    <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 0.9rem;">
-        <div><strong>Espécie:</strong> ${tree.species} <small>(#${tree.id})</small></div>
-        <div><strong>Dimensões:</strong> DAP ${tree.dap}cm / Alt ${tree.height}m</div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; text-align: center;">
-        <div style="background: #f5f5f5; border-radius: 4px; padding: 5px;">
-            <div style="font-size: 0.65rem; color: #666; text-transform: uppercase;">Prob. Falha</div>
-            <div style="font-weight: bold;">${tree.failureProb}</div>
-        </div>
-        <div style="background: #f5f5f5; border-radius: 4px; padding: 5px;">
-            <div style="font-size: 0.65rem; color: #666; text-transform: uppercase;">Alvo</div>
-            <div style="font-weight: bold;">${tree.targetType}</div>
-        </div>
-        <div style="background: ${tree.riskLevel.includes('Alto') ? '#ffebee' : '#f1f8e9'}; border-radius: 4px; padding: 5px; border: 1px solid ${tree.riskLevel.includes('Alto') ? '#ef9a9a' : '#c5e1a5'};">
-            <div style="font-size: 0.65rem; color: #666; text-transform: uppercase;">Risco Inicial</div>
-            <div style="font-weight: 800; color: ${tree.riskLevel.includes('Alto') ? '#c62828' : '#2e7d32'};">${tree.riskLevel}</div>
-        </div>
-    </div>
-
-    <div style="margin-bottom: 15px;">
-        <strong style="font-size: 0.75rem; color: #555; text-transform: uppercase;">Fatores de Risco:</strong>
-        <div style="font-size: 0.8rem; margin-top: 2px; color: #d32f2f;">${riskListHTML}</div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start;">
-        <div style="text-align: center;">${photoHTML}<div style="font-size:0.7rem; color:#666; margin-top:4px;">Registro Fotográfico</div></div>
-        <div style="text-align: center;"><div id="planning-map-container" style="width: ${size}; height: ${size}; background: #eee; border: 1px solid #ccc; border-radius: 4px; margin: 0 auto;"></div><div style="font-size:0.7rem; color:#666; margin-top:4px;">Localização: ${tree.location}</div></div>
-    </div>
-</div>
-                </div>
-
-                <div class="arb-card">
-                    <div class="arb-card-header" style="border-color: var(--arb-green);">
-                        <span>📅</span> Planejamento Operacional
-                    </div>
-                    <div class="arb-card-body">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
-                            <div><strong>${plan.interventionType}</strong> <span style="color:#666; font-size:0.8rem;">(${plan.justification})</span></div>
-                            <div>Duração: <strong>${diffDays} dias</strong></div>
-                        </div>
-                        <div id="gantt-chart" style="height: 100px; position: relative;"></div>
-                    </div>
-                </div>
-
-                <div class="arb-card">
-                    <div class="arb-card-header" style="border-color: #ffa000;">
-                        <span>🛠️</span> Recursos e Procedimentos
-                    </div>
-                    <div class="arb-card-body">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div>
-                                <div style="font-size: 0.75rem; font-weight: bold; color: var(--arb-blue); margin-bottom: 4px;">EQUIPE & RECURSOS</div>
-                                <ul class="compact-list" style="color:#444;">
-                                    <li><strong>Equipe:</strong> ${countTeam} profissionais</li>
-                                    <li><strong>Ferramentas:</strong> ${plan.tools.join(', ')}</li>
-                                    <li><strong>EPIs:</strong> ${plan.epis.slice(0,3).join(', ')}...</li>
-                                </ul>
-                            </div>
-                            <div style="border-left: 1px solid #eee; padding-left: 15px;">
-                                <div style="font-size: 0.75rem; font-weight: bold; color: var(--arb-green); margin-bottom: 4px;">PROCEDIMENTO (${plan.interventionType.toUpperCase()})</div>
-                                <ol class="compact-list" style="color:#333;">
-                                    ${steps.map(s => `<li>${s}</li>`).join('')}
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: center;">
-                        <div>
-                            <div style="border-bottom: 1px solid #333; margin-bottom: 4px; width: 80%; margin: 0 auto 4px auto;"></div>
-                            <strong style="font-size: 0.8rem;">${plan.responsible}</strong><br>
-                            <span style="font-size: 0.7rem; color: #666;">Engenheiro Responsável</span>
-                        </div>
-                        <div>
-                            <div style="border-bottom: 1px solid #333; margin-bottom: 4px; width: 80%; margin: 0 auto 4px auto;"></div>
-                            <strong style="font-size: 0.8rem;">Segurança do Trabalho</strong><br>
-                            <span style="font-size: 0.7rem; color: #666;">Liberação de Serviço</span>
-                        </div>
-                    </div>
-                </div>
-
+    return `
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; border-bottom: 4px solid; border-image: var(--arb-gradient) 1;">
+            <div style="padding-bottom: 5px;">
+                <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; line-height: 1;">
+                    <span style="color: var(--arb-blue);">Arbor</span><span style="color: var(--arb-green);">IA</span>
+                </h1>
+                <div style="font-size: 0.8rem; color: #666;">Sistema de Manejo Integrado</div>
+            </div>
+            <div style="text-align: right; padding-bottom: 8px;">
+                <div style="font-size: 1.1rem; font-weight: bold; color: #333;">PI-${plan.id.split('-').slice(1).join('-')}</div>
+                <div style="font-size: 0.8rem; color: #666;">Expedição: ${new Date().toLocaleDateString('pt-BR')}</div>
             </div>
         </div>
-    </div>
-`;
+
+        <div class="arb-card">
+            <div class="arb-card-header" style="border-color: var(--arb-blue);">
+                <span>📍</span> Identificação e Diagnóstico
+            </div>
+            <div class="arb-card-body">
+                <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 0.9rem;">
+                    <div><strong>Espécie:</strong> ${tree.species} <small>(#${tree.displayId})</small></div>
+                    <div><strong>Dimensões:</strong> DAP ${tree.dap}cm / Alt ${tree.height}m</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; text-align: center;">
+                    <div style="background: #f5f5f5; border-radius: 4px; padding: 5px;"><div style="font-size: 0.65rem; color: #666; text-transform: uppercase;">Prob. Falha</div><div style="font-weight: bold;">${tree.failureProb}</div></div>
+                    <div style="background: #f5f5f5; border-radius: 4px; padding: 5px;"><div style="font-size: 0.65rem; color: #666; text-transform: uppercase;">Alvo</div><div style="font-weight: bold;">${tree.targetType}</div></div>
+                    <div style="background: ${tree.riskLevel.includes('Alto') ? '#ffebee' : '#f1f8e9'}; border-radius: 4px; padding: 5px; border: 1px solid ${tree.riskLevel.includes('Alto') ? '#ef9a9a' : '#c5e1a5'};"><div style="font-size: 0.65rem; color: #666; text-transform: uppercase;">Risco Inicial</div><div style="font-weight: 800; color: ${tree.riskLevel.includes('Alto') ? '#c62828' : '#2e7d32'};">${tree.riskLevel}</div></div>
+                </div>
+                <div style="margin-bottom: 15px;"><strong style="font-size: 0.75rem; color: #555; text-transform: uppercase;">Fatores de Risco:</strong><div style="font-size: 0.8rem; margin-top: 2px; color: #d32f2f;">${riskListHTML}</div></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start;">
+                    <div style="text-align: center;">${photoHTML}<div style="font-size:0.7rem; color:#666; margin-top:4px;">Registro Fotográfico</div></div>
+                    <div style="text-align: center;"><div id="planning-map-container" style="width: ${size}; height: ${size}; background: #eee; border: 1px solid #ccc; border-radius: 4px; margin: 0 auto;"></div><div style="font-size:0.7rem; color:#666; margin-top:4px;">Localização: ${tree.location}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="arb-card">
+            <div class="arb-card-header" style="border-color: var(--arb-green);"><span>📅</span> Planejamento Operacional</div>
+            <div class="arb-card-body">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
+                    <div><strong>${plan.interventionType}</strong> <span style="color:#666; font-size:0.8rem;">(${plan.justification})</span></div>
+                    <div>Duração: <strong>${diffDays} dias</strong></div>
+                </div>
+                <div id="gantt-chart"></div>
+            </div>
+        </div>
+
+        <div class="arb-card">
+            <div class="arb-card-header" style="border-color: #ffa000;"><span>🛠️</span> Recursos e Procedimentos</div>
+            <div class="arb-card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <div style="font-size: 0.75rem; font-weight: bold; color: var(--arb-blue); margin-bottom: 4px;">EQUIPE & RECURSOS</div>
+                        <ul class="compact-list" style="color:#444;">
+                            <li><strong>Equipe:</strong> ${countTeam} profissionais</li>
+                            <li><strong>Ferramentas:</strong> ${plan.tools.join(', ')}</li>
+                            <li><strong>EPIs:</strong> ${plan.epis.slice(0,3).join(', ')}...</li>
+                        </ul>
+                    </div>
+                    <div style="border-left: 1px solid #eee; padding-left: 15px;">
+                        <div style="font-size: 0.75rem; font-weight: bold; color: var(--arb-green); margin-bottom: 4px;">PROCEDIMENTO (${plan.interventionType.toUpperCase()})</div>
+                        <ol class="compact-list" style="color:#333;">${steps.map(s => `<li>${s}</li>`).join('')}</ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: center;">
+                <div>
+                    <div style="border-bottom: 1px solid #333; margin-bottom: 4px; width: 80%; margin: 0 auto 4px auto;"></div>
+                    <strong style="font-size: 0.8rem;">${plan.responsible}</strong><br>
+                    <span style="font-size: 0.7rem; color: #666;">Engenheiro Responsável</span>
+                </div>
+                <div>
+                    <div style="border-bottom: 1px solid #333; margin-bottom: 4px; width: 80%; margin: 0 auto 4px auto;"></div>
+                    <strong style="font-size: 0.8rem;">Segurança do Trabalho</strong><br>
+                    <span style="font-size: 0.7rem; color: #666;">Liberação de Serviço</span>
+                </div>
+            </div>
+        </div>
+    `;
 }
+
+/**
+ * [NEW] Creates the full self-contained HTML for the print preview.
+ */
+function generatePlanoIntervencaoForPrinting(plan, tree) {
+    const reportContent = getPlanoDocumentHTML(plan, tree);
+    const styles = `
+        :root {
+            --arb-blue: #1565c0;
+            --arb-green: #2e7d32;
+            --arb-gradient: linear-gradient(90deg, #1565c0 0%, #2e7d32 100%);
+            --arb-gray: #f8f9fa;
+            --arb-border: #dee2e6;
+        }
+        body {
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            color: #333;
+            margin: 0;
+        }
+        h1, h2, h3, h4 { margin: 0; }
+        p { margin: 0 0 5px 0; }
+        .arb-card {
+            border: 1px solid var(--arb-border);
+            border-radius: 6px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .arb-card-header {
+            background: var(--arb-gray);
+            padding: 6px 12px;
+            border-bottom: 2px solid #e0e0e0;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .arb-card-body { padding: 10px; }
+        ul.compact-list, ol.compact-list {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 0.8rem;
+            line-height: 1.3;
+        }
+        ul.compact-list li, ol.compact-list li { margin-bottom: 2px; }
+        #gantt-chart { min-height: 100px; position: relative; }
+        #planning-map-container {
+             width: 220px;
+             height: 220px;
+             background: #eee;
+             border: 1px solid #ccc;
+             border-radius: 4px;
+             margin: 0 auto;
+        }
+        .map-label-clean {
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 0 0 3px black;
+        }
+    `;
+
+    const printHTML = `
+        <html>
+            <head>
+                <title>Plano de Intervenção - ${plan.id}</title>
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                <style>${styles}</style>
+            </head>
+            <body>
+                ${reportContent}
+            </body>
+        </html>
+    `;
+    return printHTML;
+}
+
+/**
+ * [REFACTORED] Renders the document view, now acting as a simple wrapper for the printable content.
+ */
+function renderDocumentView(plan, tree) {
+    const reportContent = getPlanoDocumentHTML(plan, tree);
+    return `
+        <div>
+            <div class="risk-buttons-area no-print" style="padding: 15px; background: #fff; border-bottom: 1px solid #eee; margin-bottom: 20px; display: flex; justify-content: space-between;">
+                <button type="button" id="btn-back-edit" class="btn btn-secondary">Editar</button>
+                <button type="button" id="btn-download-pdf" class="btn btn-primary" style="background: var(--arb-green); border-color: var(--arb-green);">Gerar Relatório para Impressão</button>
+            </div>
+            <div style="background: #555; padding: 20px; display: flex; justify-content: center;">
+                <div id="printable-area">
+                    ${reportContent}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // --- CONTROLLER ---
 
 const Actions = {
     initMap: (tree) => {
         const coords = convertToLatLon(tree);
-        if (!window.L || !coords) {
-            
-            const container = $('#planning-map-container');
-            if (container) {
-                container.innerHTML = '<p style="text-align:center; color: var(--color-text-muted); padding: 1rem;">Coordenadas inválidas ou não especificadas.</p>';
-            }
-            return;
-        }
-
         const container = $('#planning-map-container');
         if (!container) return;
+
+        if (!window.L || !coords) {
+            container.innerHTML = '<p style="text-align:center; color: var(--color-text-muted); padding: 1rem;">Coordenadas inválidas.</p>';
+            return;
+        }
 
         if (state.mapInstance) {
             state.mapInstance.remove();
@@ -460,84 +548,56 @@ const Actions = {
             maxNativeZoom: 19
         }).addTo(map);
 
-        let color;
-        if ((tree.riskLevel || '').includes('Alto')) {
-            color = '#d32f2f';
-        } else if ((tree.riskLevel || '').includes('Médio')) {
-            color = '#f57c00';
-        } else {
-            color = '#388e3c';
-        }
-        const treeHeight = parseFloat(tree.height);
-        const radiusInMeters = (treeHeight > 0) ? treeHeight : 5;
-
+        let color = (tree.riskLevel || '').includes('Alto') ? '#d32f2f' : (tree.riskLevel || '').includes('Médio') ? '#f57c00' : '#388e3c';
+        const treeHeight = parseFloat(tree.height) || 5;
+        
         const circle = L.circle(coords, {
             color: color,
             weight: 1,
             fillColor: color,
             fillOpacity: 0.5,
-            radius: radiusInMeters,
-        });
-
-        circle.bindTooltip(`${tree.id}`, {
+            radius: treeHeight,
+        }).bindTooltip(`${tree.displayId}`, {
             permanent: true,
             direction: 'center',
             className: 'map-label-clean'
-        });
+        }).addTo(map);
 
-        circle.addTo(map);
         state.mapInstance = map;
 
-        if (radiusInMeters > 0) {
+        if (treeHeight > 0) {
             map.fitBounds(circle.getBounds(), { padding: [40, 40] });
         }
         
-        map.invalidateSize();
+        setTimeout(() => map.invalidateSize(), 100);
     },
 
+    /**
+     * [REFACTORED] Generates a print preview using the standard pipeline.
+     */
     generatePDF: async () => {
         const btn = $('#btn-download-pdf');
         if (btn) {
             btn.originalText = btn.innerHTML;
-            btn.innerHTML = 'Gerando PDF...';
+            btn.innerHTML = 'Gerando...';
             btn.disabled = true;
         }
 
         try {
-            const element = document.getElementById('printable-area');
+            const reportHTML = generatePlanoIntervencaoForPrinting(state.plan, state.selectedTree);
             
-            // 1. Rolagem para o topo (Garante captura correta)
-            window.scrollTo(0,0);
+            const mapRenderCallback = () => {
+                Actions.initMap(state.selectedTree);
+                // Also initialize Gantt chart in the preview
+                initGanttChart(state.plan);
+            };
             
-            // 2. Delay para renderização de mapas/imagens
-            await new Promise(r => setTimeout(r, 800));
-
-            // 3. Captura WYSIWYG (Alta Qualidade)
-            const canvas = await window.html2canvas(element, {
-                scale: 2, // Melhora resolução do texto
-                useCORS: true, // Vital para mapa e fotos
-                backgroundColor: '#ffffff',
-                logging: false
-            });
-
-            // 4. Gera PDF
-            const imgData = canvas.toDataURL('image/jpeg', 0.95);
-            const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            
-            // Ajusta altura proporcional
-            const imgProps = pdf.getImageProperties(imgData);
-            const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight);
-            
-            const fileName = `PI-${state.plan.id}_${new Date().toISOString().slice(0,10)}.pdf`;
-            pdf.save(fileName);
+            // This function is imported from utils.js and handles the print preview overlay
+            window.openReportPreview(reportHTML, mapRenderCallback);
 
         } catch (err) {
-            
-            alert("Erro na geração do PDF. Tente novamente.");
+            console.error("Erro ao gerar visualização de impressão:", err);
+            alert("Erro ao preparar a visualização. Tente novamente.");
         } finally {
             if (btn) {
                 btn.innerHTML = btn.originalText;
@@ -615,7 +675,11 @@ function bindEvents() {
             } else {
                 // Handle general card click to open the form
                 const id = parseInt(card.dataset.id, 10);
+                const displayId = card.dataset.displayId;
                 state.selectedTree = state.config.trees.find(t => t.id === id);
+                if (state.selectedTree) {
+                    state.selectedTree.displayId = displayId;
+                }
                 state.view = 'FORM';
                 render();
             }
@@ -715,39 +779,10 @@ function bindEvents() {
         $('#btn-back-edit').addEventListener('click', () => { state.view = 'FORM'; render(); });
         $('#btn-download-pdf').addEventListener('click', Actions.generatePDF);
         
-        // Função de polling para garantir que o mapa carregue
-        let attempts = 0;
-        function checkAndInitMap() {
-            const container = $('#planning-map-container');
-            
-            // Verifica se o container existe E tem altura definida (CSS inline que colocamos)
-            if (container && container.offsetHeight > 0) {
-                
-                // 1. Inicializa o Mapa
-                Actions.initMap(state.selectedTree);
-                
-                // 2. CRUCIAL: Força o Leaflet a entender o tamanho da div
-                if (state.mapInstance) {
-                    setTimeout(() => {
-                        state.mapInstance.invalidateSize();
-                        
-                        // Centraliza novamente para garantir
-                        const coords = convertToLatLon(state.selectedTree);
-                        if(coords) state.mapInstance.setView(coords, 18);
-                    }, 200);
-                }
-            } else if (attempts < 20) { 
-                attempts++;
-                setTimeout(checkAndInitMap, 200); // Tenta a cada 200ms
-            } else {
-                
-            }
-        }
-
-        // Inicia o processo
-        // Usamos um pequeno requestAnimationFrame para garantir que o HTML foi pintado
+        // This logic now runs inside the print preview, triggered by a callback.
+        // It's kept here to ensure the map on the non-print view still works.
         requestAnimationFrame(() => {
-            checkAndInitMap();
+            Actions.initMap(state.selectedTree);
             initGanttChart(state.plan);
         });
     }
@@ -771,7 +806,7 @@ container.style.width = '100%';
 
 // Calcula duração total em dias
 const durMob = plan.durations?.mobilization || 0;
-const durExec = plan.durations?.execution || 1;
+const durExec = plan.durations?.execution || 0;
 const durDemob = plan.durations?.demobilization || 0;
 const totalDays = durMob + durExec + durDemob;
 
@@ -815,9 +850,10 @@ if (durMob > 0) {
     html += createBar('Mobilização', durMob, '--arb-blue', currentOffset);
     currentOffset += durMob;
 }
-html += createBar('Execução', durExec, '--arb-green', currentOffset);
-currentOffset += durExec;
-
+if (durExec > 0) {
+    html += createBar('Execução', durExec, '--arb-green', currentOffset);
+    currentOffset += durExec;
+}
 if (durDemob > 0) {
     html += createBar('Desmob.', durDemob, '--arb-blue', currentOffset);
 }

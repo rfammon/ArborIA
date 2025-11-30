@@ -251,3 +251,37 @@
     border-color: var(--color-forest);
   }
 }
+
+/* --- Table Action Buttons --- */
+.action-btn-group {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.action-btn-group .action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem; /* For emoji icons */
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.action-btn-group .action-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+.action-btn-group .btn-map { background-color: #2979ff; }
+.action-btn-group .btn-details { background-color: #00b8d4; }
+.action-btn-group .btn-pdf { background-color: #6200ea; }
+.action-btn-group .btn-edit { background-color: #ff9100; }
+.action-btn-group .btn-delete { background-color: #d50000; }
+.action-btn-group .btn-photo { background-color: #2e7d32; }
+
