@@ -12,7 +12,8 @@ import { TableUI } from './table.ui.js';
 // 1. LÓGICA DO CHECKLIST (MODO FLASH CARD / TELA CHEIA)
 // ============================================================
 
-let currentCardIndex = 0;
+let currentStep = 0; // 0: Questions, 1: Target, 2: Residual Risk
+let currentQuestionIndex = 0;
 let flashCardListenersAttached = false;
 
 // Seletores específicos da nova UI Fullscreen
@@ -23,54 +24,58 @@ const getFlashCardElements = () => {
     return {
         container: container,
         closeBtn: document.getElementById('close-checklist-btn'),
-        card: document.querySelector('.mobile-checklist-card'),
         
-        // Elementos de Conteúdo
+        // As 3 etapas principais do fluxo FlashCard
+        questionCard: document.getElementById('question-card'),
+        targetCard: document.getElementById('target-card'),
+        residualRiskCard: document.getElementById('residual-risk-card'),
+        
+        // Elementos de Conteúdo Específicos do questionCard
         counter: document.getElementById('flashcard-counter'),
         questionBox: document.getElementById('flashcard-question-text'), 
-        
-        // Controle (Toggle)
         toggleInput: document.getElementById('flashcard-toggle-input'), 
         
         // Navegação
         btnPrev: document.getElementById('flashcard-prev'),
         btnNext: document.getElementById('flashcard-next'),
         
-        // Fonte de Dados (Tabela Oculta)
+        // Fonte de Dados (Tabela Oculta para perguntas do checklist)
         dataRows: document.querySelectorAll('#checklist-data-table tbody tr')
     };
 };
 
 /**
- * Renderiza o cartão atual baseado no índice.
+ * Renderiza o CARTÃO DE PERGUNTA atual baseado no índice.
  */
-function updateFlashCard(index) {
+function updateQuestionFlashCard(index) {
     const els = getFlashCardElements();
     if (!els || !els.dataRows || index < 0 || index >= els.dataRows.length) return;
 
     const row = els.dataRows[index];
-    // [IMPORTANTE] Obtém o checkbox da tabela que é a fonte de dados real
     const sourceCheckbox = row.querySelector('input[type="checkbox"]');
 
-    // Extração de Conteúdo (Célula 1) - Clona para não perder eventos de tooltip
     const questionCell = row.cells[1].cloneNode(true); 
     const tooltipSpan = questionCell.querySelector('.checklist-term');
     if (tooltipSpan) {
         tooltipSpan.classList.add('tooltip-trigger'); 
     }
 
-    // 1. Atualiza UI
+    // 1. Atualiza UI da Pergunta
     els.counter.textContent = `Fator de Risco ${index + 1} / ${els.dataRows.length}`;
     els.questionBox.innerHTML = questionCell.innerHTML; 
     
     // 2. Sincroniza Toggle Visual com o Checkbox Real
     els.toggleInput.checked = sourceCheckbox.checked;
-    updateCardVisuals(els.card, els.toggleInput.checked);
+    updateCardVisuals(els.questionCard, els.toggleInput.checked);
 
-    // 3. Atualiza Botões
-    els.btnPrev.disabled = (index === 0);
-    // Muda texto do botão no último item
-    els.btnNext.textContent = (index === els.dataRows.length - 1) ? 'Concluir' : 'Próxima ❯';
+    // 3. Atualiza Botões (para a etapa de perguntas)
+    els.btnPrev.disabled = (index === 0 && currentStep === 0);
+    // Texto do botão 'Próxima' se estiver na última pergunta da fase 0
+    if (index === els.dataRows.length - 1 && currentStep === 0) {
+        els.btnNext.textContent = 'Avançar para Alvo ❯';
+    } else {
+        els.btnNext.textContent = 'Próxima ❯';
+    }
 
     // 4. Lógica do Toggle (Remove listener antigo antes de adicionar novo)
     if (els.toggleInput._handler) {
@@ -84,14 +89,12 @@ function updateFlashCard(index) {
         sourceCheckbox.checked = isChecked;
         
         // B. Feedback Visual Imediato (Troca Cor)
-        updateCardVisuals(els.card, isChecked);
+        updateCardVisuals(els.questionCard, isChecked);
 
         // C. Auto-Avanço (apenas se marcou SIM e não é o último)
         if (isChecked && index < els.dataRows.length - 1) {
-            // [MELHORIA] Aumenta o tempo de espera para 600ms
             setTimeout(() => {
-                // Dispara a navegação para o próximo, que agora tem animação
-                els.btnNext.click();
+                els.btnNext.click(); // Simula clique no próximo
             }, 600);
         }
     };
@@ -99,6 +102,54 @@ function updateFlashCard(index) {
     els.toggleInput.addEventListener('change', onToggleChange);
     els.toggleInput._handler = onToggleChange; // Salva referência para remoção
 }
+
+/**
+ * Controla qual das 3 etapas principais (questionCard, targetCard, residualRiskCard) está visível.
+ */
+function renderStep(step) {
+    const els = getFlashCardElements();
+    if (!els) return;
+
+    // Esconde todos os cards de etapa
+    els.questionCard.style.display = 'none';
+    els.targetCard.style.display = 'none';
+    els.residualRiskCard.style.display = 'none';
+
+    // Exibe o card da etapa atual
+    if (step === 0) {
+        els.questionCard.style.display = 'flex'; // Ou 'block', dependendo do layout interno
+        updateQuestionFlashCard(currentQuestionIndex); // Atualiza o conteúdo da pergunta
+    } else if (step === 1) {
+        els.targetCard.style.display = 'flex';
+        els.btnNext.textContent = 'Próxima ❯'; // Reseta texto do botão
+        els.btnPrev.disabled = false;
+    } else if (step === 2) {
+        els.residualRiskCard.style.display = 'flex';
+        els.btnNext.textContent = 'Concluir'; // Altera texto para 'Concluir' na última etapa
+        els.btnPrev.disabled = false;
+    }
+
+    currentStep = step;
+    updateNavigationButtons(); // Atualiza o estado dos botões de navegação
+}
+
+/**
+ * Atualiza o estado dos botões de navegação (Anterior/Próxima).
+ */
+function updateNavigationButtons() {
+    const els = getFlashCardElements();
+    if (!els) return;
+
+    // Botão Anterior
+    if (currentStep === 0 && currentQuestionIndex === 0) {
+        els.btnPrev.disabled = true;
+    } else {
+        els.btnPrev.disabled = false;
+    }
+
+    // Botão Próxima (o texto já é atualizado por renderStep e updateQuestionFlashCard)
+}
+
 
 /**
  * Helper para mudar a cor do cartão (CSS class)
@@ -123,34 +174,53 @@ function setupFlashCardListeners() {
     // Botão Anterior
     els.btnPrev.addEventListener('click', (e) => {
         e.preventDefault();
-        if (currentCardIndex <= 0 || els.card.classList.contains('is-animating')) return;
+        // Previne cliques múltiplos durante a animação
+        if (els.questionCard.classList.contains('is-animating')) return; 
 
-        els.card.classList.add('is-animating', 'swipe-out-to-right');
-        setTimeout(() => {
-            currentCardIndex--;
-            updateFlashCard(currentCardIndex);
-            els.card.classList.remove('swipe-out-to-right');
-            els.card.classList.add('swipe-in-from-left');
-            setTimeout(() => els.card.classList.remove('is-animating', 'swipe-in-from-left'), 400);
-        }, 300);
+        if (currentStep === 0) { // Na fase de perguntas
+            if (currentQuestionIndex > 0) {
+                // Animação para o cartão de pergunta
+                els.questionCard.classList.add('is-animating', 'swipe-out-to-right');
+                setTimeout(() => {
+                    currentQuestionIndex--;
+                    updateQuestionFlashCard(currentQuestionIndex);
+                    els.questionCard.classList.remove('swipe-out-to-right');
+                    els.questionCard.classList.add('swipe-in-from-left');
+                    setTimeout(() => els.questionCard.classList.remove('is-animating', 'swipe-in-from-left'), 400);
+                }, 300);
+            }
+        } else if (currentStep > 0) { // Voltando do Alvo ou Risco Residual
+            currentStep--;
+            renderStep(currentStep);
+        }
     });
 
     // Botão Próximo / Concluir
     els.btnNext.addEventListener('click', (e) => {
         e.preventDefault();
-        if (els.card.classList.contains('is-animating')) return;
+        // Previne cliques múltiplos durante a animação. Aplica-se ao cartão atualmente ativo.
+        const activeCard = [els.questionCard, els.targetCard, els.residualRiskCard][currentStep];
+        if (activeCard && activeCard.classList.contains('is-animating')) return;
 
-        if (currentCardIndex < els.dataRows.length - 1) {
-            els.card.classList.add('is-animating', 'swipe-out-to-left');
-            setTimeout(() => {
-                currentCardIndex++;
-                updateFlashCard(currentCardIndex);
-                els.card.classList.remove('swipe-out-to-left');
-                els.card.classList.add('swipe-in-from-right');
-                setTimeout(() => els.card.classList.remove('is-animating', 'swipe-in-from-right'), 400);
-            }, 300);
-        } else {
-            // Fim do fluxo: Fecha o modal e notifica
+        if (currentStep === 0) { // Na fase de perguntas
+            if (currentQuestionIndex < els.dataRows.length - 1) {
+                // Animação para o cartão de pergunta
+                els.questionCard.classList.add('is-animating', 'swipe-out-to-left');
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    updateQuestionFlashCard(currentQuestionIndex);
+                    els.questionCard.classList.remove('swipe-out-to-left');
+                    els.questionCard.classList.add('swipe-in-from-right');
+                    setTimeout(() => els.questionCard.classList.remove('is-animating', 'swipe-in-from-right'), 400);
+                }, 300);
+            } else { // Última pergunta da Fase 0, avança para a Fase 1 (Alvo)
+                currentStep++;
+                renderStep(currentStep);
+            }
+        } else if (currentStep === 1) { // Na fase Alvo, avança para a Fase 2 (Risco Residual)
+            currentStep++;
+            renderStep(currentStep);
+        } else if (currentStep === 2) { // Na fase Risco Residual, conclui
             closeChecklistFlashCard();
             utils.showToast("Checklist preenchido!", "success");
         }
@@ -181,8 +251,9 @@ export function initChecklistFlashCard(retry = 0) {
     setupFlashCardListeners();
     
     // 3. Reset e Inicia no primeiro card (a UI já está visível)
-    currentCardIndex = 0;
-    updateFlashCard(currentCardIndex);
+    currentStep = 0; // Inicia na primeira etapa (perguntas)
+    currentQuestionIndex = 0; // Inicia na primeira pergunta
+    renderStep(currentStep); // Renderiza a etapa inicial
 }
 
 /**

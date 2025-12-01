@@ -1,5 +1,17 @@
 /* css/modules/02_feature.sync.css */
 
+/* 
+ * FIX STACKING CONTEXT (BUG CRÍTICO DE RENDERIZAÇÃO):
+ * O Modal de Sincronização (#sync-modal) deve ter um z-index MENOR que os modais de alerta/ação (#action-modal)
+ * e modais de autenticação (#auth-modal), que possuem z-index 2000 (via classe .modal-overlay).
+ * 
+ * Definindo como 1900, garantimos que ele fique acima do Header (z-index 1000) e do Mapa,
+ * mas abaixo de qualquer popup de confirmação disparado por ele.
+ */
+#sync-modal.modal-overlay {
+    z-index: 1900 !important;
+}
+
 #sync-modal .modal-dialog {
     position: fixed; /* Keep fixed to center */
     top: 50%;
@@ -9,7 +21,7 @@
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    z-index: 1050; /* Higher than other elements */
+    /* z-index: 1050; REMOVED/IGNORED - Controlled by parent overlay */
     width: 90%;
     max-width: 500px;
     /* Removed display: none; - The overlay's JS handles its visibility */

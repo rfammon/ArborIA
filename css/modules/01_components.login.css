@@ -56,17 +56,28 @@ body, html {
     color: var(--cyan-vibrant); /* Cor azul para o ícone */
 }
 
+/* Modificação Solicitada: Correção de Contraste no Texto ArborIA */
 .brand-content .logo h1 {
     font-size: 48px;
     font-weight: 700;
     margin: 0;
-    color: var(--teal-dark); /* Cor verde para o nome */
+    color: var(--white); /* Alterado de --teal-dark para --white para alto contraste */
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Sombra para garantir legibilidade sobre gradiente */
 }
 
+/* Modificação Solicitada: Destaque visual para o slogan/tagline */
 .brand-content .tagline {
-    font-size: 20px;
+    font-size: 22px; /* Aumentado levemente */
     margin-bottom: 40px;
-    font-weight: 400;
+    font-weight: 600; /* Mais peso para leitura */
+    color: var(--white);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4); /* Sombra para destaque do fundo */
+    background-color: rgba(255, 255, 255, 0.15); /* Pílula sutil */
+    padding: 8px 20px;
+    border-radius: 50px;
+    display: inline-block;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .brand-content .feature-list {
@@ -111,37 +122,47 @@ body, html {
     margin-bottom: 30px;
 }
 
-.login-form-container .input-group {
-    position: relative;
+.login-form-container .input-group,
+.register-form-container .input-group {
+    display: flex; /* Use flexbox for alignment */
+    align-items: center; /* Vertically center items */
     margin-bottom: 20px;
-}
-
-.login-form-container .input-group i {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 20px;
-    color: var(--grey-dark);
-}
-
-.login-form-container .input-group input {
-    width: 100%;
-    padding: 15px 20px 15px 50px; /* Espaço para o ícone */
-    border: 1px solid var(--grey-light);
+    border: 1px solid var(--grey-light); /* Move border to input-group for visual consistency */
     border-radius: 999px; /* rounded-full */
+    padding: 0 20px; /* Adjust padding for the group */
+}
+
+.login-form-container .input-group i,
+.register-form-container .input-group i {
+    /* Remove absolute positioning */
+    /* position: absolute; */
+    /* top: 50%; */
+    /* transform: translateY(-50%); */
+    /* left: 20px; */
+    color: var(--grey-dark);
+    margin-right: 10px; /* Space between icon and input */
+}
+
+.login-form-container .input-group input,
+.register-form-container .input-group input {
+    flex-grow: 1; /* Allow input to take remaining space */
+    width: auto; /* Override 100% width */
+    padding: 15px 0; /* Adjust padding as border and horizontal padding are on parent */
+    border: none; /* Remove border from input, it's on the parent group */
+    border-radius: 0; /* Remove border-radius from input */
     font-size: 16px;
     color: var(--grey-dark);
     box-sizing: border-box; /* Garante que padding não afete a largura total */
+    outline: none; /* Remove outline on focus */
 }
 
-.login-form-container .input-group input::placeholder {
-    color: var(--grey-dark);
-    opacity: 0.7;
-}
-
-.login-form-container .input-group #togglePassword {
-    left: auto;
-    right: 20px;
+.login-form-container .input-group #togglePassword,
+.login-form-container .input-group #toggleRegisterPassword,
+.register-form-container .input-group #toggleRegisterConfirmPassword {
+    /* These are now part of the flex container */
+    /* left: auto; */
+    /* right: 20px; */
+    margin-left: 10px; /* Space from the input field */
     cursor: pointer;
 }
 
@@ -247,28 +268,7 @@ body, html {
     margin-bottom: 30px;
 }
 
-.register-form-container .input-group {
-    position: relative;
-    margin-bottom: 20px;
-}
 
-.register-form-container .input-group i {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 20px;
-    color: var(--grey-dark);
-}
-
-.register-form-container .input-group input {
-    width: 100%;
-    padding: 15px 20px 15px 50px; /* Espaço para o ícone */
-    border: 1px solid var(--grey-light);
-    border-radius: 999px; /* rounded-full */
-    font-size: 16px;
-    color: var(--grey-dark);
-    box-sizing: border-box; /* Garante que padding não afete a largura total */
-}
 
 .register-form-container .input-group input::placeholder {
     color: var(--grey-dark);
@@ -307,15 +307,16 @@ body, html {
         /* Ensure content is centered even on mobile */
         display: flex;
         flex-direction: column; /* Stack content vertically */
-        justify-content: center; /* Still center horizontally for brand-content */
+        justify-content: flex-start; /* FIX: Alinha ao topo para garantir visibilidade */
         align-items: flex-start; /* Aligns content to the top */
-        padding: 20px; /* Adjust padding for mobile */
+        padding: 40px 20px 20px 20px; /* FIX: Padding superior aumentado para afastar da borda */
+        box-sizing: border-box;
     }
 
     .brand-content {
         max-width: 90%; /* Adjust for smaller screens */
-        text-align: center; /* Center brand content */
-        margin: 0 auto; /* Keep horizontal centering, remove vertical auto margin */
+        text-align: left; /* Modificado de center para left */
+        margin: 0; /* Removido margin: 0 auto para alinhamento à esquerda */
     }
 
     .brand-content .logo h1 {
@@ -324,10 +325,54 @@ body, html {
 
     .brand-content .tagline {
         font-size: 18px; /* Smaller tagline */
+        margin-bottom: 20px; /* FIX: Reduzido de 40px para 20px para economizar espaço vertical */
+        /* Removidos estilos de "pílula" */
+        background-color: transparent;
+        padding: 0;
+        border-radius: 0;
+        display: block; /* Para que o text-shadow funcione melhor */
+        backdrop-filter: none;
+        border: none;
+    }
+
+    /* Modificação Solicitada: Tópicos de Funcionalidades Mobile */
+    .brand-content .feature-list {
+        max-width: 300px; /* Definir uma largura máxima para o bloco */
+        margin: 0 auto; /* Centralizar o bloco horizontalmente */
+        padding: 0; /* Remover padding padrão da lista se houver */
+        list-style: none; /* Remover marcadores de lista */
     }
 
     .brand-content .feature-list li {
-        justify-content: center; /* Center feature list items */
+        display: flex;
+        align-items: flex-start; /* Alinhar o topo do ícone com o topo do texto */
+        margin-bottom: 15px; /* Espaçamento entre os itens - ajustado de 12px para 15px */
+        
+        /* Removidos estilos de "cartão" */
+        background-color: transparent;
+        backdrop-filter: none;
+        border-radius: 0;
+        padding: 0;
+        width: auto; /* Ajusta largura ao conteúdo, não fit-content */
+        margin-left: 0; /* Removido auto para alinhar à esquerda do bloco centralizado */
+        margin-right: 0; /* Removido auto para alinhar à esquerda do bloco centralizado */
+        box-shadow: none; /* Já estava none, garantindo */
+    }
+    
+    /* Garante que o ícone e o texto estejam alinhados verticalmente dentro do box */
+    .brand-content .feature-list li i {
+        margin-right: 10px; /* Espaço entre ícone e texto */
+        width: 24px; /* Largura fixa para alinhar textos */
+        text-align: center;
+        color: var(--white); /* Garante que o ícone é branco */
+    }
+
+    .brand-content .feature-list li span {
+        text-align: left; /* Alinhar o texto à esquerda dentro do seu contêiner */
+        color: var(--white); /* Cor do texto */
+        font-size: 16px; /* Ajuste de tamanho da fonte se necessário */
+        line-height: 1.4; /* Ajuste de line-height se necessário */
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Sombra sutil para legibilidade */
     }
 
     .login-panel-right {
@@ -362,4 +407,3 @@ body, html {
         padding: 0 10px; /* Inner padding for forms */
     }
 }
-
