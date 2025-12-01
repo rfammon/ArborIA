@@ -31,11 +31,19 @@ export async function loadFromSupabase() {
             return;
         }
 
-        utils.showToast(`Foram encontradas ${trees.length} árvores. Escolha uma opção.`, "success");
+        // [FIX] Transforma os dados do Supabase para o formato esperado pela UI local.
+        // A UI espera 'coordX' e 'coordY', mas o Supabase retorna 'longitude' e 'latitude'.
+        const transformedTrees = trees.map(tree => ({
+            ...tree,
+            coordX: tree.longitude,
+            coordY: tree.latitude,
+        }));
+
+        utils.showToast(`Foram encontradas ${transformedTrees.length} árvores. Escolha uma opção.`, "success");
 
         showDetailsModal(
             'Carregar Dados da Nuvem',
-            `<p>Foram encontradas <strong>${trees.length}</strong> árvores no servidor. Como deseja proceder?</p>
+            `<p>Foram encontradas <strong>${transformedTrees.length}</strong> árvores no servidor. Como deseja proceder?</p>
              <ul>
                 <li><strong>Mesclar:</strong> Adiciona as novas árvores e atualiza as existentes, mantendo as árvores locais que não estão no servidor.</li>
                 <li><strong>Substituir:</strong> Apaga todos os dados locais e os substitui pelos dados do servidor.</li>
@@ -45,7 +53,7 @@ export async function loadFromSupabase() {
                     text: 'Mesclar',
                     className: 'btn btn-secondary',
                     onClick: () => {
-                        applyTreeChanges(trees, 'merge');
+                        applyTreeChanges(transformedTrees, 'merge');
                         TableUI.render();
                         mapUI.updateMapData(true);
                         utils.showToast('Dados mesclados com sucesso!', 'success');
@@ -55,7 +63,7 @@ export async function loadFromSupabase() {
                     text: 'Substituir',
                     className: 'btn btn-primary',
                     onClick: () => {
-                        applyTreeChanges(trees, 'replace');
+                        applyTreeChanges(transformedTrees, 'replace');
                         TableUI.render();
                         mapUI.updateMapData(true);
                         utils.showToast('Dados substituídos com sucesso!', 'success');

@@ -328,22 +328,27 @@ export const TableUI = {
             // Ações da tabela de desktop
             const actionBtn = target.closest('.action-btn-group .action-btn');
             if (actionBtn) {
-                const id = parseInt(actionBtn.dataset.id, 10);
-                if (isNaN(id)) return;
+                const id = actionBtn.dataset.id; // ID pode ser número (local) ou UUID (string, supabase)
+                if (!id) return;
+
+                // Encontra a árvore no estado usando comparação solta para lidar com tipos mistos
+                const tree = State.registeredTrees.find(t => t.id == id);
+                if (!tree) return;
+                
+                const treeId = tree.id; // Usa o ID real da árvore encontrada, preservando o tipo
 
                 if (actionBtn.classList.contains('btn-map')) {
-                    features.handleZoomToPoint(id);
+                    features.handleZoomToPoint(treeId);
                 } else if (actionBtn.classList.contains('btn-details')) {
-                    this.showTreeDetailsModal(id);
+                    this.showTreeDetailsModal(treeId);
                 } else if (actionBtn.classList.contains('btn-pdf')) {
-                    const tree = State.registeredTrees.find(t => t.id === id);
-                    if (tree) generateIndividualReport(tree);
+                    generateIndividualReport(tree); // Passa a árvore inteira
                 } else if (actionBtn.classList.contains('btn-edit')) {
-                    features.handleEditTree(id);
+                    features.handleEditTree(treeId);
                 } else if (actionBtn.classList.contains('btn-delete')) {
-                    showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${id}?`, () => features.handleDeleteTree(id));
+                    showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${treeId}?`, () => features.handleDeleteTree(treeId));
                 } else if (actionBtn.classList.contains('btn-photo')) {
-                    getImageFromDB(id, blob => {
+                    getImageFromDB(treeId, blob => {
                         if (blob) openPhotoViewer(URL.createObjectURL(blob));
                     });
                 }
@@ -353,9 +358,12 @@ export const TableUI = {
             // Clique na lista de mobile
             const listItem = target.closest('.tree-card');
             if (listItem) {
-                const treeId = parseInt(listItem.dataset.id, 10);
-                if (!isNaN(treeId)) {
-                    this.showTreeDetailsModal(treeId);
+                const id = listItem.dataset.id;
+                if (!id) return;
+
+                const tree = State.registeredTrees.find(t => t.id == id);
+                if (tree) {
+                    this.showTreeDetailsModal(tree.id);
                 }
             }
         };

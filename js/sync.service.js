@@ -145,10 +145,17 @@ export const SyncService = {
                     
                     // Se não existe localmente, ou se a remota é mais nova
                     if (!localVersion || new Date(remoteTree.updated_at) > new Date(localVersion.updated_at || 0)) {
-                        treeMap.set(String(remoteTree.id), { 
-                            ...remoteTree, 
-                            needSync: false 
-                        });
+                        
+                        // [DIAGNOSTIC-FIX] Transforma o dado remoto para o formato local esperado.
+                        // O Supabase armazena 'longitude' e 'latitude', mas a UI espera 'coordX' e 'coordY'.
+                        const localFormattedTree = {
+                            ...remoteTree,
+                            coordX: remoteTree.longitude, // Mapeia longitude -> coordX
+                            coordY: remoteTree.latitude,  // Mapeia latitude -> coordY
+                            needSync: false
+                        };
+                        
+                        treeMap.set(String(remoteTree.id), localFormattedTree);
                         downloadCount++;
                     }
                 });
