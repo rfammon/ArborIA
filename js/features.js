@@ -417,7 +417,7 @@ export async function handleAddTreeSubmit(event) {
             num = parseFloat(num.toFixed(6));
 
             // 2. Limitar o valor absoluto para ser menor que 1000
-            if (Math.abs(num) >= 100000) {
+            if (Math.abs(num) >= 10000000) {
                 console.warn(`Atenção: O valor ${coordValue} excede o limite de 100000. Ajustando.`);
                 num = num > 0 ? 999.999999 : -999.999999;
             }
