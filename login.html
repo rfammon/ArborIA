@@ -51,7 +51,33 @@
                         <i class="fa-solid fa-user-secret"></i>
                         Entrar como Visitante
                     </button>
+                    <button type="button" id="show-register-btn" class="login-btn secondary-btn">CRIAR CONTA</button>
                 </form>
+            </div>
+
+            <!-- Formulário de Registro (inicialmente oculto) -->
+            <div class="register-form-container" style="display: none;">
+                <h2>Crie sua Conta</h2>
+                <form action="#" id="register-form">
+                    <div class="input-group">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="register-email" placeholder="E-mail" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="register-password" placeholder="Senha" required>
+                        <i class="fa-solid fa-eye-slash" id="toggleRegisterPassword"></i>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="register-confirm-password" placeholder="Confirmar Senha" required>
+                        <i class="fa-solid fa-eye-slash" id="toggleRegisterConfirmPassword"></i>
+                    </div>
+                    <div id="register-error-msg" class="auth-error-msg" style="display: none; color: red; margin-bottom: 15px;"></div>
+                    <button type="submit" id="register-btn" class="login-btn">REGISTRAR</button>
+                    <button type="button" id="show-login-btn" class="login-btn secondary-btn">VOLTAR AO LOGIN</button>
+                </form>
+            </div>
             </div>
         </div>
     </div>

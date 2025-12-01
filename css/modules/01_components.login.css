@@ -220,6 +220,63 @@ body, html {
     border-color: #ccc;
 }
 
+.login-form-container .secondary-btn {
+    background-color: var(--teal-light); /* Uma cor diferente para o botão secundário */
+    box-shadow: 0 4px 15px rgba(0, 137, 123, 0.4);
+}
+
+.login-form-container .secondary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 137, 123, 0.5);
+}
+
+.register-form-container {
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+}
+
+.register-form-container h2 {
+    color: var(--navy-dark);
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 30px;
+}
+
+.register-form-container .input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.register-form-container .input-group i {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 20px;
+    color: var(--grey-dark);
+}
+
+.register-form-container .input-group input {
+    width: 100%;
+    padding: 15px 20px 15px 50px; /* Espaço para o ícone */
+    border: 1px solid var(--grey-light);
+    border-radius: 999px; /* rounded-full */
+    font-size: 16px;
+    color: var(--grey-dark);
+    box-sizing: border-box; /* Garante que padding não afete a largura total */
+}
+
+.register-form-container .input-group input::placeholder {
+    color: var(--grey-dark);
+    opacity: 0.7;
+}
+
+.register-form-container .auth-error-msg {
+    color: red;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
 
 /* Responsividade */
 @media (max-width: 900px) {
