@@ -33,13 +33,15 @@ body, html {
     color: var(--white);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* Alinha o conteúdo 'brand-content' ao topo */
     padding: 40px;
+    position: relative; /* Para positioning de elementos internos se necessário */
 }
 
 .brand-content {
     text-align: left;
     max-width: 400px;
+    padding-top: 30px; /* Adiciona um padding no topo para afastar do limite */
 }
 
 .brand-content .logo {
@@ -51,12 +53,14 @@ body, html {
 
 .brand-content .logo i {
     font-size: 48px;
+    color: var(--cyan-vibrant); /* Cor azul para o ícone */
 }
 
 .brand-content .logo h1 {
     font-size: 48px;
     font-weight: 700;
     margin: 0;
+    color: var(--teal-dark); /* Cor verde para o nome */
 }
 
 .brand-content .tagline {
@@ -280,16 +284,82 @@ body, html {
 
 /* Responsividade */
 @media (max-width: 900px) {
+    body, html {
+        overflow-x: hidden; /* Prevent horizontal scroll */
+        overflow-y: auto; /* Allow vertical scroll for the entire page */
+    }
+
     .login-container {
         flex-direction: column;
+        height: auto; /* Allow content to dictate height */
+        min-height: 100vh; /* Ensure it covers full viewport initially */
+        position: relative; /* For absolute positioning of children */
     }
 
-    .login-panel-left, .login-panel-right {
-        flex: 1;
-        min-height: 50vh; /* Garante que cada painel tenha uma altura mínima */
+    .login-panel-left {
+        flex: none; /* Remove flex sizing */
+        width: 100%;
+        height: 65vh; /* Gradient takes up upper part */
+        min-height: 300px; /* Minimum height for gradient */
+        position: sticky; /* Make it sticky */
+        top: 0;
+        z-index: 1; /* Ensure it's behind the white panel */
+        /* Ensure content is centered even on mobile */
+        display: flex;
+        flex-direction: column; /* Stack content vertically */
+        justify-content: center; /* Still center horizontally for brand-content */
+        align-items: flex-start; /* Aligns content to the top */
+        padding: 20px; /* Adjust padding for mobile */
     }
 
-    body, html {
-        overflow: auto; /* Permite rolagem em telas menores */
+    .brand-content {
+        max-width: 90%; /* Adjust for smaller screens */
+        text-align: center; /* Center brand content */
+        margin: 0 auto; /* Keep horizontal centering, remove vertical auto margin */
+    }
+
+    .brand-content .logo h1 {
+        font-size: 40px; /* Smaller logo title */
+    }
+
+    .brand-content .tagline {
+        font-size: 18px; /* Smaller tagline */
+    }
+
+    .brand-content .feature-list li {
+        justify-content: center; /* Center feature list items */
+    }
+
+    .login-panel-right {
+        flex: none; /* Remove flex sizing */
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        min-height: 50vh; /* Start partially covering gradient */
+        background-color: var(--white);
+        border-top-left-radius: 30px; /* Rounded top corners */
+        border-top-right-radius: 30px;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3); /* More prominent shadow */
+        z-index: 2; /* Ensure it's above the gradient */
+        transform: translateY(20%); /* Start slightly lower, adjust based on content */
+        transition: transform 0.4s ease-out; /* Smooth transition for slide up */
+        padding: 40px 20px; /* Adjust padding for mobile */
+        box-sizing: border-box; /* Include padding in width/height */
+        overflow-y: auto; /* Allow scrolling inside the white panel if content is too long */
+        max-height: 90vh; /* Prevent it from taking up entire screen on scroll */
+    }
+
+    .mobile-scroll-spacer {
+        height: 40vh; /* This creates the scroll space */
+        width: 100%;
+        flex-shrink: 0; /* Prevents it from shrinking */
+    }
+
+    .login-form-container, .register-form-container {
+        max-width: 100%; /* Forms take full width within panel-right */
+        padding: 0 10px; /* Inner padding for forms */
     }
 }
+

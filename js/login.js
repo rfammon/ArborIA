@@ -3,6 +3,21 @@ import { ApiService } from './supabase-client.js';
 import { clearImageDB } from './database.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Utility function for throttling
+    const throttle = (func, limit) => {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        };
+    };
+
     // Login Elements
     const loginForm = document.querySelector('.login-form-container form');
     const loginEmailInput = document.querySelector('input[type="email"]');
@@ -190,4 +205,81 @@ document.addEventListener('DOMContentLoaded', () => {
             this.classList.toggle('fa-eye-slash');
         });
     }
+
+    // --- Mobile Scroll Animation (white panel over gradient) ---
+    const isMobile = window.matchMedia('(max-width: 900px)');
+    const loginPanelRight = document.querySelector('.login-panel-right');
+    const loginPanelLeft = document.querySelector('.login-panel-left');
+    const loginContainer = document.querySelector('.login-container');
+
+    // Declare handleScroll and initialTranslateOffset in a scope accessible by both branches
+    let initialTranslateOffset = 0; 
+    let handleScroll = () => {}; // Default empty function
+    let throttledHandleScroll; // Declare variable for the throttled function
+
+    function applyMobileScrollAnimation() {
+        if (isMobile.matches && loginPanelRight && loginPanelLeft && loginContainer) {
+            // Calculate initialTranslateOffset only when mobile
+            initialTranslateOffset = loginPanelRight.clientHeight * 0.20; 
+
+            handleScroll = () => { // Assign the actual function when mobile
+                const scrollY = window.scrollY;
+                let newTranslateY = initialTranslateOffset - scrollY; 
+
+                newTranslateY = Math.max(0, newTranslateY);
+                newTranslateY = Math.min(initialTranslateOffset, newTranslateY);
+
+                loginPanelRight.style.transform = `translateY(${newTranslateY}px)`;
+
+                const parallaxY = scrollY * -0.3; 
+                const clampedParallaxY = Math.max(-50, Math.min(0, parallaxY)); 
+                loginPanelLeft.style.transform = `translateY(${clampedParallaxY}px)`;
+            };
+
+            // Assign the throttled version for the event listener
+            throttledHandleScroll = throttle(handleScroll, 100); 
+            window.addEventListener('scroll', throttledHandleScroll);
+            handleScroll(); // Initial call to set position immediately
+
+        } else {
+            // Remove event listener if not mobile (ensuring throttledHandleScroll is defined)
+            if (throttledHandleScroll) { // Only attempt to remove if it was added
+                window.removeEventListener('scroll', throttledHandleScroll);
+            }
+
+            // Reset styles
+            if (loginPanelRight) {
+                loginPanelRight.style.transform = ''; // Reset transform
+                loginPanelRight.style.position = ''; // Reset position
+                loginPanelRight.style.bottom = '';
+                loginPanelRight.style.left = '';
+                loginPanelRight.style.right = '';
+                loginPanelRight.style.width = '';
+                loginPanelRight.style.minHeight = '';
+                loginPanelRight.style.boxShadow = '';
+                loginPanelRight.style.zIndex = '';
+                loginPanelRight.style.padding = '';
+                loginPanelRight.style.overflowY = '';
+                loginPanelRight.style.maxHeight = '';
+            }
+            if (loginPanelLeft) {
+                loginPanelLeft.style.position = ''; // Reset position
+                loginPanelLeft.style.top = '';
+                loginPanelLeft.style.zIndex = '';
+                loginPanelLeft.style.height = ''; // Reset height
+                loginPanelLeft.style.minHeight = ''; // Reset minHeight
+                loginPanelLeft.style.transform = ''; // Reset parallax transform
+            }
+            if (loginContainer) {
+                loginContainer.style.height = ''; // Reset height
+                loginContainer.style.minHeight = ''; // Reset minHeight
+                loginContainer.style.position = ''; // Reset position
+            }
+        }
+    }
+
+    // Run on load and whenever media query status changes
+    isMobile.addEventListener('change', applyMobileScrollAnimation);
+    applyMobileScrollAnimation(); // Initial call
 });
+
