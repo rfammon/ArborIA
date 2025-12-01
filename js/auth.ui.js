@@ -107,7 +107,7 @@ export const AuthUI = {
             // Estado: LOGADO
             this.elements.userDisplay.innerHTML = `
                 <div class="user-controls-group">
-                    <button id="btn-sync-data" class="btn btn-primary btn-sm" title="Sincronizar Dados">
+                    <button id="btn-open-sync-modal" class="btn btn-primary btn-sm" title="Gerenciar Dados e Sincronização">
                         <i class="fas fa-sync-alt"></i>
                     </button>
                     <span class="user-email-span"><i class="fas fa-user-circle"></i> ${user.email.split('@')[0]}</span>
@@ -118,6 +118,8 @@ export const AuthUI = {
             `;
             
             document.getElementById('btn-logout').addEventListener('click', () => this.handleLogout());
+            // O listener para 'btn-open-sync-modal' já está em main.js, então não precisamos adicioná-lo aqui.
+            // Apenas disparamos o evento para que main.js saiba que a UI foi atualizada.
             document.dispatchEvent(new CustomEvent('auth-ui-updated', { detail: { user } }));
 
         } else { // Simplificado para cobrir tanto user.isGuest quanto null (nenhum usuário logado)
@@ -231,6 +233,7 @@ export const AuthUI = {
         // **NOVO**: Limpa dados salvos no LocalStorage
         localStorage.removeItem('manualPodaData'); // STORAGE_KEY do js/state.js
         localStorage.removeItem('manualPodaActiveTab'); // ACTIVE_TAB_KEY do js/state.js
+        localStorage.removeItem('lastSyncTimestamp'); // Adicionado para garantir sincronização completa no próximo login
         // Adicione outras chaves de localStorage se houver dados sensíveis do usuário aqui.
 
         await ApiService.logout();

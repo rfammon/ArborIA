@@ -184,18 +184,32 @@ export function getAllImagesFromDB() {
 }
 
 /**
- * Limpa todo o banco de imagens (Reset).
+ * [NOVO] Deleta completamente o banco de dados IndexedDB.
+ * Usado no login para garantir que não haja dados de visitante.
  */
 export function clearImageDB() {
      return new Promise((resolve, reject) => {
-        if (!dbInstance) {
-            return reject(new Error("Banco de dados fechado."));
+        // É crucial fechar qualquer conexão existente antes de tentar deletar.
+        if (dbInstance) {
+            dbInstance.close();
+            dbInstance = null; // Anula a instância para evitar uso de conexão fechada
         }
-        const transaction = dbInstance.transaction([STORE_NAME], "readwrite");
-        const objectStore = transaction.objectStore(STORE_NAME);
-        const request = objectStore.clear();
 
-        request.onsuccess = () => resolve();
-        request.onerror = (e) => reject(e.target.error);
+        const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+
+        deleteRequest.onsuccess = () => {
+            resolve();
+        };
+
+        deleteRequest.onerror = (event) => {
+            console.error(`Erro ao deletar o banco de dados ${DB_NAME}:`, event.target.error);
+            reject(new Error("Não foi possível limpar os dados da sessão anterior. O login foi abortado."));
+        };
+
+        deleteRequest.onblocked = (event) => {
+            // Isso acontece se o DB estiver aberto em outra aba do navegador.
+            console.warn(`A exclusão do banco de dados ${DB_NAME} está bloqueada.`);
+            reject(new Error("A limpeza de dados foi bloqueada. Por favor, feche todas as outras abas deste aplicativo e tente novamente."));
+        };
     });
 }

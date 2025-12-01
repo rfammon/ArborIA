@@ -19,6 +19,12 @@ async function checkSupabaseConnection() {
 }
 
 function initSupabase() {
+    // Only initialize if _supabase is not already set
+    if (_supabase) {
+        console.warn("Supabase client already initialized. Skipping re-initialization.");
+        return;
+    }
+
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
     try {
         _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -184,5 +190,38 @@ export const ApiService = {
             .upsert(payload)
             .select();
         return { data, error };
+    },
+
+    getRealtimeSubscription(tableName, handlers) {
+        if (!_supabase) return null;
+        
+        const channel = _supabase.channel(`public:${tableName}`);
+        
+        channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: tableName }, payload => {
+            if (handlers.INSERT) handlers.INSERT(payload);
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: tableName }, payload => {
+            if (handlers.UPDATE) handlers.UPDATE(payload);
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: tableName }, payload => {
+            if (handlers.DELETE) handlers.DELETE(payload);
+        })
+        .subscribe(status => {
+            if (status === 'SUBSCRIBED') {
+                console.log(`Realtime channel subscribed for table: ${tableName}`);
+            } else if (status === 'CHANNEL_ERROR') {
+                console.error(`Realtime channel error for table: ${tableName}`);
+            } else if (status === 'TIMED_OUT') {
+                console.warn(`Realtime channel timed out for table: ${tableName}`);
+            }
+        });
+
+        return channel;
+    },
+
+    async removeRealtimeSubscription(subscription) {
+        if (subscription) {
+            await _supabase.removeChannel(subscription);
+        }
     }
 };

@@ -1,5 +1,6 @@
 // js/login.js
 import { ApiService } from './supabase-client.js';
+import { clearImageDB } from './database.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.querySelector('form');
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.innerHTML = 'Processando...';
 
             try {
+                // 1. Autenticar usuário
                 const { data, error } = await ApiService.login(email, password);
 
                 if (error) {
@@ -39,14 +41,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (data.user) {
-                    // Redirect to the main application on successful login
+                    // 2. Limpar o IndexedDB ANTES de redirecionar
+                    await clearImageDB();
+                    
+                    // 3. Redirecionar para a aplicação principal
                     window.location.replace('index.html');
                 } else {
                     throw new Error('Usuário não encontrado após o login.');
                 }
 
             } catch (error) {
-                console.error('Login failed:', error);
+                console.error('Login ou processo de limpeza falhou:', error);
                 if (errorMsgElement) {
                     errorMsgElement.textContent = `Erro: ${error.message}`;
                     errorMsgElement.style.display = 'block';

@@ -111,6 +111,38 @@ export function saveDataToStorage() {
 }
 
 /**
+ * Aplica um novo conjunto de dados de árvores ao estado local.
+ * @param {Array} newTrees - A nova lista de árvores.
+ * @param {string} mergeOption - 'merge' para mesclar ou 'replace' para substituir.
+ */
+export function applyTreeChanges(newTrees, mergeOption) {
+    if (mergeOption === 'replace') {
+        setRegisteredTrees(newTrees);
+    } else if (mergeOption === 'merge') {
+        const existingTrees = [...registeredTrees];
+        const newTreesMap = new Map(newTrees.map(tree => [tree.id, tree]));
+        
+        const mergedTrees = existingTrees.map(existingTree => {
+            if (newTreesMap.has(existingTree.id)) {
+                // Se o ID existe nos novos dados, substitui pelo novo
+                const newTree = newTreesMap.get(existingTree.id);
+                newTreesMap.delete(existingTree.id); // Remove para não adicioná-lo duas vezes
+                return newTree;
+            }
+            return existingTree; // Mantém o antigo se não houver conflito
+        });
+
+        // Adiciona as árvores restantes do newTreesMap que não existiam no original
+        mergedTrees.push(...newTreesMap.values());
+        
+        setRegisteredTrees(mergedTrees);
+    }
+
+    saveDataToStorage();
+    console.log(`Dados aplicados com a opção: ${mergeOption}. Total de árvores: ${registeredTrees.length}`);
+}
+
+/**
  * Carrega os dados do LocalStorage para a memória.
  */
 export function loadDataFromStorage() {
@@ -146,6 +178,40 @@ export function getActiveTab() {
     return null;
   }
 }
+
+/**
+ * Adiciona uma única árvore ao estado.
+ * @param {object} tree - O objeto da árvore a ser adicionado.
+ */
+export function addTree(tree) {
+    registeredTrees.push(tree);
+    saveDataToStorage();
+}
+
+/**
+ * Atualiza uma única árvore no estado.
+ * @param {object} updatedTree - O objeto da árvore com os dados atualizados.
+ */
+export function updateTree(updatedTree) {
+    const index = registeredTrees.findIndex(t => t.id === updatedTree.id);
+    if (index !== -1) {
+        registeredTrees[index] = updatedTree;
+        saveDataToStorage();
+    }
+}
+
+/**
+ * Deleta uma árvore do estado pelo seu ID.
+ * @param {number | string} treeId - O ID da árvore a ser deletada.
+ */
+export function deleteTreeById(treeId) {
+    const initialLength = registeredTrees.length;
+    registeredTrees = registeredTrees.filter(t => t.id !== treeId);
+    if (registeredTrees.length < initialLength) {
+        saveDataToStorage();
+    }
+}
+
 
 /**
  * [NOVO] Realiza uma limpeza completa do estado da aplicação em memória.

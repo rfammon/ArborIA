@@ -5,6 +5,7 @@ import { UI } from './ui.js';
 import { TooltipUI } from './tooltip.ui.js';
 import { TableUI } from './table.ui.js';
 import { AuthUI } from './auth.ui.js'; 
+import { SyncUI } from './sync.ui.js';
 import { ApiService } from './supabase-client.js';
 import { SyncService } from './sync.service.js'; 
 
@@ -287,57 +288,32 @@ function setupActionButtons() {
         removePhotoBtn.addEventListener('click', features.clearPhotoPreview);
     }
     
-    // NOTA: A lógica do botão sync foi movida para attachSyncListener()
-    // para ser chamada dinamicamente quando o AuthUI atualizar a interface.
+    // Anexa o listener ao botão de sync. Chamado aqui para o caso de o botão já existir no DOM.
+    attachSyncModalListener();
 }
 
-// === 4. LÓGICA DE SINCRONIZAÇÃO DINÂMICA ===
-function attachSyncListener() {
-    const btnSync = document.getElementById('btn-sync-data');
-    if (!btnSync) return; // Se não estiver logado, o botão não existe
-
-    // Remove listeners antigos para evitar duplicação (cloneNode hack ou apenas cuidado)
-    const newBtn = btnSync.cloneNode(true);
-    btnSync.parentNode.replaceChild(newBtn, btnSync);
-
-    newBtn.addEventListener('click', async () => {
-        const session = await ApiService.getSession();
-        if (!session) {
-            utils.showToast("Sessão expirada. Faça login novamente.", "error");
-            return;
-        }
-
-        const icon = newBtn.querySelector('i');
-        if(icon) icon.classList.add('rotating');
+/**
+ * Anexa o event listener para o botão que abre o modal de sincronização.
+ * Precisa ser chamado sempre que a UI de autenticação é atualizada.
+ */
+function attachSyncModalListener() {
+    const btnOpenSync = document.getElementById('btn-open-sync-modal');
+    if (btnOpenSync) {
+        // Remove listener antigo para evitar duplicatas, caso esta função seja chamada várias vezes
+        const newBtn = btnOpenSync.cloneNode(true);
+        btnOpenSync.parentNode.replaceChild(newBtn, btnOpenSync);
         
-        try {
-            utils.showToast("Sincronizando...", "info");
-            
-            const result = await SyncService.synchronize(state.registeredTrees);
-            
-            if (result.success) {
-                state.setRegisteredTrees(result.updatedTrees);
-                TableUI.render();
-                mapUI.updateMapData(true);
-                utils.showToast(`Concluído! (+${result.stats.downloaded} / ^${result.stats.uploaded})`, "success");
-            } else {
-                throw new Error(result.error);
-            }
-        } catch (error) {
-            console.error("Sync Error:", error);
-            utils.showToast("Erro na sincronização.", "error");
-        } finally {
-            if(icon) icon.classList.remove('rotating');
-        }
-    });
+        newBtn.addEventListener('click', () => {
+            SyncUI.showModal();
+        });
+    }
 }
+
 
 // Escuta o evento disparado pelo AuthUI quando o usuário loga/desloga
 document.addEventListener('auth-ui-updated', (e) => {
-    // Se usuário logou (e.detail.user existe), o botão sync deve estar lá
-    if (e.detail && e.detail.user) {
-        attachSyncListener();
-    }
+    // Anexa o listener novamente pois o botão de sync pode ter sido recriado no DOM.
+    attachSyncModalListener();
 });
 
 // === 5. ATALHOS ===
@@ -425,6 +401,7 @@ async function initApp() {
     try {
         UI.init();
         TooltipUI.init();
+        SyncUI.init();
     } catch (e) {
         console.error("UI Init Error:", e);
     }
