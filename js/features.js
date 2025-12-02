@@ -8,6 +8,7 @@ import * as utils from './utils.js';
 import * as db from './database.js';
 import { TableUI } from './table.ui.js';
 import { ApiService } from './supabase-client.js';
+import { RealtimeService } from './realtime.service.js';
 
 // ============================================================ 
 // NOVA LÓGICA DE RISCO (METODOLOGIA TRAQ/ISA)
@@ -460,19 +461,21 @@ export async function handleAddTreeSubmit(event) {
   };
 
   // --- [NEW] SUPABASE INTEGRATION ---
-  try {
-      // FIX: Changed saveTree to upsertTree to match Supabase Client API
-      const { data: supabaseData, error: supabaseError } = await ApiService.upsertTree(treeData);
-      if (supabaseError) {
-          throw new Error(supabaseError.message);
-      }
-      utils.showToast("Dados sincronizados com o servidor.", "success");
-      if (supabaseData && supabaseData.length > 0) {
-          treeData.id_supabase = supabaseData[0].id;
-      }
-  } catch (e) {
-      console.error("Falha ao salvar no Supabase:", e);
-      utils.showToast("Falha ao sincronizar. Salvando localmente.", "error");
+  if (RealtimeService.isSubscribed) {
+    try {
+        // FIX: Changed saveTree to upsertTree to match Supabase Client API
+        const { data: supabaseData, error: supabaseError } = await ApiService.upsertTree(treeData);
+        if (supabaseError) {
+            throw new Error(supabaseError.message);
+        }
+        utils.showToast("Dados sincronizados com o servidor.", "success");
+        if (supabaseData && supabaseData.length > 0) {
+            treeData.id_supabase = supabaseData[0].id;
+        }
+    } catch (e) {
+        console.error("Falha ao salvar no Supabase:", e);
+        utils.showToast("Falha ao sincronizar. Salvando localmente.", "error");
+    }
   }
   // --- END SUPABASE INTEGRATION ---
 

@@ -19,7 +19,6 @@ export async function loadFromSupabase() {
     }
 
     try {
-        // Corrected to use the right function name from ApiService
         const { data: trees, error } = await ApiService.getTrees();
 
         if (error) {
@@ -32,11 +31,22 @@ export async function loadFromSupabase() {
         }
 
         // [FIX] Transforma os dados do Supabase para o formato esperado pela UI local.
-        // A UI espera 'coordX' e 'coordY', mas o Supabase retorna 'longitude' e 'latitude'.
+        // Mapeia snake_case (DB) para camelCase (App) e garante persistência de campos de risco.
         const transformedTrees = trees.map(tree => ({
             ...tree,
+            // Coordenadas
             coordX: tree.longitude,
             coordY: tree.latitude,
+            // Dados Dendrométricos
+            altura: tree.altura || null,
+            // Mapeamento Explícito de Campos de Risco
+            riskFactors: tree.riskfactors || tree.riskFactors || [], // Garante array
+            targetCategory: tree.targetcategory || tree.targetCategory,
+            mitigation: tree.mitigation,
+            riskLevel: tree.risklevel || tree.riskLevel,
+            residualRisk: tree.residualrisk || tree.residualRisk,
+            utmZoneNum: tree.utmzonenum,
+            utmZoneLetter: tree.utmzoneletter
         }));
 
         utils.showToast(`Foram encontradas ${transformedTrees.length} árvores. Escolha uma opção.`, "success");
@@ -102,16 +112,50 @@ export async function saveToSupabase() {
         async () => {
             utils.showToast("Enviando dados... Por favor, aguarde.", "info");
             try {
-                const upsertPromises = localTrees.map(tree => ApiService.upsertTree(tree));
-                const results = await Promise.all(upsertPromises);
+                // Prepara os dados. A conversão de chaves para snake_case é feita pelo ApiService.upsertTrees
+                // mas garantimos que as propriedades necessárias estejam presentes no objeto.
+                const treesToUpsert = localTrees.map(tree => {
+                    const { id, ...treeData } = tree;
+                    
+                    const payload = { 
+                        ...treeData,
+                        // Assegura que propriedades vitais estejam no payload
+                        riskFactors: tree.riskFactors,
+                        targetCategory: tree.targetCategory,
+                        mitigation: tree.mitigation
+                    };
 
-                const errors = results.filter(res => res.error);
+                    // Se ID for local, remove para que o Supabase crie um novo
+                    if (typeof id === 'number' || String(id).startsWith('local_')) {
+                        return { ...payload, longitude: tree.coordX, latitude: tree.coordY };
+                    }
+                    // Se ID for UUID, mantém para update
+                    return { ...tree, ...payload, longitude: tree.coordX, latitude: tree.coordY };
+                });
 
-                if (errors.length > 0) {
-                    throw new Error(`Falha ao salvar ${errors.length} registros. Primeira falha: ${errors[0].error.message}`);
+                const { data: upsertedTrees, error } = await ApiService.upsertTrees(treesToUpsert);
+
+                if (error) {
+                    throw new Error(error.message);
                 }
 
-                utils.showToast(`${results.length} registros foram salvos com sucesso!`, "success");
+                // Atualiza estado local com os dados retornados (que agora têm UUIDs definitivos)
+                if (upsertedTrees && upsertedTrees.length > 0) {
+                    const transformedUpsertedTrees = upsertedTrees.map(tree => ({
+                        ...tree,
+                        coordX: tree.longitude,
+                        coordY: tree.latitude,
+                        riskFactors: tree.riskfactors || tree.riskFactors,
+                        targetCategory: tree.targetcategory || tree.targetCategory,
+                        mitigation: tree.mitigation,
+                        altura: tree.altura
+                    }));
+                    applyTreeChanges(transformedUpsertedTrees, 'merge');
+                    TableUI.render();
+                    mapUI.updateMapData(true);
+                }
+
+                utils.showToast(`${upsertedTrees.length} registros foram salvos com sucesso!`, "success");
             } catch (e) {
                 console.error("Erro ao salvar no Supabase:", e);
                 utils.showToast(e.message || "Ocorreu um erro ao salvar os dados.", "error");

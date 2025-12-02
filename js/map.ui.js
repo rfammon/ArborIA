@@ -88,8 +88,9 @@ function showMapInfoBox(tree) {
   infoBox.appendChild(pRisk);
   
   // Altura info
+  const alturaFormatted = !isNaN(parseFloat(tree.altura)) ? `${parseFloat(tree.altura).toFixed(1)} m` : 'N/A';
   const pHeight = document.createElement('p');
-  pHeight.innerHTML = `<strong>Altura (Raio):</strong> ${tree.altura || '?'} m`;
+  pHeight.innerHTML = `<strong>Altura (Raio):</strong> ${alturaFormatted}`;
   pHeight.style.fontSize = '0.85rem';
   pHeight.style.color = '#555';
   infoBox.appendChild(pHeight);
@@ -160,7 +161,7 @@ function renderMapMarkers() {
       // Lógica de Raio Real (Fall Zone)
       // Se tiver altura válida, usa a altura como raio. Senão, usa o padrão do risco.
       const treeHeight = parseFloat(tree.altura);
-      const radiusInMeters = (treeHeight > 0) ? treeHeight : defaultRadius;
+      const radiusInMeters = (!isNaN(treeHeight) && treeHeight > 0) ? treeHeight : defaultRadius;
 
       // [MUDANÇA] L.circle usa metros (Geográfico), L.circleMarker usa pixels (Tela)
       // Usamos L.circle para representar a projeção real da copa/queda no terreno.

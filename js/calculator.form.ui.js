@@ -1,9 +1,12 @@
-// js/calculator.form.ui.js (NOVO v24.0)
+// js/calculator.form.ui.js (NOVO v24.2 - Fix Populate)
 // Gerencia o formulário de registro (desktop e mobile) e os controles de foto.
 
 // === 1. IMPORTAÇÕES ===
 import * as state from './state.js';
 import * as features from './features.js';
+// [PATCH] Importa a função corrigida
+import { handleAddTreeSubmit as handleAddTreeSubmitPatch } from './features_patch.js';
+
 import { getImageFromDB } from './database.js';
 import { showToast, optimizeImage, showInputError, clearInputError } from './utils.js?v=26.3';
 // [NOVO] Importa funções da tabela para atualizar a UI no submit
@@ -117,15 +120,44 @@ export function populateFormForEdit(tree) {
   features.clearPhotoPreview();
   _clearAllValidationErrors(form); // Limpa erros ao preencher o formulário para edição
 
-  // Preenche os campos de texto
+  // Preenche os campos de texto básicos
   document.getElementById('risk-data').value = tree.data;
   document.getElementById('risk-especie').value = tree.especie;
   document.getElementById('risk-local').value = tree.local;
   document.getElementById('risk-coord-x').value = tree.coordX;
   document.getElementById('risk-coord-y').value = tree.coordY;
+  
+  // Preenche o campo altura
+  const alturaInput = document.getElementById('risk-altura');
+  if (alturaInput) {
+      alturaInput.value = tree.altura || '';
+  }
+
   document.getElementById('risk-dap').value = tree.dap;
   document.getElementById('risk-avaliador').value = tree.avaliador;
   document.getElementById('risk-obs').value = tree.observacoes;
+
+  // [FIX] Preencher Taxa de Ocupação (Target Category)
+  if (tree.targetCategory) {
+      // Desktop Radio
+      const desktopRadio = document.querySelector(`input[name="target_category_desktop"][value="${tree.targetCategory}"]`);
+      if (desktopRadio) desktopRadio.checked = true;
+      
+      // Mobile Radio (se disponível na view atual)
+      const mobileRadio = document.querySelector(`input[name="target_category"][value="${tree.targetCategory}"]`);
+      if (mobileRadio) mobileRadio.checked = true;
+  }
+
+  // [FIX] Preencher Mitigação (Select)
+  if (tree.mitigation) {
+      // Desktop Select
+      const desktopSelect = document.getElementById('mitigation-action-desktop');
+      if (desktopSelect) desktopSelect.value = tree.mitigation;
+
+      // Mobile Select (se disponível na view atual)
+      const mobileSelect = document.getElementById('mitigation-action');
+      if (mobileSelect) mobileSelect.value = tree.mitigation;
+  }
 
   // Carrega a foto (se houver)
   if (tree.hasPhoto) {
@@ -145,10 +177,17 @@ export function populateFormForEdit(tree) {
     });
   }
 
-  // Marca os checkboxes
+  // Marca os checkboxes dos Fatores de Risco
+  // Garante compatibilidade se riskFactors for array (JSONB) ou objeto
+  const riskFactors = tree.riskFactors || [];
   const allCheckboxes = form.querySelectorAll('.risk-checkbox');
   allCheckboxes.forEach((cb, index) => {
-    cb.checked = (tree.riskFactors && tree.riskFactors[index] === 1) || false;
+    // Se for array simples [0, 1, 0...]
+    if (Array.isArray(riskFactors)) {
+         cb.checked = (riskFactors[index] === 1) || false;
+    } else {
+        cb.checked = false;
+    }
   });
 
   // Atualiza o status do GPS (para mostrar a zona da árvore)
@@ -200,7 +239,7 @@ function _setupFormListeners(form, isTouchDevice) {
   }
 
   // Listener de SUBMIT
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => { // [PATCH] Adicionado async
     event.preventDefault(); // Previne o submit padrão para fazer validação manual
     
     let isFormValid = true;
@@ -224,7 +263,8 @@ function _setupFormListeners(form, isTouchDevice) {
     }
 
     // Se o formulário é válido, prossegue com o submit
-    const result = features.handleAddTreeSubmit(event);
+    // [PATCH] Substituição da chamada original pela versão do patch
+    const result = await handleAddTreeSubmitPatch(event);
     if (!result || !result.success) return;
 
     // Ação de UI baseada no resultado

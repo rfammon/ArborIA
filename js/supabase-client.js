@@ -134,14 +134,68 @@ export const ApiService = {
             }
         });
 
-        // Se o ID for numérico (legado), não o envie para que o Supabase gere um UUID
-        if (dbPayload.id && !isNaN(Number(dbPayload.id))) {
+        // Se o ID for numérico (legado) ou "local_", não o envie para que o Supabase gere um UUID
+        if (dbPayload.id && (typeof dbPayload.id === 'number' || String(dbPayload.id).startsWith('local_'))) {
             delete dbPayload.id;
         }
 
         const { data, error } = await _supabase
             .from('arvores')
             .upsert(dbPayload)
+            .select();
+
+        return { data, error };
+    },
+
+    async upsertTrees(treesData) {
+        if (!_supabase) return { error: 'Offline' };
+        const user = await this.getUser();
+        if (!user) return { error: 'Usuário não logado' };
+
+        const payloads = treesData.map(treeData => {
+            const dbPayload = {
+                user_id: user.id,
+                id: treeData.id,
+                nome: treeData.nome || treeData.especie || 'Nome não especificado',
+                especie: treeData.especie,
+                data: treeData.data,
+                local: treeData.local,
+                avaliador: treeData.avaliador,
+                observacoes: treeData.observacoes,
+                dap: parseFloat(treeData.dap) || 0,
+                altura: parseFloat(treeData.altura) || 0,
+                latitude: parseFloat(treeData.coordY) || treeData.latitude || 0,
+                longitude: parseFloat(treeData.coordX) || treeData.longitude || 0,
+                pontuacao: parseInt(treeData.pontuacao) || 0,
+                utmzonenum: treeData.utmZoneNum,
+                utmzoneletter: treeData.utmZoneLetter,
+                risklevel: treeData.riskLevel,
+                residualrisk: treeData.residualRisk,
+                mitigation: treeData.mitigation,
+                targetcategory: treeData.targetCategory,
+                riskfactors: treeData.riskFactors,
+                hasphoto: treeData.hasPhoto,
+                risco: treeData.risco,
+                riscoclass: treeData.riscoClass,
+                updated_at: new Date().toISOString(),
+            };
+
+            // Clean undefined
+            Object.keys(dbPayload).forEach(key => {
+                if (dbPayload[key] === undefined) delete dbPayload[key];
+            });
+
+            // Handle local IDs (don't send them, let Supabase generate UUID)
+            if (dbPayload.id && (typeof dbPayload.id === 'number' || String(dbPayload.id).startsWith('local_'))) {
+                delete dbPayload.id;
+            }
+
+            return dbPayload;
+        });
+
+        const { data, error } = await _supabase
+            .from('arvores')
+            .upsert(payloads)
             .select();
 
         return { data, error };

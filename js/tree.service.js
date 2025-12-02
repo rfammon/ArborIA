@@ -22,8 +22,7 @@ export function clearPhotoPreview() {
     if (submitBtn) {
         submitBtn.innerHTML = '➕ Registrar Árvore';
     }
-    state.setEditingTreeId(null);
-
+    
     // Limpa Checkboxes da Tabela Oculta
     const form = document.getElementById('risk-calculator-form');
     if (form) form.reset();
@@ -108,13 +107,13 @@ export function handleAddTreeSubmit(event) {
     let resultTree;
 
     if (state.getEditingTreeId() === null) {
-        const newTreeId = state.getRegisteredTrees().length > 0 ? Math.max(...state.getRegisteredTrees().map(t => t.id)) + 1 : 1;
+        const newTreeId = `local_${Date.now()}`;
         resultTree = { ...treeData, id: newTreeId };
         if (resultTree.hasPhoto) db.saveImageToDB(resultTree.id, state.getCurrentTreePhoto());
         state.setRegisteredTrees([...state.getRegisteredTrees(), resultTree]);
         utils.showToast(`Árvore ID ${resultTree.id} salva!`, 'success');
     } else {
-        const idx = state.getRegisteredTrees().findIndex(t => t.id === state.getEditingTreeId());
+        const idx = state.getRegisteredTrees().findIndex(t => String(t.id) === String(state.getEditingTreeId()));
         if (idx === -1) return { success: false };
 
         resultTree = { ...treeData, id: state.getEditingTreeId() };
@@ -146,10 +145,10 @@ export function handleAddTreeSubmit(event) {
 }
 
 export function handleDeleteTree(id) {
-    const t = state.getRegisteredTrees().find(tree => tree.id === id);
+    const t = state.getRegisteredTrees().find(tree => String(tree.id) === String(id));
     if (t && t.hasPhoto) db.deleteImageFromDB(id);
 
-    const n = state.getRegisteredTrees().filter(tree => tree.id !== id);
+    const n = state.getRegisteredTrees().filter(tree => String(tree.id) !== String(id));
     state.setRegisteredTrees(n);
     state.saveDataToStorage();
     TableUI.render();
@@ -159,7 +158,7 @@ export function handleDeleteTree(id) {
 }
 
 export function handleEditTree(id) {
-    const t = state.getRegisteredTrees().find(tree => tree.id === id);
+    const t = state.getRegisteredTrees().find(tree => String(tree.id) === String(id));
     if (!t) { utils.showToast(`Erro ID ${id}.`, "error"); return null; }
 
     state.setEditingTreeId(id);

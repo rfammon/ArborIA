@@ -1,13 +1,16 @@
 /**
- * ARBORIA 2.0 - TABLE UI (V28.0 - Fixed Overflow & Toggle Logic)
+ * ARBORIA 2.0 - TABLE UI (V28.1 - Patch Applied for Delete)
  * Renderiza a tabela de resumo e gerencia ações de linha.
  */ 
 
 import * as State from './state.js';
-import * as features from './features.js'; // Importação correta
-import { showConfirmModal, openPhotoViewer, showDetailsModal } from './modal.ui.js'; // Adiciona showDetailsModal
+import * as features from './features.js'; 
+// [PATCH] Importa a função corrigida
+import { handleDeleteTree as handleDeleteTreePatch } from './features_patch.js';
+
+import { showConfirmModal, openPhotoViewer, showDetailsModal } from './modal.ui.js'; 
 import { getImageFromDB } from './database.js';
-import { debounce } from './utils.js'; // Importa a função debounce
+import { debounce } from './utils.js'; 
 import { generateIndividualReport } from './pdf.generator.js';
 
 export const TableUI = {
@@ -179,6 +182,7 @@ export const TableUI = {
             const photoIcon = tree.hasPhoto ? '📷' : '';
             const dateSimple = tree.data ? tree.data.split('-').reverse().join('/') : '--/--';
 
+            const alturaFormatted = !isNaN(parseFloat(tree.altura)) ? `${parseFloat(tree.altura).toFixed(1)} m` : 'N/A';
             return `
                 <tr id="row-${tree.id}" class="${riskClass}">
                     <td class="col-id"><strong>${tree.displayId}</strong></td>
@@ -194,7 +198,7 @@ export const TableUI = {
                     </td>
                     
                     <td class="col-secondary">
-                        <div style="font-size:0.75rem;">D:${tree.dap} cm<br>H:${tree.altura} m</div>
+                        <div style="font-size:0.75rem;">D:${tree.dap} cm<br>H:${alturaFormatted}</div>
                     </td>
                     
                     <td style="font-size:0.85rem;">${tree.local}</td>
@@ -346,7 +350,8 @@ export const TableUI = {
                 } else if (actionBtn.classList.contains('btn-edit')) {
                     features.handleEditTree(treeId);
                 } else if (actionBtn.classList.contains('btn-delete')) {
-                    showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${treeId}?`, () => features.handleDeleteTree(treeId));
+                    // [PATCH] Substitui pela função do patch
+                    showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${treeId}?`, () => handleDeleteTreePatch(treeId));
                 } else if (actionBtn.classList.contains('btn-photo')) {
                     getImageFromDB(treeId, blob => {
                         if (blob) openPhotoViewer(URL.createObjectURL(blob));
@@ -410,12 +415,13 @@ export const TableUI = {
             .filter(Boolean)
             .join('');
 
+        const alturaFormatted = !isNaN(parseFloat(tree.altura)) ? `${parseFloat(tree.altura).toFixed(1)} m` : 'N/A';
         const content = `
             <div class="details-modal-grid">
                 <p><strong>Data:</strong> ${dateSimple}</p>
                 <p><strong>Local:</strong> ${tree.local || 'N/A'}</p>
                 <p><strong>DAP:</strong> ${tree.dap || 'N/A'} cm</p>
-                <p><strong>Altura:</strong> ${tree.altura || 'N/A'} m</p>
+                <p><strong>Altura:</strong> ${alturaFormatted}</p>
             </div>
 
             <div class="details-section">

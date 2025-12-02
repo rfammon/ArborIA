@@ -1,4 +1,4 @@
-// js/main.js (v2.8 - Robust Init & Sync Event Fix)
+// js/main.js (v2.9 - Patch Applied for CRUD)
 
 import * as state from './state.js';
 import { UI } from './ui.js'; 
@@ -10,6 +10,9 @@ import { ApiService } from './supabase-client.js';
 import { SyncService } from './sync.service.js'; 
 
 import * as features from './features.js';
+// [PATCH] Importa funções corrigidas
+import { handleAddTreeSubmit as handleAddTreeSubmitPatch } from './features_patch.js';
+
 import { initImageDB, getImageFromDB } from './database.js'; 
 import * as modalUI from './modal.ui.js'; 
 import * as mapUI from './map.ui.js'; 
@@ -165,7 +168,8 @@ function setupActionButtons() {
     const riskForm = document.getElementById('risk-calculator-form');
     if (riskForm) {
         riskForm.addEventListener('submit', async (e) => {
-            const result = await features.handleAddTreeSubmit(e); 
+            // [PATCH] Usa a função corrigida
+            const result = await handleAddTreeSubmitPatch(e); 
             if (result && result.success) {
                 TableUI.render(); 
                 mapUI.updateMapData(true); 
