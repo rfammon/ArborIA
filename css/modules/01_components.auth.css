@@ -9,6 +9,17 @@
     padding-right: 15px;
 }
 
+.user-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#btn-toggle-realtime.active {
+    background-color: #4CAF50; /* A green color */
+    color: white;
+}
+
 /* Botão de Auth (Logout, etc) - Adaptado para fundo CLARO */
 .btn-auth {
     background-color: transparent;

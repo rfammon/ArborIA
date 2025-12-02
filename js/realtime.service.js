@@ -5,41 +5,64 @@ import { addTree, updateTree, deleteTreeById } from './state.js';
 import { TableUI } from './table.ui.js';
 import * as mapUI from './map.ui.js';
 import * as utils from './utils.js';
+import { loadFromSupabaseSilent } from './sync-features.js';
 
 export const RealtimeService = (() => {
     let subscription = null;
+    const STORAGE_KEY = 'realtime_sync_enabled';
 
     const handleInsert = (payload) => {
-        utils.showToast(`Novo registro recebido: ${payload.new.especie}`, 'info');
-        addTree(payload.new);
+        utils.showToast(`Novo registro recebido: ${payload.new.nome || payload.new.especie}`, 'info');
+        
+        // Adapta o payload para o formato local
+        const newTree = {
+            ...payload.new,
+            coordX: payload.new.longitude,
+            coordY: payload.new.latitude,
+            riskFactors: payload.new.riskfactors || [],
+            targetCategory: payload.new.targetcategory,
+            mitigation: payload.new.mitigation,
+            altura: payload.new.altura
+        };
+
+        addTree(newTree);
         TableUI.render();
         mapUI.updateMapData(true);
     };
 
     const handleUpdate = (payload) => {
-        utils.showToast(`Registro atualizado: ${payload.new.especie}`, 'info');
-        updateTree(payload.new);
+        utils.showToast(`Registro atualizado: ${payload.new.nome || payload.new.especie}`, 'info');
+        
+        // Adapta o payload para o formato local
+        const updatedTree = {
+            ...payload.new,
+            coordX: payload.new.longitude,
+            coordY: payload.new.latitude,
+            riskFactors: payload.new.riskfactors || [],
+            targetCategory: payload.new.targetcategory,
+            mitigation: payload.new.mitigation,
+            altura: payload.new.altura
+        };
+
+        updateTree(updatedTree);
         TableUI.render();
         mapUI.updateMapData(true);
     };
 
     const handleDelete = (payload) => {
-        utils.showToast(`Registro removido.`, 'info');
+        utils.showToast(`Registro removido remotamente.`, 'info');
         deleteTreeById(payload.old.id);
         TableUI.render();
         mapUI.updateMapData(true);
     };
 
-    const subscribe = async () => {
+    const enable = async (silent = false) => {
         const user = await ApiService.getUser();
-        if (!user) {
-            utils.showToast("Usuário não autenticado para tempo real.", "error");
-            return false;
-        }
+        if (!user) return false;
 
-        if (subscription) {
-            return true; // Already subscribed
-        }
+        localStorage.setItem(STORAGE_KEY, 'true');
+
+        if (subscription) return true;
 
         try {
             subscription = ApiService.getRealtimeSubscription('trees', {
@@ -49,30 +72,63 @@ export const RealtimeService = (() => {
             });
 
             if (subscription) {
-                utils.showToast("Sincronização em tempo real ativada.", "success");
+                if (!silent) utils.showToast("Sincronização em tempo real ativada.", "success");
                 return true;
             }
             return false;
         } catch (e) {
-            utils.showToast("Falha ao ativar o tempo real.", "error");
+            console.error(e);
+            if (!silent) utils.showToast("Falha ao ativar o tempo real.", "error");
             return false;
         }
     };
 
-    const unsubscribe = async () => {
+    const disable = async (silent = false) => {
+        localStorage.setItem(STORAGE_KEY, 'false');
+        
         if (!subscription) return;
+        
         try {
             await ApiService.removeRealtimeSubscription(subscription);
             subscription = null;
-            utils.showToast("Sincronização em tempo real desativada.", "info");
+            if (!silent) utils.showToast("Sincronização em tempo real desativada.", "info");
         } catch (e) {
-            utils.showToast("Erro ao desativar o tempo real.", "error");
+            console.error(e);
         }
     };
 
+    /**
+     * Chamado ao iniciar o app ou após login.
+     * Recupera o estado persistido e ativa se necessário.
+     */
+    const init = async () => {
+        const isEnabled = localStorage.getItem(STORAGE_KEY) === 'true';
+        if (isEnabled) {
+            await enable(true);
+        }
+    };
+
+    /**
+     * Chamado imediatamente após o Login.
+     * Força ativação e carrega dados.
+     */
+    const startAutoSync = async () => {
+        // 1. Força persistência para TRUE
+        localStorage.setItem(STORAGE_KEY, 'true');
+        
+        // 2. Ativa o canal Realtime
+        await enable(true);
+        
+        // 3. Carrega dados iniciais e retorna a promessa
+        return loadFromSupabaseSilent();
+    };
+
     return {
-        subscribe,
-        unsubscribe,
+        enable,
+        disable,
+        init,
+        startAutoSync,
+        get isEnabled() { return localStorage.getItem(STORAGE_KEY) === 'true'; },
         get isSubscribed() { return !!subscription; }
     };
 })();

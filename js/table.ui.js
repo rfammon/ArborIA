@@ -1,12 +1,12 @@
 /**
- * ARBORIA 2.0 - TABLE UI (V28.1 - Patch Applied for Delete)
+ * ARBORIA 2.0 - TABLE UI (V28.1 - Patch Applied for Delete & Edit)
  * Renderiza a tabela de resumo e gerencia ações de linha.
  */ 
 
 import * as State from './state.js';
 import * as features from './features.js'; 
-// [PATCH] Importa a função corrigida
-import { handleDeleteTree as handleDeleteTreePatch } from './features_patch.js';
+// [PATCH] Importa as funções corrigidas (incluindo handleEditTree agora)
+import { handleDeleteTree as handleDeleteTreePatch, handleEditTree as handleEditTreePatch } from './features_patch.js';
 
 import { showConfirmModal, openPhotoViewer, showDetailsModal } from './modal.ui.js'; 
 import { getImageFromDB } from './database.js';
@@ -348,7 +348,8 @@ export const TableUI = {
                 } else if (actionBtn.classList.contains('btn-pdf')) {
                     generateIndividualReport(tree); // Passa a árvore inteira
                 } else if (actionBtn.classList.contains('btn-edit')) {
-                    features.handleEditTree(treeId);
+                    // [PATCH] Substitui pela função do patch para usar a UI corrigida
+                    handleEditTreePatch(treeId);
                 } else if (actionBtn.classList.contains('btn-delete')) {
                     // [PATCH] Substitui pela função do patch
                     showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${treeId}?`, () => handleDeleteTreePatch(treeId));
@@ -455,7 +456,8 @@ export const TableUI = {
             {
                 text: '✏️ Editar',
                 className: 'export-btn',
-                onClick: () => features.handleEditTree(tree.id)
+                // [PATCH] Usa a versão do patch
+                onClick: () => handleEditTreePatch(tree.id)
             },
             {
                 text: '📄 Laudo',

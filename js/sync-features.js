@@ -7,6 +7,50 @@ import * as mapUI from './map.ui.js';
 import * as utils from './utils.js';
 
 /**
+ * Carrega dados do Supabase silenciosamente (sem modal), realizando um merge.
+ * Ideal para sincronização automática ao logar.
+ */
+export async function loadFromSupabaseSilent() {
+    utils.showToast("Sincronizando dados...", "info");
+
+    const user = await ApiService.getUser();
+    if (!user) return; // Silencioso se não logado
+
+    try {
+        const { data: trees, error } = await ApiService.getTrees();
+
+        if (error) throw new Error(error.message);
+        if (!trees || trees.length === 0) return;
+
+        // Transformação de dados (mesma lógica do loadFromSupabase)
+        const transformedTrees = trees.map(tree => ({
+            ...tree,
+            coordX: tree.longitude,
+            coordY: tree.latitude,
+            altura: tree.altura || null,
+            riskFactors: tree.riskfactors || tree.riskFactors || [],
+            targetCategory: tree.targetcategory || tree.targetCategory,
+            mitigation: tree.mitigation,
+            riskLevel: tree.risklevel || tree.riskLevel,
+            residualRisk: tree.residualrisk || tree.residualRisk,
+            utmZoneNum: tree.utmzonenum,
+            utmZoneLetter: tree.utmzoneletter
+        }));
+
+        // Merge automático
+        applyTreeChanges(transformedTrees, 'merge');
+        TableUI.render();
+        mapUI.updateMapData(true);
+        
+        utils.showToast("Dados sincronizados.", "success");
+
+    } catch (e) {
+        console.error("Erro na sincronização silenciosa:", e);
+        // Não mostra erro para não interromper fluxo, ou mostra um toast discreto
+    }
+}
+
+/**
  * Carrega os dados do Supabase e oferece opções de mesclagem ou substituição.
  */
 export async function loadFromSupabase() {

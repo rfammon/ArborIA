@@ -77,7 +77,7 @@ function getReducedFailureProb(failureProb) {
 }
 
 // ============================================================ 
-// FUNÇÕES CORRIGIDAS (handleAddTreeSubmit & handleDeleteTree)
+// FUNÇÕES CORRIGIDAS (handleAddTreeSubmit, handleDeleteTree, handleEditTree)
 // ============================================================ 
 
 export async function handleAddTreeSubmit(event) {
@@ -275,4 +275,64 @@ export async function handleDeleteTree(id) {
   
   utils.showToast(`Removido localmente.`, 'info'); 
   return true;
+}
+
+export function handleEditTree(id) {
+  const t = state.registeredTrees.find(tree => tree.id === id);
+  if (!t) { utils.showToast(`Erro ID ${id}.`, "error"); return null; }
+  
+  state.setEditingTreeId(id);
+  if(state.setLastUtmZone) state.setLastUtmZone(t.utmZoneNum || 0, t.utmZoneLetter || 'Z');
+  
+  const setVal = (elemId, val) => {
+      const el = document.getElementById(elemId);
+      if(el) el.value = (val !== undefined && val !== null) ? val : '';
+  };
+
+  setVal('risk-data', t.data);
+  setVal('risk-especie', t.especie);
+  setVal('risk-local', t.local);
+  setVal('risk-coord-x', t.coordX);
+  setVal('risk-coord-y', t.coordY);
+  setVal('risk-dap', t.dap);
+  setVal('risk-altura', t.altura);
+  setVal('risk-avaliador', t.avaliador);
+  setVal('risk-obs', t.observacoes);
+  
+  const checkboxes = document.querySelectorAll('.risk-checkbox');
+  checkboxes.forEach(cb => cb.checked = false); 
+  if (t.riskFactors && Array.isArray(t.riskFactors)) {
+      t.riskFactors.forEach((val, index) => {
+          if (val === 1 && checkboxes[index]) checkboxes[index].checked = true;
+      });
+  }
+
+  // [CORREÇÃO] Texto do botão limpo, sem ID
+  const btn = document.getElementById('add-tree-btn');
+  if (btn) {
+    btn.innerHTML = 'Salvar Alterações';
+    btn.style.backgroundColor = 'var(--color-accent)';
+    btn.style.color = 'var(--color-dark)';
+  }
+  
+  document.querySelector('.sub-nav-btn[data-target="tab-content-register"]').click();
+  utils.showToast(`Editando...`, "info");
+  
+  // Popula a avaliação de risco atual para permitir a edição sem refazer o checklist
+  currentRiskAssessment.targetCategory = t.targetCategory || null;
+  currentRiskAssessment.mitigationAction = t.mitigation || 'nenhuma';
+
+  // Sincroniza o radio button do formulário desktop
+  if (t.targetCategory) {
+    const targetRadio = document.querySelector(`input[name="target_category_desktop"][value="${t.targetCategory}"]`);
+    if (targetRadio) targetRadio.checked = true;
+  }
+  
+  // Sincroniza o select de mitigação
+  const mitigationSelect = document.getElementById('mitigation-action-desktop');
+  if (mitigationSelect && t.mitigation) {
+    mitigationSelect.value = t.mitigation;
+  }
+
+  return t;
 }

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sem Conexão - ArborIA</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 { color: #2c3e50; }
+        p { margin-bottom: 20px; }
+        .icon { font-size: 64px; margin-bottom: 20px; color: #95a5a6; }
+        button {
+            padding: 10px 20px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background-color: #004d40; }
+    </style>
+</head>
+<body>
+    <div class="icon">📡</div>
+    <h1>Você está offline</h1>
+    <p>Não foi possível carregar esta página. Verifique sua conexão com a internet e tente novamente.</p>
+    <p>Você ainda pode acessar as funcionalidades básicas do aplicativo que já foram carregadas.</p>
+    <button onclick="window.location.reload()">Tentar Novamente</button>
+    <br><br>
+    <a href="/" style="color: #00796b; text-decoration: none;">Voltar ao Início</a>
+</body>
+</html>

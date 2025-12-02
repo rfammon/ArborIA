@@ -1,7 +1,8 @@
 import { UI } from './ui.js';
 import { ApiService } from './supabase-client.js';
 import { resetApplicationState } from './state.js';
-import { clearImageDB } from './database.js'; // Adicionar este import
+import { clearImageDB } from './database.js';
+import { RealtimeService } from './realtime.service.js';
 
 export const AuthUI = {
     elements: {
@@ -73,7 +74,6 @@ export const AuthUI = {
 
         if (isGuestFromUrl) {
             sessionStorage.setItem('arboria_guest_mode', 'true');
-            // Limpa o parâmetro da URL para uma aparência mais limpa
             window.history.replaceState({}, document.title, window.location.pathname);
         }
 
@@ -85,17 +85,20 @@ export const AuthUI = {
         }
 
         try {
-            // Verifica sessão real
             const user = await ApiService.getUser();
             if (user) {
                 this.handleLoginSuccess(user);
+                // Inicializa o serviço realtime e carrega os dados
+                await RealtimeService.startAutoSync();
+                const toggle = document.getElementById('btn-toggle-realtime');
+                if (toggle) {
+                    toggle.classList.add('active');
+                }
             } else {
-                // Se não há usuário logado e não é visitante, forçar modo visitante
                 this.handleLoginSuccess({ isGuest: true });
             }
         } catch (error) {
             console.warn("AuthUI: Falha ao verificar sessão inicial (Supabase pode estar offline).", error);
-            // Em caso de erro, ainda garantir que ele caia no modo visitante
             this.handleLoginSuccess({ isGuest: true });
         }
     },
@@ -105,9 +108,15 @@ export const AuthUI = {
 
         if (user && !user.isGuest) {
             // Estado: LOGADO
+            const isRealtimeEnabled = RealtimeService.isEnabled;
+            
             this.elements.userDisplay.innerHTML = `
                 <div class="user-controls-group">
-                    <button id="btn-open-sync-modal" class="btn btn-primary btn-sm" title="Gerenciar Dados e Sincronização">
+                    <button id="btn-toggle-realtime" class="btn btn-secondary btn-sm" title="Ativar/Desativar a atualização automática de dados.">
+                        <i class="fas fa-wifi"></i>
+                    </button>
+            
+                    <button id="btn-open-sync-modal" class="btn btn-primary btn-sm" title="Sincronizar dados manualmente com o servidor.">
                         <i class="fas fa-sync-alt"></i>
                     </button>
                     <span class="user-email-span"><i class="fas fa-user-circle"></i> ${user.email.split('@')[0]}</span>
@@ -117,13 +126,30 @@ export const AuthUI = {
                 </div>
             `;
             
+            // Listener do Toggle
+            const toggle = document.getElementById('btn-toggle-realtime');
+            if(toggle) {
+                // Add active class if realtime is enabled
+                if (isRealtimeEnabled) {
+                    toggle.classList.add('active');
+                }
+                toggle.addEventListener('click', (e) => {
+                    const isCurrentlyEnabled = RealtimeService.isEnabled;
+                    if(isCurrentlyEnabled) {
+                        RealtimeService.disable();
+                        toggle.classList.remove('active');
+                    } else {
+                        RealtimeService.enable();
+                        toggle.classList.add('active');
+                    }
+                });
+            }
+
             document.getElementById('btn-logout').addEventListener('click', () => this.handleLogout());
-            // O listener para 'btn-open-sync-modal' já está em main.js, então não precisamos adicioná-lo aqui.
-            // Apenas disparamos o evento para que main.js saiba que a UI foi atualizada.
             document.dispatchEvent(new CustomEvent('auth-ui-updated', { detail: { user } }));
 
-        } else { // Simplificado para cobrir tanto user.isGuest quanto null (nenhum usuário logado)
-            // Estado: VISITANTE (ou nenhum usuário logado, que agora será tratado como visitante)
+        } else {
+            // Estado: VISITANTE
             this.elements.userDisplay.innerHTML = `
                 <div class="user-controls-group">
                     <span class="user-email-span"><i class="fas fa-user-secret"></i> Modo Visitante</span>
@@ -142,7 +168,6 @@ export const AuthUI = {
             this.elements.modal.classList.add('active');
             this.elements.modal.style.display = 'flex';
             this.resetForm();
-            // Foca no email para usabilidade
             setTimeout(() => this.elements.emailInput.focus(), 100);
         }
     },
@@ -196,12 +221,22 @@ export const AuthUI = {
                 throw new Error(result.error.message || "Erro na autenticação");
             }
 
-            // Sucesso
             if (result.data.user) {
                 const msg = this.state.isLoginMode ? "Login realizado!" : "Conta criada!";
                 UI.showToast(msg, "success");
                 
                 this.handleLoginSuccess(result.data.user);
+                
+                // *** TRIGGER AUTOMÁTICO DE SYNC ***
+                // Ativa o Realtime e Carrega os dados silenciosamente
+                await RealtimeService.startAutoSync();
+
+                // Ativa o botão de "Atualização Automática"
+                const toggle = document.getElementById('btn-toggle-realtime');
+                if (toggle) {
+                    toggle.classList.add('active');
+                }
+
                 this.closeModal();
             }
 
@@ -222,7 +257,6 @@ export const AuthUI = {
     async handleLogout() {
         sessionStorage.removeItem('arboria_guest_mode');
 
-        // **NOVO**: Limpa o banco de dados local (IndexedDB de imagens)
         try {
             await clearImageDB();
             console.log("Banco de dados de imagens local limpo.");
@@ -230,15 +264,15 @@ export const AuthUI = {
             console.error("Erro ao limpar o banco de dados de imagens local:", error);
         }
 
-        // **NOVO**: Limpa dados salvos no LocalStorage
-        localStorage.removeItem('manualPodaData'); // STORAGE_KEY do js/state.js
-        localStorage.removeItem('manualPodaActiveTab'); // ACTIVE_TAB_KEY do js/state.js
-        localStorage.removeItem('lastSyncTimestamp'); // Adicionado para garantir sincronização completa no próximo login
-        // Adicione outras chaves de localStorage se houver dados sensíveis do usuário aqui.
+        localStorage.removeItem('manualPodaData'); 
+        localStorage.removeItem('manualPodaActiveTab'); 
+        localStorage.removeItem('lastSyncTimestamp'); 
+        
+        // Desativa realtime ao sair
+        RealtimeService.disable(true);
 
         await ApiService.logout();
         
-        // Limpa o estado da aplicação em memória
         resetApplicationState();
 
         this.state.currentUser = null;
@@ -250,7 +284,6 @@ export const AuthUI = {
     handleExitGuestMode() {
         sessionStorage.removeItem('arboria_guest_mode');
         
-        // Limpa o estado da aplicação em memória
         resetApplicationState();
 
         this.state.currentUser = null;

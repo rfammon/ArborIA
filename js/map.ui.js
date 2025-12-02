@@ -176,8 +176,8 @@ function renderMapMarkers() {
       });
       
       // Configuração do Rótulo (Label dentro do ponto)
-      // O CSS .map-label-clean deve ser adicionado ao style.css ou injetado
-      circle.bindTooltip(`${tree.id}`, { 
+      // [MUDANÇA] Exibe o nome da árvore (ou espécie, ou ID como fallback)
+      circle.bindTooltip(`${tree.nome || tree.especie || tree.id}`, { 
           permanent: true, 
           direction: 'center', 
           className: 'map-label-clean' 
