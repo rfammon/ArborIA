@@ -318,23 +318,21 @@ function _setupPhotoListeners() {
 
       features.clearPhotoPreview();
       try {
-        showToast('Otimizando foto...', 'success');
-        // Utiliza a função movida para 'utils.js'
-        const optimizedBlob = await optimizeImage(file, 800, 0.7);
-        state.setCurrentTreePhoto(optimizedBlob);
+        // [MODIFIED] Bypass client-side optimization. Store the raw file object.
+        state.setCurrentTreePhoto(file); 
 
         const previewContainer = document.getElementById('photo-preview-container');
         const removeBtn = document.getElementById('remove-photo-btn');
         const preview = document.createElement('img');
         
         preview.id = 'photo-preview';
-        preview.src = URL.createObjectURL(optimizedBlob);
+        preview.src = URL.createObjectURL(file); // Create preview from the original file
         previewContainer.prepend(preview);
         removeBtn.style.display = 'block';
 
       } catch (error) {
-        
-        showToast('Erro ao processar a foto. Tente outra imagem.', 'error');
+        console.error("Erro ao processar preview da foto:", error);
+        showToast('Erro ao carregar o preview da foto.', 'error');
         state.setCurrentTreePhoto(null);
         features.clearPhotoPreview();
       }

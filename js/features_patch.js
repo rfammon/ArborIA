@@ -202,13 +202,13 @@ export async function handleAddTreeSubmit(event) {
   let mode = 'add';
 
   if (state.editingTreeId === null) {
+    mode = 'add';
     const newTreeId = state.registeredTrees.length > 0 
         ? (Math.max(...state.registeredTrees.map(t => Number(t.id) || 0)) + 1) 
         : 1;
 
     resultTree = { ...treeData, id: supabaseId || newTreeId }; 
     
-    if (resultTree.hasPhoto) db.saveImageToDB(resultTree.id, state.currentTreePhoto);
     state.registeredTrees.push(resultTree);
     utils.showToast(`Árvore salva! (ID: ${resultTree.id})`, 'success');
   } else {
@@ -218,18 +218,23 @@ export async function handleAddTreeSubmit(event) {
     
     resultTree = { ...treeData, id: state.editingTreeId };
     
-    const original = state.registeredTrees[idx];
-    
-    if (original.hasPhoto && state.currentTreePhoto === null) {
-        resultTree.hasPhoto = true; 
-    } else if (state.currentTreePhoto !== null) {
-        db.saveImageToDB(resultTree.id, state.currentTreePhoto);
-    } else if (!resultTree.hasPhoto && original.hasPhoto) {
-        db.deleteImageFromDB(resultTree.id);
-    }
-    
     state.registeredTrees[idx] = resultTree;
     utils.showToast(`Atualizado com sucesso!`, 'success');
+  }
+
+  if (resultTree.hasPhoto && state.currentTreePhoto) {
+    try {
+      utils.showToast('Enviando foto...', 'info');
+      const { error: uploadError } = await ApiService.uploadImage(resultTree.id, state.currentTreePhoto);
+      if (uploadError) {
+        // Now expecting an error object, so we access its message property
+        throw new Error(uploadError.message || 'Erro desconhecido no upload');
+      }
+      utils.showToast('Foto enviada com sucesso!', 'success');
+    } catch (e) {
+      console.error("Erro no upload da foto:", e);
+      utils.showToast(`Falha ao enviar a foto: ${e.message}`, 'error');
+    }
   }
 
   state.saveDataToStorage();

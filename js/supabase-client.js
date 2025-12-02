@@ -277,5 +277,38 @@ export const ApiService = {
         if (subscription) {
             await _supabase.removeChannel(subscription);
         }
+    },
+
+    async uploadImage(arvoreId, imageFile) {
+        if (!_supabase) return { error: 'Offline' };
+
+        const formData = new FormData();
+        formData.append('arvore_id', arvoreId);
+        formData.append('image', imageFile);
+
+        try {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) throw new Error("Usuário não autenticado.");
+
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/image-upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'x-client-info': 'arboria-webapp-v1', // Optional but good practice
+                },
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Falha na requisição: ${errorText}`);
+            }
+
+            const responseData = await response.json();
+            return { data: responseData, error: null };
+
+        } catch (error) {
+            return { data: null, error };
+        }
     }
 };
