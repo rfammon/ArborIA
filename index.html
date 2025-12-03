@@ -1527,17 +1527,33 @@
                     ✕
                 </button>
 
+                <!-- Stepper de Progresso -->
+                <div id="risk-stepper">
+                    <div class="step-item active">
+                        <div class="step-circle">1</div>
+                        <span class="step-label">Perguntas</span>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-circle">2</div>
+                        <span class="step-label">Alvo</span>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-circle">3</div>
+                        <span class="step-label">Risco</span>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-circle">4</div>
+                        <span class="step-label">Confirmar</span>
+                    </div>
+                </div>
+
+                <!-- Card 1: Perguntas do Checklist -->
                 <div id="question-card" class="mobile-checklist-card">
-                    <p id="flashcard-counter">Fator de Risco 1 / 16</p>
+                    <p id="flashcard-counter">Pergunta 1 de 16</p>
                     <h3 id="flashcard-question-text">
-                        Há
-                        <span
-                            class="checklist-term"
-                            data-term-key="galhos-mortos"
-                            >galhos mortos</span
-                        >
-                        > 5cm?
+                        Há galhos mortos com diâmetro superior a 5 cm?
                     </h3>
+                    <p id="flashcard-question-weight">Peso: 3</p>
 
                     <div class="flashcard-toggle-area">
                         <span style="color: rgba(255, 255, 255, 0.7)">NÃO</span>
@@ -1552,134 +1568,92 @@
                     </div>
                 </div>
 
-                <div
-                    id="target-card"
-                    class="mobile-checklist-card"
-                    style="display: none"
-                >
-                    <h3>Etapa 2/3: Taxa de Ocupação do Alvo</h3>
-                    <p>
+                <!-- Card 2: Seleção de Alvo -->
+                <div id="target-card" style="display: none">
+                    <h3>🎯 Seleção do Alvo</h3>
+                    <p class="helper-text">
                         Com que frequência o alvo (pessoas ou propriedades) está
                         na zona de impacto da árvore?
                     </p>
+
+                    <div class="summary-container"></div>
+
                     <div class="target-options-container">
                         <div class="form-group-radio">
                             <input
                                 type="radio"
                                 id="target_1"
-                                name="target_category"
+                                name="target-category"
                                 value="1"
                             />
                             <label for="target_1">
-                                <strong>Raro</strong>
-                                <small
-                                    >Área raramente usada (ex: trilha de mata
-                                    nativa).</small
-                                >
+                                <strong>Categoria 1 - Raro</strong>
+                                <small></small>Área raramente usada (ex: trilha de mata nativa).</small>
                             </label>
                         </div>
                         <div class="form-group-radio">
                             <input
                                 type="radio"
                                 id="target_2"
-                                name="target_category"
+                                name="target-category"
                                 value="2"
                             />
                             <label for="target_2">
-                                <strong>Ocasional</strong>
-                                <small
-                                    >Trânsito irregular (ex: estacionamento de
-                                    um parque).</small
-                                >
+                                <strong>Categoria 2 - Ocasional</strong>
+                                <small></small>Trânsito irregular (ex: estacionamento de um parque).</small>
                             </label>
                         </div>
                         <div class="form-group-radio">
                             <input
                                 type="radio"
                                 id="target_3"
-                                name="target_category"
+                                name="target-category"
                                 value="3"
                             />
                             <label for="target_3">
-                                <strong>Frequente</strong>
-                                <small
-                                    >Ocupado boa parte do dia (ex: pátio de
-                                    escola, via coletora).</small
-                                >
+                                <strong>Categoria 3 - Frequente</strong>
+                                <small></small>Ocupado boa parte do dia (ex: pátio de escola, via coletora).</small>
                             </label>
                         </div>
                         <div class="form-group-radio">
                             <input
                                 type="radio"
                                 id="target_4"
-                                name="target_category"
+                                name="target-category"
                                 value="4"
                             />
                             <label for="target_4">
-                                <strong>Constante</strong>
-                                <small
-                                    >Ocupação contínua (ex: residências, vias
-                                    arteriais).</small
-                                >
+                                <strong>Categoria 4 - Constante</strong>
+                                <small>Ocupação contínua (ex: residências, vias arteriais).</small>
                             </label>
                         </div>
                     </div>
                 </div>
 
-                <div
-                    id="residual-risk-card"
-                    class="mobile-checklist-card"
-                    style="display: none"
-                >
-                    <h3>Etapa 3/3: Risco Residual</h3>
-                    <p>
-                        Selecione uma ação mitigadora para simular o risco após
-                        a intervenção.
-                    </p>
-                    <div
-                        class="form-group-select"
-                        style="width: 100%; margin-top: 1rem"
-                    >
-                        <label
-                            for="mitigation-action"
-                            style="
-                                text-align: left;
-                                display: block;
-                                margin-bottom: 8px;
-                                color: rgba(255, 255, 255, 0.8);
-                            "
-                            >Ação de Mitigação Sugerida:</label
-                        >
-                        <select
-                            id="mitigation-action"
-                            name="mitigation-action"
-                            class="form-control"
-                        >
-                            <option value="nenhuma">Nenhuma</option>
-                            <option value="poda_limpeza">
-                                Poda de Limpeza
-                            </option>
-                            <option value="poda_reducao">
-                                Poda de Redução
-                            </option>
-                            <option value="supressao">Supressão</option>
-                            <option value="isolamento">
-                                Isolamento da Área
-                            </option>
+                <!-- Card 3: Cálculo de Risco e Mitigação -->
+                <div id="risk-card" style="display: none">
+                    <div id="risk-summary"></div>
+
+                    <div class="mitigation-section">
+                        <label for="mitigation-action" style="display: block; margin-bottom: 8px; font-weight: bold;">
+                            Ação de Mitigação:
+                        </label>
+                        <select id="mitigation-action" name="mitigation-action">
+                            <option value="nenhuma">Nenhuma ação</option>
+                            <option value="monitoramento">Monitoramento regular</option>
+                            <option value="poda">Poda corretiva</option>
+                            <option value="reducao">Redução de copa</option>
+                            <option value="remocao">Remoção da árvore</option>
                         </select>
                     </div>
-                    <div
-                        style="
-                            margin-top: 1.5rem;
-                            font-size: 0.9rem;
-                            color: rgba(255, 255, 255, 0.7);
-                        "
-                    >
-                        <p>
-                            O risco residual será calculado com base na redução
-                            da probabilidade de falha que esta ação proporciona.
-                        </p>
-                    </div>
+                </div>
+
+                <!-- Card 4: Confirmação Final -->
+                <div id="confirm-card" style="display: none">
+                    <div id="confirm-summary"></div>
+                    <button id="confirm-save-btn" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 20px;">
+                        ✓ Confirmar e Salvar
+                    </button>
                 </div>
 
                 <div class="mobile-checklist-nav">

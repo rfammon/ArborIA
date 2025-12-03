@@ -3,28 +3,28 @@
  * Contém: Lógica de GPS, CRUD (com risco TRAQ), Importação/Exportação (com risco TRAQ).
  */
 
-import * as state from './state.js';
-import * as utils from './utils.js';
-import * as db from './database.js';
-import { TableUI } from './table.ui.js';
-import { ApiService } from './supabase-client.js';
-import { RealtimeService } from './realtime.service.js';
+import * as state from "./state.js";
+import * as utils from "./utils.js";
+import * as db from "./database.js";
+import { TableUI } from "./table.ui.js";
+import { ApiService } from "./supabase-client.js";
+import { RealtimeService } from "./realtime.service.js";
 
-// ============================================================ 
+// ============================================================
 // NOVA LÓGICA DE RISCO (METODOLOGIA TRAQ/ISA)
-// ============================================================ 
+// ============================================================
 
 // Armazena os dados da avaliação atual enquanto o checklist está aberto
 let currentRiskAssessment = {
-    targetCategory: null,
-    mitigationAction: 'nenhuma'
+  targetCategory: null,
+  mitigationAction: "nenhuma",
 };
 
 const riskProfile = {
-    'Baixo':    { class: 'risk-low' },
-    'Moderado': { class: 'risk-medium' },
-    'Alto':     { class: 'risk-high' },
-    'Extremo':  { class: 'risk-extreme' }
+  Baixo: { class: "risk-low" },
+  Moderado: { class: "risk-medium" },
+  Alto: { class: "risk-high" },
+  Extremo: { class: "risk-extreme" },
 };
 
 /**
@@ -33,10 +33,10 @@ const riskProfile = {
  * @returns {string} 'Improvável', 'Possível', 'Provável', ou 'Iminente'.
  */
 function getFailureProb(score) {
-    if (score >= 30) return 'Iminente';
-    if (score >= 20) return 'Provável';
-    if (score >= 10) return 'Possível';
-    return 'Improvável';
+  if (score >= 30) return "Iminente";
+  if (score >= 20) return "Provável";
+  if (score >= 10) return "Possível";
+  return "Improvável";
 }
 
 /**
@@ -45,12 +45,12 @@ function getFailureProb(score) {
  * @returns {string} 'Muito Baixo', 'Baixo', 'Médio', 'Alto'.
  */
 function getImpactProb(targetVal) {
-    const value = parseInt(targetVal, 10);
-    if (value === 1) return 'Muito Baixo';
-    if (value === 2) return 'Baixo';
-    if (value === 3) return 'Médio';
-    if (value === 4) return 'Alto';
-    return 'Muito Baixo'; // Padrão de segurança
+  const value = parseInt(targetVal, 10);
+  if (value === 1) return "Muito Baixo";
+  if (value === 2) return "Baixo";
+  if (value === 3) return "Médio";
+  if (value === 4) return "Alto";
+  return "Muito Baixo"; // Padrão de segurança
 }
 
 /**
@@ -61,27 +61,44 @@ function getImpactProb(targetVal) {
  * @returns {string} O nível de risco final: 'Baixo', 'Moderado', 'Alto', ou 'Extremo'.
  */
 function runTraqMatrices(failureProb, impactProb, targetCategory) {
-    const impactProbMap = { 'Muito Baixo': 0, 'Baixo': 1, 'Médio': 2, 'Alto': 3 };
-    const impactIndex = impactProbMap[impactProb];
-    const eventLikelihoodMatrix = {
-        'Improvável':   ['Muito Improvável', 'Muito Improvável', 'Improvável',     'Improvável'    ],
-        'Possível':     ['Muito Improvável', 'Improvável',     'Provável',       'Provável'      ],
-        'Provável':     ['Improvável',     'Provável',       'Muito Provável', 'Muito Provável'],
-        'Iminente':     ['Improvável',     'Muito Provável', 'Muito Provável', 'Muito Provável']
-    };
-    const eventLikelihood = (eventLikelihoodMatrix[failureProb] && impactIndex !== undefined) ? eventLikelihoodMatrix[failureProb][impactIndex] : 'Muito Improvável';
+  const impactProbMap = { "Muito Baixo": 0, Baixo: 1, Médio: 2, Alto: 3 };
+  const impactIndex = impactProbMap[impactProb];
+  const eventLikelihoodMatrix = {
+    Improvável: [
+      "Muito Improvável",
+      "Muito Improvável",
+      "Improvável",
+      "Improvável",
+    ],
+    Possível: ["Muito Improvável", "Improvável", "Provável", "Provável"],
+    Provável: ["Improvável", "Provável", "Muito Provável", "Muito Provável"],
+    Iminente: [
+      "Improvável",
+      "Muito Provável",
+      "Muito Provável",
+      "Muito Provável",
+    ],
+  };
+  const eventLikelihood =
+    eventLikelihoodMatrix[failureProb] && impactIndex !== undefined
+      ? eventLikelihoodMatrix[failureProb][impactIndex]
+      : "Muito Improvável";
 
-    const consequence = (parseInt(targetCategory, 10) === 4) ? 'Severa' : 'Significante';
-    const consequenceMap = { 'Mínima': 0, 'Menor': 1, 'Significante': 2, 'Severa': 3 };
-    const consequenceIndex = consequenceMap[consequence];
-    const riskRatingMatrix = {
-        'Muito Provável':   ['Moderado', 'Alto',          'Extremo',      'Extremo' ],
-        'Provável':         ['Baixo',    'Moderado',      'Alto',         'Extremo' ],
-        'Improvável':       ['Baixo',    'Baixo',         'Moderado',     'Alto'    ],
-        'Muito Improvável': ['Baixo',    'Baixo',         'Baixo',        'Moderado']
-    };
-    const finalRisk = (riskRatingMatrix[eventLikelihood] && consequenceIndex !== undefined) ? riskRatingMatrix[eventLikelihood][consequenceIndex] : 'Baixo';
-    return finalRisk;
+  const consequence =
+    parseInt(targetCategory, 10) === 4 ? "Severa" : "Significante";
+  const consequenceMap = { Mínima: 0, Menor: 1, Significante: 2, Severa: 3 };
+  const consequenceIndex = consequenceMap[consequence];
+  const riskRatingMatrix = {
+    "Muito Provável": ["Moderado", "Alto", "Extremo", "Extremo"],
+    Provável: ["Baixo", "Moderado", "Alto", "Extremo"],
+    Improvável: ["Baixo", "Baixo", "Moderado", "Alto"],
+    "Muito Improvável": ["Baixo", "Baixo", "Baixo", "Moderado"],
+  };
+  const finalRisk =
+    riskRatingMatrix[eventLikelihood] && consequenceIndex !== undefined
+      ? riskRatingMatrix[eventLikelihood][consequenceIndex]
+      : "Baixo";
+  return finalRisk;
 }
 
 /**
@@ -89,369 +106,449 @@ function runTraqMatrices(failureProb, impactProb, targetCategory) {
  * @returns {string} A probabilidade de falha reduzida.
  */
 function getReducedFailureProb(failureProb) {
-    const reductionMap = {
-        'Iminente': 'Provável',
-        'Provável': 'Possível',
-        'Possível': 'Improvável',
-        'Improvável': 'Improvável'
-    };
-    return reductionMap[failureProb] || 'Improvável';
+  const reductionMap = {
+    Iminente: "Provável",
+    Provável: "Possível",
+    Possível: "Improvável",
+    Improvável: "Improvável",
+  };
+  return reductionMap[failureProb] || "Improvável";
 }
 
-
-// ============================================================ 
+// ============================================================
 // 1. LÓGICA DO CHECKLIST (MODO FLASH CARD / TELA CHEIA) - v2 (TRAQ)
-// ============================================================ 
+// ============================================================
 
 let currentCardIndex = 0;
 let flashCardListenersAttached = false;
-let flashcardStep = 'checklist'; // 'checklist', 'target', 'residual'
+let flashcardStep = "checklist"; // 'checklist', 'target', 'residual'
 
 const getFlashCardElements = () => {
-    const container = document.getElementById('checklist-flashcard-view');
-    if (!container) return null;
+  const container = document.getElementById("checklist-flashcard-view");
+  if (!container) return null;
 
-    return {
-        container: container,
-        closeBtn: document.getElementById('close-checklist-btn'),
-        questionCard: document.getElementById('question-card'),
-        targetCard: document.getElementById('target-card'),
-        residualRiskCard: document.getElementById('residual-risk-card'),
-        counter: document.getElementById('flashcard-counter'),
-        questionBox: document.getElementById('flashcard-question-text'), 
-        toggleInput: document.getElementById('flashcard-toggle-input'), 
-        btnPrev: document.getElementById('flashcard-prev'),
-        btnNext: document.getElementById('flashcard-next'),
-        dataRows: document.querySelectorAll('#checklist-data-table tbody tr')
-    };
+  return {
+    container: container,
+    closeBtn: document.getElementById("close-checklist-btn"),
+    questionCard: document.getElementById("question-card"),
+    targetCard: document.getElementById("target-card"),
+    residualRiskCard: document.getElementById("residual-risk-card"),
+    counter: document.getElementById("flashcard-counter"),
+    questionBox: document.getElementById("flashcard-question-text"),
+    toggleInput: document.getElementById("flashcard-toggle-input"),
+    btnPrev: document.getElementById("flashcard-prev"),
+    btnNext: document.getElementById("flashcard-next"),
+    dataRows: document.querySelectorAll("#checklist-data-table tbody tr"),
+  };
 };
 
 function showCard(cardToShow) {
-    const els = getFlashCardElements();
-    if (!els) return;
-    ['questionCard', 'targetCard', 'residualRiskCard'].forEach(cardKey => {
-        if (els[cardKey]) {
-            els[cardKey].style.display = (cardKey === cardToShow) ? 'flex' : 'none';
-        }
-    });
+  const els = getFlashCardElements();
+  if (!els) return;
+  ["questionCard", "targetCard", "residualRiskCard"].forEach((cardKey) => {
+    if (els[cardKey]) {
+      els[cardKey].style.display = cardKey === cardToShow ? "flex" : "none";
+    }
+  });
 }
 
 function updateFlashcardUI() {
-    const els = getFlashCardElements();
-    if (!els) return;
+  const els = getFlashCardElements();
+  if (!els) return;
 
-    if (flashcardStep === 'checklist') {
-        showCard('questionCard');
-        const row = els.dataRows[currentCardIndex];
-        const sourceCheckbox = row.querySelector('input[type="checkbox"]');
-        const questionCell = row.cells[1].cloneNode(true);
-        if (questionCell.querySelector('.checklist-term')) {
-            questionCell.querySelector('.checklist-term').classList.add('tooltip-trigger');
-        }
-        els.counter.textContent = `Fator de Risco ${currentCardIndex + 1} / ${els.dataRows.length}`;
-        els.questionBox.innerHTML = questionCell.innerHTML; 
-        els.toggleInput.checked = sourceCheckbox.checked;
-        updateCardVisuals(els.questionCard, sourceCheckbox.checked);
-        els.btnPrev.disabled = (currentCardIndex === 0);
-        els.btnNext.textContent = (currentCardIndex === els.dataRows.length - 1) ? 'Avançar para Alvo ❯' : 'Próxima ❯';
-    } else if (flashcardStep === 'target') {
-        showCard('targetCard');
-        els.counter.textContent = 'Etapa 2 de 3: Alvo';
-        els.btnPrev.disabled = false;
-        els.btnNext.textContent = 'Avançar para Mitigação ❯';
-    } else if (flashcardStep === 'residual') {
-        showCard('residualRiskCard');
-        els.counter.textContent = 'Etapa 3 de 3: Risco Residual';
-        els.btnPrev.disabled = false;
-        els.btnNext.textContent = 'Concluir e Salvar';
+  if (flashcardStep === "checklist") {
+    showCard("questionCard");
+    const row = els.dataRows[currentCardIndex];
+    const sourceCheckbox = row.querySelector('input[type="checkbox"]');
+    const questionCell = row.cells[1].cloneNode(true);
+    if (questionCell.querySelector(".checklist-term")) {
+      questionCell
+        .querySelector(".checklist-term")
+        .classList.add("tooltip-trigger");
     }
+    els.counter.textContent = `Fator de Risco ${currentCardIndex + 1} / ${els.dataRows.length}`;
+    els.questionBox.innerHTML = questionCell.innerHTML;
+    els.toggleInput.checked = sourceCheckbox.checked;
+    updateCardVisuals(els.questionCard, sourceCheckbox.checked);
+    els.btnPrev.disabled = currentCardIndex === 0;
+    els.btnNext.textContent =
+      currentCardIndex === els.dataRows.length - 1
+        ? "Avançar para Alvo ❯"
+        : "Próxima ❯";
+  } else if (flashcardStep === "target") {
+    showCard("targetCard");
+    els.counter.textContent = "Etapa 2 de 3: Alvo";
+    els.btnPrev.disabled = false;
+    els.btnNext.textContent = "Avançar para Mitigação ❯";
+  } else if (flashcardStep === "residual") {
+    showCard("residualRiskCard");
+    els.counter.textContent = "Etapa 3 de 3: Risco Residual";
+    els.btnPrev.disabled = false;
+    els.btnNext.textContent = "Concluir e Salvar";
+  }
 }
 
 function handleFlashcardToggle() {
-    const els = getFlashCardElements();
-    if (!els) return;
-    const sourceCheckbox = els.dataRows[currentCardIndex].querySelector('input[type="checkbox"]');
-    sourceCheckbox.checked = els.toggleInput.checked;
-    updateCardVisuals(els.questionCard, sourceCheckbox.checked);
+  const els = getFlashCardElements();
+  if (!els) return;
+  const sourceCheckbox = els.dataRows[currentCardIndex].querySelector(
+    'input[type="checkbox"]',
+  );
+  sourceCheckbox.checked = els.toggleInput.checked;
+  updateCardVisuals(els.questionCard, sourceCheckbox.checked);
 
-    if (sourceCheckbox.checked && currentCardIndex < els.dataRows.length - 1) {
-        setTimeout(() => els.btnNext.click(), 600);
-    }
+  if (sourceCheckbox.checked && currentCardIndex < els.dataRows.length - 1) {
+    setTimeout(() => els.btnNext.click(), 600);
+  }
 }
 
 function updateCardVisuals(cardElement, isChecked) {
-    if (isChecked) cardElement.classList.add('answered-yes');
-    else cardElement.classList.remove('answered-yes');
+  if (isChecked) cardElement.classList.add("answered-yes");
+  else cardElement.classList.remove("answered-yes");
 }
 
 function setupFlashCardListeners() {
-    if (flashCardListenersAttached) return;
-    const els = getFlashCardElements();
-    if (!els) return;
+  if (flashCardListenersAttached) return;
+  const els = getFlashCardElements();
+  if (!els) return;
 
-    els.closeBtn.addEventListener('click', closeChecklistFlashCard);
-    if(els.toggleInput._handler) els.toggleInput.removeEventListener('change', els.toggleInput._handler);
-    els.toggleInput.addEventListener('change', handleFlashcardToggle);
-    els.toggleInput._handler = handleFlashcardToggle;
+  els.closeBtn.addEventListener("click", closeChecklistFlashCard);
+  if (els.toggleInput._handler)
+    els.toggleInput.removeEventListener("change", els.toggleInput._handler);
+  els.toggleInput.addEventListener("change", handleFlashcardToggle);
+  els.toggleInput._handler = handleFlashcardToggle;
 
-    els.btnPrev.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (flashcardStep === 'residual') {
-            flashcardStep = 'target';
-        } else if (flashcardStep === 'target') {
-            flashcardStep = 'checklist';
-        } else if (flashcardStep === 'checklist' && currentCardIndex > 0) {
-            currentCardIndex--;
+  els.btnPrev.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (flashcardStep === "residual") {
+      flashcardStep = "target";
+    } else if (flashcardStep === "target") {
+      flashcardStep = "checklist";
+    } else if (flashcardStep === "checklist" && currentCardIndex > 0) {
+      currentCardIndex--;
+    }
+    updateFlashcardUI();
+  });
+
+  els.btnNext.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (flashcardStep === "checklist") {
+      if (currentCardIndex < els.dataRows.length - 1) {
+        currentCardIndex++;
+      } else {
+        flashcardStep = "target";
+      }
+    } else if (flashcardStep === "target") {
+      const targetInput = document.querySelector(
+        'input[name="target_category"]:checked',
+      );
+      if (!targetInput) {
+        utils.showToast("Por favor, selecione a taxa de ocupação.", "error");
+        return;
+      }
+      currentRiskAssessment.targetCategory = targetInput.value;
+      flashcardStep = "residual";
+    } else if (flashcardStep === "residual") {
+      const mitigationInput = document.getElementById("mitigation-action");
+      currentRiskAssessment.mitigationAction = mitigationInput.value;
+      closeChecklistFlashCard();
+      utils.showToast("Checklist preenchido!", "success");
+      // Dispara o submit do formulário principal diretamente
+      const form = document.getElementById("risk-calculator-form");
+      if (form) {
+        // Usa requestSubmit() para disparar validações e eventos de submit
+        if (form.requestSubmit) {
+          form.requestSubmit();
+        } else {
+          // Fallback para navegadores antigos
+          const submitEvent = new Event("submit", {
+            bubbles: true,
+            cancelable: true,
+          });
+          form.dispatchEvent(submitEvent);
         }
-        updateFlashcardUI();
-    });
-
-    els.btnNext.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (flashcardStep === 'checklist') {
-            if (currentCardIndex < els.dataRows.length - 1) {
-                currentCardIndex++;
-            } else {
-                flashcardStep = 'target';
-            }
-        } else if (flashcardStep === 'target') {
-            const targetInput = document.querySelector('input[name="target_category"]:checked');
-            if (!targetInput) {
-                utils.showToast("Por favor, selecione a taxa de ocupação.", "error");
-                return;
-            }
-            currentRiskAssessment.targetCategory = targetInput.value;
-            flashcardStep = 'residual';
-        } else if (flashcardStep === 'residual') {
-            const mitigationInput = document.getElementById('mitigation-action');
-            currentRiskAssessment.mitigationAction = mitigationInput.value;
-            closeChecklistFlashCard();
-            utils.showToast("Checklist preenchido!", "success");
-            // Dispara o submit do formulário principal para salvar os dados
-            document.getElementById('add-tree-btn').click();
-        }
-        updateFlashcardUI();
-    });
-    flashCardListenersAttached = true;
+      } else {
+        utils.showToast("Erro: Formulário não encontrado", "error");
+      }
+    }
+    updateFlashcardUI();
+  });
+  flashCardListenersAttached = true;
 }
 
 export function initChecklistFlashCard(retry = 0) {
-    const els = getFlashCardElements();
-    if (!els || !els.dataRows || els.dataRows.length === 0) {
-        if (retry < 5) setTimeout(() => initChecklistFlashCard(retry + 1), 150);
-        else utils.showToast("Erro: Tabela de critérios não carregou.", "error");
-        return;
-    }
-    setupFlashCardListeners();
-    currentCardIndex = 0;
-    flashcardStep = 'checklist';
-    // Limpa a avaliação anterior
-    currentRiskAssessment = { targetCategory: null, mitigationAction: 'nenhuma' };
-    // Limpa o estado dos radio buttons (mobile e desktop) e select
-    document.querySelectorAll('input[name="target_category"], input[name="target_category_desktop"]').forEach(radio => radio.checked = false);
-    document.getElementById('mitigation-action').value = 'nenhuma';
-    
-    updateFlashcardUI();
+  const els = getFlashCardElements();
+  if (!els || !els.dataRows || els.dataRows.length === 0) {
+    if (retry < 5) setTimeout(() => initChecklistFlashCard(retry + 1), 150);
+    else utils.showToast("Erro: Tabela de critérios não carregou.", "error");
+    return;
+  }
+  setupFlashCardListeners();
+  currentCardIndex = 0;
+  flashcardStep = "checklist";
+  // Limpa a avaliação anterior
+  currentRiskAssessment = { targetCategory: null, mitigationAction: "nenhuma" };
+  // Limpa o estado dos radio buttons (mobile e desktop) e select
+  document
+    .querySelectorAll(
+      'input[name="target_category"], input[name="target_category_desktop"]',
+    )
+    .forEach((radio) => (radio.checked = false));
+  document.getElementById("mitigation-action").value = "nenhuma";
+
+  updateFlashcardUI();
 }
 
 function closeChecklistFlashCard() {
-    const els = getFlashCardElements();
-    if (els && els.container) els.container.classList.remove('active');
+  const els = getFlashCardElements();
+  if (els && els.container) els.container.classList.remove("active");
 }
 
-// ============================================================ 
+// ============================================================
 // 2. LÓGICA DE GPS (Mantida Original)
-// ============================================================ 
+// ============================================================
 
 export async function handleGetGPS() {
-    const gpsStatus = document.getElementById('gps-status');
-    const coordXField = document.getElementById('risk-coord-x');
-    const coordYField = document.getElementById('risk-coord-y');
-    const getGpsBtn = document.getElementById('get-gps-btn');
+  const gpsStatus = document.getElementById("gps-status");
+  const coordXField = document.getElementById("risk-coord-x");
+  const coordYField = document.getElementById("risk-coord-y");
+  const getGpsBtn = document.getElementById("get-gps-btn");
 
-    if (!navigator.geolocation) {
-        if (gpsStatus) {
-            gpsStatus.textContent = "Sem GPS disponível.";
-            gpsStatus.className = 'instruction-text text-center error';
-        }
-        return;
+  if (!navigator.geolocation) {
+    if (gpsStatus) {
+      gpsStatus.textContent = "Sem GPS disponível.";
+      gpsStatus.className = "instruction-text text-center error";
     }
+    return;
+  }
 
-    const TIMEOUT_MS = 20000; // 20 segundos de timeout
-    const options = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
-    let watchId = null;
-    let bestAccuracy = Infinity;
-    let timeoutId = null;
+  const TIMEOUT_MS = 20000; // 20 segundos de timeout
+  const options = { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 };
+  let watchId = null;
+  let bestAccuracy = Infinity;
+  let timeoutId = null;
 
-    if (getGpsBtn) {
-        getGpsBtn.disabled = true;
-        getGpsBtn.innerHTML = 'Buscando GPS...';
+  if (getGpsBtn) {
+    getGpsBtn.disabled = true;
+    getGpsBtn.innerHTML = "Buscando GPS...";
+  }
+  if (gpsStatus) gpsStatus.innerHTML = "Aguardando sinal < 5m...";
+
+  const cleanup = () => {
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    if (timeoutId !== null) clearTimeout(timeoutId);
+    const btn = document.getElementById("get-gps-btn");
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = "Capturar GPS Preciso";
     }
-    if (gpsStatus) gpsStatus.innerHTML = 'Aguardando sinal < 5m...';
+  };
 
-    const cleanup = () => {
-        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-        if (timeoutId !== null) clearTimeout(timeoutId);
-        const btn = document.getElementById('get-gps-btn');
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = 'Capturar GPS Preciso';
-        }
-    };
-    
-    timeoutId = setTimeout(() => {
-        cleanup();
-        utils.showToast(`Precisão < 5m não atingida em 20s. Melhor: ${bestAccuracy.toFixed(1)}m`, "error");
-        if (gpsStatus) gpsStatus.innerHTML = `Falha. Melhor precisão: ${bestAccuracy.toFixed(1)}m`;
-    }, TIMEOUT_MS);
-
-    const processCoord = (coords) => {
-        const utmCoords = utils.convertLatLonToUtm(coords.latitude, coords.longitude);
-        if (utmCoords) {
-            if (coordXField) coordXField.value = utmCoords.easting.toFixed(0);
-            if (coordYField) coordYField.value = utmCoords.northing.toFixed(0);
-
-            if (state.setLastUtmZone) state.setLastUtmZone(utmCoords.zoneNum, utmCoords.zoneLetter);
-
-            const dz = document.getElementById('default-utm-zone');
-            if (dz) dz.value = `${utmCoords.zoneNum}${utmCoords.zoneLetter}`;
-
-            const gs = document.getElementById('gps-status');
-            if (gs) {
-                gs.innerHTML = `Precisão: <span style="color:var(--color-forest)">±${coords.accuracy.toFixed(1)}m</span>`;
-            }
-            utils.showToast("Coordenadas capturadas com sucesso!", "success");
-        } else {
-            utils.showToast("Erro na conversão de coordenadas UTM.", "error");
-        }
-        cleanup();
-    };
-
-    watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-            bestAccuracy = Math.min(bestAccuracy, pos.coords.accuracy);
-            if (gpsStatus) {
-                gpsStatus.innerHTML = `Aguardando... (precisão: ±${pos.coords.accuracy.toFixed(1)}m)`;
-            }
-
-            if (pos.coords.accuracy < 5) {
-                processCoord(pos.coords);
-            }
-        },
-        (err) => {
-            cleanup();
-            utils.showToast("Erro no GPS: " + err.message, "error");
-        },
-        options
+  timeoutId = setTimeout(() => {
+    cleanup();
+    utils.showToast(
+      `Precisão < 5m não atingida em 20s. Melhor: ${bestAccuracy.toFixed(1)}m`,
+      "error",
     );
+    if (gpsStatus)
+      gpsStatus.innerHTML = `Falha. Melhor precisão: ${bestAccuracy.toFixed(1)}m`;
+  }, TIMEOUT_MS);
+
+  const processCoord = (coords) => {
+    const utmCoords = utils.convertLatLonToUtm(
+      coords.latitude,
+      coords.longitude,
+    );
+    if (utmCoords) {
+      if (coordXField) coordXField.value = utmCoords.easting.toFixed(0);
+      if (coordYField) coordYField.value = utmCoords.northing.toFixed(0);
+
+      if (state.setLastUtmZone)
+        state.setLastUtmZone(utmCoords.zoneNum, utmCoords.zoneLetter);
+
+      const dz = document.getElementById("default-utm-zone");
+      if (dz) dz.value = `${utmCoords.zoneNum}${utmCoords.zoneLetter}`;
+
+      const gs = document.getElementById("gps-status");
+      if (gs) {
+        gs.innerHTML = `Precisão: <span style="color:var(--color-forest)">±${coords.accuracy.toFixed(1)}m</span>`;
+      }
+      utils.showToast("Coordenadas capturadas com sucesso!", "success");
+    } else {
+      utils.showToast("Erro na conversão de coordenadas UTM.", "error");
+    }
+    cleanup();
+  };
+
+  watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      bestAccuracy = Math.min(bestAccuracy, pos.coords.accuracy);
+      if (gpsStatus) {
+        gpsStatus.innerHTML = `Aguardando... (precisão: ±${pos.coords.accuracy.toFixed(1)}m)`;
+      }
+
+      if (pos.coords.accuracy < 5) {
+        processCoord(pos.coords);
+      }
+    },
+    (err) => {
+      cleanup();
+      utils.showToast("Erro no GPS: " + err.message, "error");
+    },
+    options,
+  );
 }
 
-// ============================================================ 
+// ============================================================
 // 3. CRUD & AÇÕES DIVERSAS (Integradas com Lógica TRAQ)
-// ============================================================ 
+// ============================================================
 
 export function clearPhotoPreview() {
-  const pc = document.getElementById('photo-preview-container');
-  const rb = document.getElementById('remove-photo-btn');
-  const op = document.querySelector('#photo-preview-container img');
-  
-  if (op && pc) { try { URL.revokeObjectURL(op.src); } catch(e){} op.remove(); }
-  if (rb) rb.style.display = 'none';
-  
-  if(state.setCurrentTreePhoto) state.setCurrentTreePhoto(null);
-  
-  const pi = document.getElementById('tree-photo-input');
+  const pc = document.getElementById("photo-preview-container");
+  const rb = document.getElementById("remove-photo-btn");
+  const op = document.querySelector("#photo-preview-container img");
+
+  if (op && pc) {
+    try {
+      URL.revokeObjectURL(op.src);
+    } catch (e) {}
+    op.remove();
+  }
+  if (rb) rb.style.display = "none";
+
+  if (state.setCurrentTreePhoto) state.setCurrentTreePhoto(null);
+
+  const pi = document.getElementById("tree-photo-input");
   if (pi) pi.value = null;
 
-  document.querySelectorAll('.risk-checkbox').forEach(cb => cb.checked = false);
-  document.querySelectorAll('input[name="target_category_desktop"]').forEach(radio => radio.checked = false);
-  
-  currentRiskAssessment = { targetCategory: null, mitigationAction: 'nenhuma' };
-  
+  document
+    .querySelectorAll(".risk-checkbox")
+    .forEach((cb) => (cb.checked = false));
+  document
+    .querySelectorAll('input[name="target_category_desktop"]')
+    .forEach((radio) => (radio.checked = false));
+
+  currentRiskAssessment = { targetCategory: null, mitigationAction: "nenhuma" };
+
   TableUI.render();
 }
 
 export async function handleAddTreeSubmit(event) {
   event.preventDefault();
   const form = event.target;
-  
+
   let totalScore = 0;
-  form.querySelectorAll('.risk-checkbox:checked').forEach(cb => totalScore += parseInt(cb.dataset.weight, 10));
-  const checkedRiskFactors = Array.from(form.querySelectorAll('.risk-checkbox')).map(cb => cb.checked ? 1 : 0);
-  
-  const desktopTargetInput = document.querySelector('input[name="target_category_desktop"]:checked');
+  form
+    .querySelectorAll(".risk-checkbox:checked")
+    .forEach((cb) => (totalScore += parseInt(cb.dataset.weight, 10)));
+  const checkedRiskFactors = Array.from(
+    form.querySelectorAll(".risk-checkbox"),
+  ).map((cb) => (cb.checked ? 1 : 0));
+
+  const desktopTargetInput = document.querySelector(
+    'input[name="target_category_desktop"]:checked',
+  );
   if (desktopTargetInput) {
-      currentRiskAssessment.targetCategory = desktopTargetInput.value;
+    currentRiskAssessment.targetCategory = desktopTargetInput.value;
   }
 
   if (currentRiskAssessment.targetCategory === null) {
-      utils.showToast("Selecione a 'Taxa de Ocupação do Alvo' antes de registrar.", "error");
-      return { success: false };
+    utils.showToast(
+      "Selecione a 'Taxa de Ocupação do Alvo' antes de registrar.",
+      "error",
+    );
+    return { success: false };
   }
 
   const failureProb = getFailureProb(totalScore);
   const impactProb = getImpactProb(currentRiskAssessment.targetCategory);
-  const initialRisk = runTraqMatrices(failureProb, impactProb, currentRiskAssessment.targetCategory);
+  const initialRisk = runTraqMatrices(
+    failureProb,
+    impactProb,
+    currentRiskAssessment.targetCategory,
+  );
 
-  let mitigationVal = document.getElementById('mitigation-action-desktop')?.value || 'nenhuma';
-  if (mitigationVal === 'nenhuma' && currentRiskAssessment.mitigationAction) {
-      mitigationVal = currentRiskAssessment.mitigationAction;
+  let mitigationVal =
+    document.getElementById("mitigation-action-desktop")?.value || "nenhuma";
+  if (mitigationVal === "nenhuma" && currentRiskAssessment.mitigationAction) {
+    mitigationVal = currentRiskAssessment.mitigationAction;
   }
   currentRiskAssessment.mitigationAction = mitigationVal;
 
   let residualRisk = initialRisk;
-  if (currentRiskAssessment.mitigationAction !== 'nenhuma') {
-      const reducedFailureProb = getReducedFailureProb(failureProb);
-      residualRisk = runTraqMatrices(reducedFailureProb, impactProb, currentRiskAssessment.targetCategory);
+  if (currentRiskAssessment.mitigationAction !== "nenhuma") {
+    const reducedFailureProb = getReducedFailureProb(failureProb);
+    residualRisk = runTraqMatrices(
+      reducedFailureProb,
+      impactProb,
+      currentRiskAssessment.targetCategory,
+    );
   }
 
-  const classificationClass = riskProfile[initialRisk] ? riskProfile[initialRisk].class : 'risk-low';
-  const especie = document.getElementById('risk-especie').value.trim();
-  if (!especie) { utils.showToast("Nome da espécie é obrigatório.", 'error'); return { success: false }; }
+  const classificationClass = riskProfile[initialRisk]
+    ? riskProfile[initialRisk].class
+    : "risk-low";
+  const especie = document.getElementById("risk-especie").value.trim();
+  if (!especie) {
+    utils.showToast("Nome da espécie é obrigatório.", "error");
+    return { success: false };
+  }
 
   // --- INÍCIO DA CORREÇÃO PARA numeric field overflow ---
   const sanitizeCoordinate = (coordValue) => {
-    if (coordValue && coordValue.toLowerCase() !== 'n/a') {
-        let num = parseFloat(coordValue);
-        if (!isNaN(num)) {
-            // 1. Arredondar para a escala permitida (6 casas decimais)
-            num = parseFloat(num.toFixed(6));
+    if (coordValue && coordValue.toLowerCase() !== "n/a") {
+      let num = parseFloat(coordValue);
+      if (!isNaN(num)) {
+        // 1. Arredondar para a escala permitida (6 casas decimais)
+        num = parseFloat(num.toFixed(6));
 
-            // 2. Limitar o valor absoluto para ser menor que 1000
-            if (Math.abs(num) >= 10000000) {
-                console.warn(`Atenção: O valor ${coordValue} excede o limite de 100000. Ajustando.`);
-                num = num > 0 ? 999.999999 : -999.999999;
-            }
-            return num;
+        // 2. Limitar o valor absoluto para ser menor que 1000
+        if (Math.abs(num) >= 10000000) {
+          console.warn(
+            `Atenção: O valor ${coordValue} excede o limite de 100000. Ajustando.`,
+          );
+          num = num > 0 ? 999.999999 : -999.999999;
         }
+        return num;
+      }
     }
     return coordValue; // Retorna o original ('N/A' ou outro) se não for um número válido
   };
 
-  const coordX_sanitized = sanitizeCoordinate(document.getElementById('risk-coord-x').value);
-  const coordY_sanitized = sanitizeCoordinate(document.getElementById('risk-coord-y').value);
+  const coordX_sanitized = sanitizeCoordinate(
+    document.getElementById("risk-coord-x").value,
+  );
+  const coordY_sanitized = sanitizeCoordinate(
+    document.getElementById("risk-coord-y").value,
+  );
   // --- FIM DA CORREÇÃO ---
 
   const treeData = {
-    data: document.getElementById('risk-data').value || new Date().toISOString().split('T')[0],
+    data:
+      document.getElementById("risk-data").value ||
+      new Date().toISOString().split("T")[0],
     especie: especie,
     nome: especie, // Adicionado para resolver 'null value in column "nome"'
-    local: document.getElementById('risk-local').value || 'N/A',
+    local: document.getElementById("risk-local").value || "N/A",
     coordX: coordX_sanitized,
     coordY: coordY_sanitized,
-    utmZoneNum: (state.lastUtmZone && state.lastUtmZone.num) ? state.lastUtmZone.num : 0,
-    utmZoneLetter: (state.lastUtmZone && state.lastUtmZone.letter) ? state.lastUtmZone.letter : 'Z',
-    dap: document.getElementById('risk-dap').value || 'N/A',
+    utmZoneNum:
+      state.lastUtmZone && state.lastUtmZone.num ? state.lastUtmZone.num : 0,
+    utmZoneLetter:
+      state.lastUtmZone && state.lastUtmZone.letter
+        ? state.lastUtmZone.letter
+        : "Z",
+    dap: document.getElementById("risk-dap").value || "N/A",
     // [FIX-SUPABASE-ERROR]: A coluna 'altura' não foi encontrada no esquema da tabela 'arvores' no Supabase.
     // Esta linha foi comentada para resolver o erro PGRST204.
     // Se 'altura' for uma coluna intencional, adicione-a à tabela 'arvores' no Supabase
     // (com o tipo de dado correto, ex: NUMERIC(10,2) ou TEXT) e então descomente esta linha.
-    // altura: document.getElementById('risk-altura').value || '0.0', 
-    avaliador: document.getElementById('risk-avaliador').value || 'N/A',
-    observacoes: document.getElementById('risk-obs').value || 'N/A',
+    // altura: document.getElementById('risk-altura').value || '0.0',
+    avaliador: document.getElementById("risk-avaliador").value || "N/A",
+    observacoes: document.getElementById("risk-obs").value || "N/A",
     pontuacao: totalScore,
     riskFactors: checkedRiskFactors,
-    hasPhoto: (state.currentTreePhoto !== null),
+    hasPhoto: state.currentTreePhoto !== null,
     riskLevel: initialRisk,
     residualRisk: residualRisk,
     mitigation: currentRiskAssessment.mitigationAction,
@@ -463,123 +560,140 @@ export async function handleAddTreeSubmit(event) {
   // --- [NEW] SUPABASE INTEGRATION ---
   if (RealtimeService.isSubscribed) {
     try {
-        // FIX: Changed saveTree to upsertTree to match Supabase Client API
-        const { data: supabaseData, error: supabaseError } = await ApiService.upsertTree(treeData);
-        if (supabaseError) {
-            throw new Error(supabaseError.message);
-        }
-        utils.showToast("Dados sincronizados com o servidor.", "success");
-        if (supabaseData && supabaseData.length > 0) {
-            treeData.id_supabase = supabaseData[0].id;
-        }
+      // FIX: Changed saveTree to upsertTree to match Supabase Client API
+      const { data: supabaseData, error: supabaseError } =
+        await ApiService.upsertTree(treeData);
+      if (supabaseError) {
+        throw new Error(supabaseError.message);
+      }
+      utils.showToast("Dados sincronizados com o servidor.", "success");
+      if (supabaseData && supabaseData.length > 0) {
+        treeData.id_supabase = supabaseData[0].id;
+      }
     } catch (e) {
-        console.error("Falha ao salvar no Supabase:", e);
-        utils.showToast("Falha ao sincronizar. Salvando localmente.", "error");
+      console.error("Falha ao salvar no Supabase:", e);
+      utils.showToast("Falha ao sincronizar. Salvando localmente.", "error");
     }
   }
   // --- END SUPABASE INTEGRATION ---
 
-  if(state.setLastEvaluatorName) state.setLastEvaluatorName(treeData.avaliador);
-  
+  if (state.setLastEvaluatorName)
+    state.setLastEvaluatorName(treeData.avaliador);
+
   let resultTree;
 
   if (state.editingTreeId === null) {
-    const newTreeId = state.registeredTrees.length > 0 ? Math.max(...state.registeredTrees.map(t => t.id)) + 1 : 1;
+    const newTreeId =
+      state.registeredTrees.length > 0
+        ? Math.max(...state.registeredTrees.map((t) => t.id)) + 1
+        : 1;
     resultTree = { ...treeData, id: newTreeId };
-    if (resultTree.hasPhoto) db.saveImageToDB(resultTree.id, state.currentTreePhoto);
+    if (resultTree.hasPhoto)
+      db.saveImageToDB(resultTree.id, state.currentTreePhoto);
     state.registeredTrees.push(resultTree);
-    utils.showToast(`Árvore ID ${resultTree.id} salva!`, 'success');
+    utils.showToast(`Árvore ID ${resultTree.id} salva!`, "success");
   } else {
-    const idx = state.registeredTrees.findIndex(t => t.id === state.editingTreeId);
+    const idx = state.registeredTrees.findIndex(
+      (t) => t.id === state.editingTreeId,
+    );
     if (idx === -1) return { success: false };
-    
+
     resultTree = { ...treeData, id: state.editingTreeId };
     const original = state.registeredTrees[idx];
-    
+
     if (original.hasPhoto && state.currentTreePhoto === null) {
-        resultTree.hasPhoto = true; 
+      resultTree.hasPhoto = true;
     } else if (state.currentTreePhoto !== null) {
-        db.saveImageToDB(resultTree.id, state.currentTreePhoto);
+      db.saveImageToDB(resultTree.id, state.currentTreePhoto);
     } else if (!resultTree.hasPhoto && original.hasPhoto) {
-        db.deleteImageFromDB(resultTree.id);
+      db.deleteImageFromDB(resultTree.id);
     }
-    
+
     state.registeredTrees[idx] = resultTree;
-    utils.showToast(`ID ${resultTree.id} atualizado!`, 'success');
+    utils.showToast(`ID ${resultTree.id} atualizado!`, "success");
   }
 
   state.saveDataToStorage();
   state.setEditingTreeId(null);
   form.reset();
-  clearPhotoPreview(); 
-  document.getElementById('add-tree-btn').innerHTML = 'Registrar Árvore';
-  if(document.activeElement) document.activeElement.blur();
+  clearPhotoPreview();
+  document.getElementById("add-tree-btn").innerHTML = "Registrar Árvore";
+  if (document.activeElement) document.activeElement.blur();
 
   TableUI.render();
   return { success: true, tree: resultTree };
 }
 
 export function handleDeleteTree(id) {
-  const t = state.registeredTrees.find(tree => tree.id === id);
+  const t = state.registeredTrees.find((tree) => tree.id === id);
   if (t && t.hasPhoto) db.deleteImageFromDB(id);
-  
-  const n = state.registeredTrees.filter(tree => tree.id !== id);
-  state.setRegisteredTrees(n); 
+
+  const n = state.registeredTrees.filter((tree) => tree.id !== id);
+  state.setRegisteredTrees(n);
   state.saveDataToStorage();
   TableUI.render();
-  
-  utils.showToast(`Árvore removida.`, 'info'); 
+
+  utils.showToast(`Árvore removida.`, "info");
   return true;
 }
 
 export function handleEditTree(id) {
-  const t = state.registeredTrees.find(tree => tree.id === id);
-  if (!t) { utils.showToast(`Erro ID ${id}.`, "error"); return null; }
-  
-  state.setEditingTreeId(id);
-  if(state.setLastUtmZone) state.setLastUtmZone(t.utmZoneNum || 0, t.utmZoneLetter || 'Z');
-  
-  const setVal = (elemId, val) => {
-      const el = document.getElementById(elemId);
-      if(el) el.value = (val !== undefined && val !== null) ? val : '';
-  };
-
-  setVal('risk-data', t.data);
-  setVal('risk-especie', t.especie);
-  setVal('risk-local', t.local);
-  setVal('risk-coord-x', t.coordX);
-  setVal('risk-coord-y', t.coordY);
-  setVal('risk-dap', t.dap);
-  setVal('risk-altura', t.altura);
-  setVal('risk-avaliador', t.avaliador);
-  setVal('risk-obs', t.observacoes);
-  
-  const checkboxes = document.querySelectorAll('.risk-checkbox');
-  checkboxes.forEach(cb => cb.checked = false); 
-  if (t.riskFactors && Array.isArray(t.riskFactors)) {
-      t.riskFactors.forEach((val, index) => {
-          if (val === 1 && checkboxes[index]) checkboxes[index].checked = true;
-      });
+  const t = state.registeredTrees.find((tree) => tree.id === id);
+  if (!t) {
+    utils.showToast(`Erro ID ${id}.`, "error");
+    return null;
   }
 
-  document.getElementById('add-tree-btn').innerHTML = `Salvar Alterações (ID: ${id})`;
-  document.querySelector('.sub-nav-btn[data-target="tab-content-register"]').click();
+  state.setEditingTreeId(id);
+  if (state.setLastUtmZone)
+    state.setLastUtmZone(t.utmZoneNum || 0, t.utmZoneLetter || "Z");
+
+  const setVal = (elemId, val) => {
+    const el = document.getElementById(elemId);
+    if (el) el.value = val !== undefined && val !== null ? val : "";
+  };
+
+  setVal("risk-data", t.data);
+  setVal("risk-especie", t.especie);
+  setVal("risk-local", t.local);
+  setVal("risk-coord-x", t.coordX);
+  setVal("risk-coord-y", t.coordY);
+  setVal("risk-dap", t.dap);
+  setVal("risk-altura", t.altura);
+  setVal("risk-avaliador", t.avaliador);
+  setVal("risk-obs", t.observacoes);
+
+  const checkboxes = document.querySelectorAll(".risk-checkbox");
+  checkboxes.forEach((cb) => (cb.checked = false));
+  if (t.riskFactors && Array.isArray(t.riskFactors)) {
+    t.riskFactors.forEach((val, index) => {
+      if (val === 1 && checkboxes[index]) checkboxes[index].checked = true;
+    });
+  }
+
+  document.getElementById("add-tree-btn").innerHTML =
+    `Salvar Alterações (ID: ${id})`;
+  document
+    .querySelector('.sub-nav-btn[data-target="tab-content-register"]')
+    .click();
   utils.showToast(`Editando ID ${id}...`, "info");
-  
+
   // Popula a avaliação de risco atual para permitir a edição sem refazer o checklist
   currentRiskAssessment = {
     targetCategory: t.targetCategory || null,
-    mitigationAction: t.mitigation || 'nenhuma'
+    mitigationAction: t.mitigation || "nenhuma",
   };
 
   // Sincroniza o radio button do formulário desktop
   if (t.targetCategory) {
-    const targetRadio = document.querySelector(`input[name="target_category_desktop"][value="${t.targetCategory}"]`);
+    const targetRadio = document.querySelector(
+      `input[name="target_category_desktop"][value="${t.targetCategory}"]`,
+    );
     if (targetRadio) targetRadio.checked = true;
   }
-  
+
   // Sincroniza o select de mitigação
-  const mitigationSelect = document.getElementById('mitigation-action-desktop');
+  const mitigationSelect = document.getElementById("mitigation-action-desktop");
   if (mitigationSelect && t.mitigation) {
     mitigationSelect.value = t.mitigation;
   }
@@ -590,94 +704,150 @@ export function handleEditTree(id) {
 }
 
 export function handleClearAll() {
-  state.registeredTrees.forEach(t => { if (t.hasPhoto) db.deleteImageFromDB(t.id); });
-  state.setRegisteredTrees([]); 
+  state.registeredTrees.forEach((t) => {
+    if (t.hasPhoto) db.deleteImageFromDB(t.id);
+  });
+  state.setRegisteredTrees([]);
   state.saveDataToStorage();
   TableUI.render();
-  utils.showToast('Banco limpo.', 'success'); 
+  utils.showToast("Banco limpo.", "success");
   return true;
 }
 
 // === HELPERS ===
 export function handleTableFilter() {
-  const fi = document.getElementById('table-filter-input'); 
+  const fi = document.getElementById("table-filter-input");
   if (!fi) return;
   const ft = fi.value.toLowerCase();
-  document.querySelectorAll("#summary-table-container tbody tr").forEach(r => {
-    r.style.display = r.textContent.toLowerCase().includes(ft) ? "" : "none";
-  });
+  document
+    .querySelectorAll("#summary-table-container tbody tr")
+    .forEach((r) => {
+      r.style.display = r.textContent.toLowerCase().includes(ft) ? "" : "none";
+    });
 }
 
 export function handleSort(sortKey) {
-  if (state.sortState.key === sortKey) state.setSortState(sortKey, state.sortState.direction === 'asc' ? 'desc' : 'asc');
-  else state.setSortState(sortKey, 'asc');
+  if (state.sortState.key === sortKey)
+    state.setSortState(
+      sortKey,
+      state.sortState.direction === "asc" ? "desc" : "asc",
+    );
+  else state.setSortState(sortKey, "asc");
 }
 
 export function getSortValue(tree, key) {
-  const numKeys = ['id', 'dap', 'altura', 'pontuacao', 'coordX', 'coordY', 'utmZoneNum'];
+  const numKeys = [
+    "id",
+    "dap",
+    "altura",
+    "pontuacao",
+    "coordX",
+    "coordY",
+    "utmZoneNum",
+  ];
   if (numKeys.includes(key)) return parseFloat(tree[key]) || 0;
-  return (tree[key] || '').toLowerCase();
+  return (tree[key] || "").toLowerCase();
 }
 
 // === MAPA ===
-export function convertToLatLon(tree) { 
-  if(tree.coordX === 'N/A' || tree.coordY === 'N/A') return null;
-  if (typeof window.proj4 === 'undefined') return null;
-  
-  const e = parseFloat(tree.coordX); const n = parseFloat(tree.coordY);
-  const zn = tree.utmZoneNum || 23; 
-  const hemi = '+south';
+export function convertToLatLon(tree) {
+  if (tree.coordX === "N/A" || tree.coordY === "N/A") return null;
+  if (typeof window.proj4 === "undefined") return null;
+
+  const e = parseFloat(tree.coordX);
+  const n = parseFloat(tree.coordY);
+  const zn = tree.utmZoneNum || 23;
+  const hemi = "+south";
   const def = `+proj=utm +zone=${zn} ${hemi} +datum=WGS84 +units=m +no_defs`;
-  
-  try { 
-      const ll = window.proj4(def, "EPSG:4326", [e, n]); 
-      return [ll[1], ll[0]]; 
-  } catch(e) { return null; }
+
+  try {
+    const ll = window.proj4(def, "EPSG:4326", [e, n]);
+    return [ll[1], ll[0]];
+  } catch (e) {
+    return null;
+  }
 }
 
 export function handleZoomToPoint(id) {
-  const t = state.registeredTrees.find(tr => tr.id === id); 
+  const t = state.registeredTrees.find((tr) => tr.id === id);
   if (!t) return;
-  
+
   const latLonCoords = convertToLatLon(t);
   if (!latLonCoords) {
-      utils.showToast("Coordenadas inválidas para esta árvore.", "error");
-      return;
+    utils.showToast("Coordenadas inválidas para esta árvore.", "error");
+    return;
   }
 
   state.setZoomTargetCoords(latLonCoords);
   state.setHighlightTargetId(id);
   state.setOpenInfoBoxId(id);
-  
-  document.querySelector('.sub-nav-btn[data-target="tab-content-mapa"]').click();
+
+  document
+    .querySelector('.sub-nav-btn[data-target="tab-content-mapa"]')
+    .click();
 }
 
 export function handleMapMarkerClick(id) {
   state.setHighlightTargetId(id);
-  document.querySelector('.sub-nav-btn[data-target="tab-content-summary"]').click();
+  document
+    .querySelector('.sub-nav-btn[data-target="tab-content-summary"]')
+    .click();
   setTimeout(() => {
-      const row = document.getElementById(`row-${id}`);
-      if(row) {
-          row.scrollIntoView({behavior: 'smooth', block: 'center'});
-          row.classList.add('glow-effect');
-          setTimeout(() => row.classList.remove('glow-effect'), 1500);
-      }
+    const row = document.getElementById(`row-${id}`);
+    if (row) {
+      row.scrollIntoView({ behavior: "smooth", block: "center" });
+      row.classList.add("glow-effect");
+      setTimeout(() => row.classList.remove("glow-effect"), 1500);
+    }
   }, 300);
 }
 
 // === IMPORTAÇÃO / EXPORTAÇÃO (ATUALIZADO PARA TRAQ) ===
 function getCSVData() {
   if (state.registeredTrees.length === 0) return null;
-  const headers = ["ID", "Data", "Especie", "CoordX", "CoordY", "ZonaN", "ZonaL", "DAP", "Altura", "Local", "Avaliador", "Pontos", "Risco_Inicial", "Risco_Residual", "Acao_Mitigadora", "Obs", "Fatores", "Foto"];
+  const headers = [
+    "ID",
+    "Data",
+    "Especie",
+    "CoordX",
+    "CoordY",
+    "ZonaN",
+    "ZonaL",
+    "DAP",
+    "Altura",
+    "Local",
+    "Avaliador",
+    "Pontos",
+    "Risco_Inicial",
+    "Risco_Residual",
+    "Acao_Mitigadora",
+    "Obs",
+    "Fatores",
+    "Foto",
+  ];
   let csv = "\\uFEFF" + headers.join(";") + "\\n";
-  state.registeredTrees.forEach(t => {
-    const c = (s) => (s || '').toString().replace(/[\\n;]/g, ' ');
-    const rf = (t.riskFactors || []).join(',');
+  state.registeredTrees.forEach((t) => {
+    const c = (s) => (s || "").toString().replace(/[\\n;]/g, " ");
+    const rf = (t.riskFactors || []).join(",");
     const r = [
-      t.id, t.data, c(t.especie), t.coordX, t.coordY, t.utmZoneNum, t.utmZoneLetter, 
-      t.dap, t.altura, c(t.local), c(t.avaliador), t.pontuacao, 
-      t.riskLevel, t.residualRisk, t.mitigation, // Novos campos TRAQ
-      c(t.observacoes), rf, t.hasPhoto?'Sim':'Nao'
+      t.id,
+      t.data,
+      c(t.especie),
+      t.coordX,
+      t.coordY,
+      t.utmZoneNum,
+      t.utmZoneLetter,
+      t.dap,
+      t.altura,
+      c(t.local),
+      c(t.avaliador),
+      t.pontuacao,
+      t.riskLevel,
+      t.residualRisk,
+      t.mitigation, // Novos campos TRAQ
+      c(t.observacoes),
+      rf,
+      t.hasPhoto ? "Sim" : "Nao",
     ];
     csv += r.join(";") + "\\n";
   });
@@ -685,211 +855,241 @@ function getCSVData() {
 }
 
 export function sendEmailReport() {
-    const csvData = getCSVData();
-    if (!csvData) {
-        utils.showToast("Nenhum dado para enviar.", "error");
-        return;
-    }
-    const subject = "Laudo de Avaliação Arbórea - ArborIA (TRAQ)";
-    const body = `Segue o laudo gerado pelo aplicativo ArborIA.\\n\\n${csvData}`;
-    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    const link = document.createElement('a');
-    link.href = mailtoLink;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const csvData = getCSVData();
+  if (!csvData) {
+    utils.showToast("Nenhum dado para enviar.", "error");
+    return;
+  }
+  const subject = "Laudo de Avaliação Arbórea - ArborIA (TRAQ)";
+  const body = `Segue o laudo gerado pelo aplicativo ArborIA.\\n\\n${csvData}`;
+  const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const link = document.createElement("a");
+  link.href = mailtoLink;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 export function exportActionZip() {
-  if (typeof JSZip === 'undefined' || state.registeredTrees.length === 0) return;
-  
-  const zipStatus = document.getElementById('zip-status'); 
-  if(zipStatus) zipStatus.style.display = 'flex';
-  
+  if (typeof JSZip === "undefined" || state.registeredTrees.length === 0)
+    return;
+
+  const zipStatus = document.getElementById("zip-status");
+  if (zipStatus) zipStatus.style.display = "flex";
+
   try {
     const zip = new JSZip();
     const csv = getCSVData();
     if (csv) zip.file("manifesto_dados_traq.csv", csv);
-    
-    db.getAllImagesFromDB().then(images => {
-        if (images.length > 0) {
-          const imgFolder = zip.folder("images");
-          images.forEach(img => {
-             const t = state.registeredTrees.find(x => x.id === img.id);
-             if(t && t.hasPhoto) {
-                 let ext = img.imageBlob.type.includes('png') ? 'png' : 'jpg';
-                 imgFolder.file(`tree_id_${img.id}.${ext}`, img.imageBlob);
-             }
-          });
-        }
-        zip.generateAsync({ type: "blob" }).then(blob => {
-            utils.downloadBlob(blob, `Backup_ArborIA_TRAQ_${new Date().toISOString().slice(0,10)}.zip`);
-            if(zipStatus) zipStatus.style.display = 'none';
+
+    db.getAllImagesFromDB().then((images) => {
+      if (images.length > 0) {
+        const imgFolder = zip.folder("images");
+        images.forEach((img) => {
+          const t = state.registeredTrees.find((x) => x.id === img.id);
+          if (t && t.hasPhoto) {
+            let ext = img.imageBlob.type.includes("png") ? "png" : "jpg";
+            imgFolder.file(`tree_id_${img.id}.${ext}`, img.imageBlob);
+          }
         });
+      }
+      zip.generateAsync({ type: "blob" }).then((blob) => {
+        utils.downloadBlob(
+          blob,
+          `Backup_ArborIA_TRAQ_${new Date().toISOString().slice(0, 10)}.zip`,
+        );
+        if (zipStatus) zipStatus.style.display = "none";
+      });
     });
-  } catch (e) { 
-      if(zipStatus) zipStatus.style.display = 'none'; 
+  } catch (e) {
+    if (zipStatus) zipStatus.style.display = "none";
   }
 }
 
 export async function handleImportZip(event) {
-  if (typeof JSZip === 'undefined') return;
-  const file = event.target.files[0]; 
+  if (typeof JSZip === "undefined") return;
+  const file = event.target.files[0];
   if (!file) return;
-  
-  const zipStatus = document.getElementById('zip-status');
-  if (zipStatus) zipStatus.style.display = 'flex';
+
+  const zipStatus = document.getElementById("zip-status");
+  if (zipStatus) zipStatus.style.display = "flex";
 
   try {
     const zip = await JSZip.loadAsync(file);
-    
+
     // 1. Tenta encontrar o arquivo CSV (Novo ou Antigo)
     let csvFile = zip.file("manifesto_dados_traq.csv"); // Novo padrão TRAQ
     let isTraqFormat = true;
 
     if (!csvFile) {
-        // Tenta o padrão antigo (fallback)
-        csvFile = zip.file("manifesto_dados.csv");
-        isTraqFormat = false;
+      // Tenta o padrão antigo (fallback)
+      csvFile = zip.file("manifesto_dados.csv");
+      isTraqFormat = false;
     }
 
     if (!csvFile) {
-        // Última tentativa: Procura qualquer arquivo que termine em .csv
-        const csvFiles = zip.file(/.*\.csv$/);
-        if (csvFiles.length > 0) {
-            csvFile = csvFiles[0];
-            // Assume formato novo se tiver 'traq' no nome
-            isTraqFormat = csvFile.name.toLowerCase().includes('traq');
-        } else {
-            throw new Error("Arquivo CSV não encontrado no ZIP.");
-        }
+      // Última tentativa: Procura qualquer arquivo que termine em .csv
+      const csvFiles = zip.file(/.*\.csv$/);
+      if (csvFiles.length > 0) {
+        csvFile = csvFiles[0];
+        // Assume formato novo se tiver 'traq' no nome
+        isTraqFormat = csvFile.name.toLowerCase().includes("traq");
+      } else {
+        throw new Error("Arquivo CSV não encontrado no ZIP.");
+      }
     }
-    
+
     const csvContent = await csvFile.async("string");
-    const lines = csvContent.split('\\n').filter(l => l.trim() !== '');
-    
+    const lines = csvContent.split("\\n").filter((l) => l.trim() !== "");
+
     // Remove o BOM (\\uFEFF) se existir e pega os cabeçalhos
-    const headers = lines[0].replace(/^\\uFEFF/, '').split(';').map(h => h.trim());
-    
+    const headers = lines[0]
+      .replace(/^\\uFEFF/, "")
+      .split(";")
+      .map((h) => h.trim());
+
     // Validação extra de formato baseada nos cabeçalhos
-    if (!isTraqFormat && headers.includes('Risco_Inicial')) {
-        isTraqFormat = true;
+    if (!isTraqFormat && headers.includes("Risco_Inicial")) {
+      isTraqFormat = true;
     }
 
     let newTrees = [...state.registeredTrees];
-    let maxId = newTrees.length > 0 ? Math.max(...newTrees.map(t => t.id)) : 0;
-    
+    let maxId =
+      newTrees.length > 0 ? Math.max(...newTrees.map((t) => t.id)) : 0;
+
     // Definição do Perfil de Risco (para mapear cores)
     const riskProfile = {
-        'Baixo':    { class: 'risk-low' },
-        'Moderado': { class: 'risk-medium' },
-        'Alto':     { class: 'risk-high' },
-        'Extremo':  { class: 'risk-extreme' }
+      Baixo: { class: "risk-low" },
+      Moderado: { class: "risk-medium" },
+      Alto: { class: "risk-high" },
+      Extremo: { class: "risk-extreme" },
     };
 
     for (let i = 1; i < lines.length; i++) {
-        const row = lines[i].split(';');
-        if (row.length < 5) continue; // Pula linhas vazias ou quebradas
+      const row = lines[i].split(";");
+      if (row.length < 5) continue; // Pula linhas vazias ou quebradas
 
-        const newId = ++maxId;
-        let tree;
+      const newId = ++maxId;
+      let tree;
 
-        if (isTraqFormat) {
-            // Mapeamento Dinâmico (TRAQ)
-            const dataMap = headers.reduce((obj, header, index) => {
-                obj[header] = row[index];
-                return obj;
-            }, {});
+      if (isTraqFormat) {
+        // Mapeamento Dinâmico (TRAQ)
+        const dataMap = headers.reduce((obj, header, index) => {
+          obj[header] = row[index];
+          return obj;
+        }, {});
 
-            tree = {
-                id: newId,
-                data: dataMap['Data'], 
-                especie: dataMap['Especie'], 
-                local: dataMap['Local'],
-                coordX: dataMap['CoordX'], 
-                coordY: dataMap['CoordY'], 
-                utmZoneNum: parseInt(dataMap['ZonaN']) || 0,
-                utmZoneLetter: dataMap['ZonaL'], 
-                dap: dataMap['DAP'], 
-                altura: dataMap['Altura'],
-                avaliador: dataMap['Avaliador'], 
-                observacoes: dataMap['Obs'],
-                pontuacao: parseInt(dataMap['Pontos_Checklist'] || dataMap['Pontos']) || 0,
-                riskFactors: (dataMap['Fatores_IDs'] || dataMap['Fatores'] || '').split(',').map(Number),
-                hasPhoto: (dataMap['Tem_Foto'] || dataMap['Foto'] || '').trim().toLowerCase() === 'sim',
-                
-                // Campos TRAQ
-                targetType: dataMap['Alvo_Tipo'] || 'Não Informado',
-                failureProb: dataMap['Prob_Falha'] || 'Não Avaliado',
-                riskLevel: dataMap['Risco_Inicial'] || 'Baixo',
-                residualRisk: dataMap['Risco_Residual'] || 'Baixo',
-                mitigation: dataMap['Mitigacao'] || 'nenhuma',
-                
-                // Compatibilidade UI
-                risco: dataMap['Risco_Inicial'] || 'Baixo',
-                riscoClass: (riskProfile[dataMap['Risco_Inicial']] || {class: 'risk-low'}).class,
-            };
-        } else {
-            // Mapeamento Legado (Antigo)
-            // Layout antigo: ID;Data;Especie;CoordX;CoordY;ZonaN;ZonaL;DAP;Altura;Local;Avaliador;Pontos;Risco;Obs;Fatores;Foto
-            const pontuacao = parseInt(row[11]) || 0;
-            // Recálculo básico para TRAQ
-            let riskLevel = 'Baixo';
-            let riskClass = 'risk-low';
-            if(pontuacao >= 20) { riskLevel = 'Alto'; riskClass = 'risk-high'; }
-            else if(pontuacao >= 10) { riskLevel = 'Moderado'; riskClass = 'risk-medium'; }
+        tree = {
+          id: newId,
+          data: dataMap["Data"],
+          especie: dataMap["Especie"],
+          local: dataMap["Local"],
+          coordX: dataMap["CoordX"],
+          coordY: dataMap["CoordY"],
+          utmZoneNum: parseInt(dataMap["ZonaN"]) || 0,
+          utmZoneLetter: dataMap["ZonaL"],
+          dap: dataMap["DAP"],
+          altura: dataMap["Altura"],
+          avaliador: dataMap["Avaliador"],
+          observacoes: dataMap["Obs"],
+          pontuacao:
+            parseInt(dataMap["Pontos_Checklist"] || dataMap["Pontos"]) || 0,
+          riskFactors: (dataMap["Fatores_IDs"] || dataMap["Fatores"] || "")
+            .split(",")
+            .map(Number),
+          hasPhoto:
+            (dataMap["Tem_Foto"] || dataMap["Foto"] || "")
+              .trim()
+              .toLowerCase() === "sim",
 
-            tree = {
-                id: newId,
-                data: row[1], especie: row[2], local: row[9],
-                coordX: row[3], coordY: row[4], 
-                utmZoneNum: parseInt(row[5]) || 0, utmZoneLetter: row[6], 
-                dap: row[7], altura: row[8],
-                avaliador: row[10], observacoes: row[13],
-                pontuacao: pontuacao,
-                riskFactors: (row[14] || '').split(',').map(Number),
-                hasPhoto: (row[15] || '').trim().toLowerCase() === 'sim',
-                
-                // Preenche TRAQ com defaults
-                targetType: 'Legado',
-                failureProb: 'Não Avaliado',
-                riskLevel: riskLevel,
-                residualRisk: riskLevel,
-                mitigation: 'nenhuma',
-                risco: riskLevel,
-                riscoClass: riskClass
-            };
+          // Campos TRAQ
+          targetType: dataMap["Alvo_Tipo"] || "Não Informado",
+          failureProb: dataMap["Prob_Falha"] || "Não Avaliado",
+          riskLevel: dataMap["Risco_Inicial"] || "Baixo",
+          residualRisk: dataMap["Risco_Residual"] || "Baixo",
+          mitigation: dataMap["Mitigacao"] || "nenhuma",
+
+          // Compatibilidade UI
+          risco: dataMap["Risco_Inicial"] || "Baixo",
+          riscoClass: (
+            riskProfile[dataMap["Risco_Inicial"]] || { class: "risk-low" }
+          ).class,
+        };
+      } else {
+        // Mapeamento Legado (Antigo)
+        // Layout antigo: ID;Data;Especie;CoordX;CoordY;ZonaN;ZonaL;DAP;Altura;Local;Avaliador;Pontos;Risco;Obs;Fatores;Foto
+        const pontuacao = parseInt(row[11]) || 0;
+        // Recálculo básico para TRAQ
+        let riskLevel = "Baixo";
+        let riskClass = "risk-low";
+        if (pontuacao >= 20) {
+          riskLevel = "Alto";
+          riskClass = "risk-high";
+        } else if (pontuacao >= 10) {
+          riskLevel = "Moderado";
+          riskClass = "risk-medium";
         }
 
-        // Importação de Imagem
-        if (tree.hasPhoto) {
-            const oldId = isTraqFormat ? (headers.includes('ID') ? row[headers.indexOf('ID')] : row[0]) : row[0];
-            // Procura por JPG ou PNG
-            let imgFile = zip.file(`images/tree_id_${oldId}.jpg`);
-            if (!imgFile) imgFile = zip.file(`images/tree_id_${oldId}.png`);
-            
-            if (imgFile) {
-                const blob = await imgFile.async("blob");
-                await db.saveImageToDB(newId, blob);
-            }
+        tree = {
+          id: newId,
+          data: row[1],
+          especie: row[2],
+          local: row[9],
+          coordX: row[3],
+          coordY: row[4],
+          utmZoneNum: parseInt(row[5]) || 0,
+          utmZoneLetter: row[6],
+          dap: row[7],
+          altura: row[8],
+          avaliador: row[10],
+          observacoes: row[13],
+          pontuacao: pontuacao,
+          riskFactors: (row[14] || "").split(",").map(Number),
+          hasPhoto: (row[15] || "").trim().toLowerCase() === "sim",
+
+          // Preenche TRAQ com defaults
+          targetType: "Legado",
+          failureProb: "Não Avaliado",
+          riskLevel: riskLevel,
+          residualRisk: riskLevel,
+          mitigation: "nenhuma",
+          risco: riskLevel,
+          riscoClass: riskClass,
+        };
+      }
+
+      // Importação de Imagem
+      if (tree.hasPhoto) {
+        const oldId = isTraqFormat
+          ? headers.includes("ID")
+            ? row[headers.indexOf("ID")]
+            : row[0]
+          : row[0];
+        // Procura por JPG ou PNG
+        let imgFile = zip.file(`images/tree_id_${oldId}.jpg`);
+        if (!imgFile) imgFile = zip.file(`images/tree_id_${oldId}.png`);
+
+        if (imgFile) {
+          const blob = await imgFile.async("blob");
+          await db.saveImageToDB(newId, blob);
         }
-        newTrees.push(tree);
+      }
+      newTrees.push(tree);
     }
-    
+
     state.setRegisteredTrees(newTrees);
     state.saveDataToStorage();
     TableUI.render();
-    
+
     // Importa utils dinamicamente para usar o showToast
-    const u = await import('./utils.js');
+    const u = await import("./utils.js");
     u.showToast("Importação TRAQ concluída!", "success");
-    
   } catch (e) {
-      console.error(e);
-      const u = await import('./utils.js');
-      u.showToast("Erro crítico na importação.", "error");
+    console.error(e);
+    const u = await import("./utils.js");
+    u.showToast("Erro crítico na importação.", "error");
   } finally {
-      if (zipStatus) zipStatus.style.display = 'none';
-      event.target.value = null;
+    if (zipStatus) zipStatus.style.display = "none";
+    event.target.value = null;
   }
 }

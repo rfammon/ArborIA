@@ -1,133 +1,141 @@
 // js/data-content.js (v19.4)
 // Contém apenas os objetos de dados e conteúdo do manual.
 
-const imgTag = (src, alt) => `<img src="img/${src}" alt="${alt}" class="manual-img">`;
+const imgTag = (src, alt) =>
+  `<img src="img/${src}" alt="${alt}" class="manual-img">`;
 
 const glossaryTerms = {
-    'colar do galho': 'Zona especializada na base do galho, responsável pela compartimentalização de ferimentos.',
-    'crista da casca': 'Elevação cortical paralela ao ângulo de inserção do galho, indicadora da zona de união.',
-    'lenho de cicatrização': 'Tecido formado para selar ferimentos, também conhecido como callus.',
-    'casca inclusa': 'Tecido cortical aprisionado em uniões de ângulo agudo.',
-    'lenho de reação': 'Madeira com propriedades alteradas por resposta a tensões.',
-    'gemas epicórmicas': 'Brotos dormentes no tronco ou galhos principais.',
-    'entreno': 'Espaço entre dois nós consecutivos no ramo.',
-    'no': 'Ponto de inserção de folhas, gemas ou ramos.',
-    'lenho': 'Tecido vegetal com função de sustentação e condução de seiva.',
-    'podao': 'Tesoura de poda de haste longa para alcance elevado.',
-    'tesourao-poda': 'Ferramenta para galhos de até 7 cm de diâmetro.',
-    'serra-poda': 'Serra com dentes especiais para madeira verde.',
-    'motosserra-glossario': 'Equipamento motorizado para corte de galhos e troncos.',
-    'motopoda-glossario': 'Ferramenta motorizada com haste para galhos altos.',
-    'podador-bypass-glossario': 'Lâmina deslizante que realiza cortes limpos.',
-    'podador-bigorna': 'Lâmina que pressiona o galho contra superfície plana.',
-    'hipsometro': 'Instrumento para medir altura de árvores.',
-    'poda-conducao': 'Direciona crescimento da árvore.',
-    'poda-formacao': 'Define estrutura arquitetônica futura.',
-    'poda-limpeza': 'Remove galhos mortos, doentes ou mal orientados.',
-    'poda-adequacao': 'Adapta a árvore ao espaço urbano ou industrial.',
-    'poda-reducao': 'Diminui volume da copa.',
-    'poda-emergencia': 'Elimina riscos iminentes.',
-    'poda-raizes': 'Deve ser evitada; requer profissional habilitado.',
-    'poda-cabecote': 'Poda severa para estimular brotação.',
-    'poda drástica': 'Corte indiscriminado com remoção total ou parcial da copa (não recomendada).',
-    'poda-reducao-garfo': 'Preserva estrutura natural.',
-    'corte-rente': 'Remove o colar do galho (inadequado).',
-    'corte-toco': 'Retarda cicatrização.',
-    'poda-tres-cortes': 'Técnica que preserva tecidos vitais.',
-    'desbaste-copa': 'Remoção seletiva para luz e ventilação.',
-    'elevacao-copa': 'Remoção de galhos inferiores.',
-    'reducao-copa': 'Corte seletivo para adequação ao espaço.',
-    'topping': 'Sinônimo de Poda Drástica.',
-    'dap': 'Diâmetro à Altura do Peito (DAP): Medida padrão a 1,30 m do solo.',
-    'projecao-copa': 'Área de sombreamento da copa.',
-    'indice-vitalidade': 'Avaliação do estado fitossanitário.',
-    'rcr': 'Raio Crítico Radicular (RCR): Área de influência e sustentação mecânica das raízes.',
-    'nivel-1-avaliacao': 'Nível 1: Análise visual.',
-    'nivel-2-avaliacao': 'Nível 2: Inspeção 360º.',
-    'nivel-3-avaliacao': 'Nível 3: Métodos avançados para avaliar defeitos.',
-    'asv': 'Autorização de Supressão de Vegetação (ASV): Documento emitido pelo órgão ambiental competente que autoriza o corte ou supressão de vegetação nativa ou árvores isoladas, mediante justificativa técnica e compensação ambiental.',
-    'app': 'Área de Preservação Permanente (APP): Espaço protegido por lei, com função ambiental de preservar recursos hídricos, biodiversidade e estabilidade geológica. Intervenções são permitidas apenas em casos de utilidade pública, interesse social ou baixo impacto ambiental.',
-    'ctf': 'Cadastro Técnico Federal (CTF): Registro obrigatório no IBAMA para pessoas físicas ou jurídicas que realizam atividades potencialmente poluidoras ou utilizadoras de recursos naturais.',
-    'art': 'Anotação de Responsabilidade Técnica (ART): Documento que formaliza a responsabilidade técnica de um profissional habilitado sobre determinado serviço ou estudo ambiental.',
-    'tcra': 'Termo de Compromisso de Recuperação Ambiental (TCRA): Instrumento legal que formaliza a obrigação de compensação ambiental por meio de ações de recuperação ou preservação.',
-    'compensacao-ambiental': 'Medida obrigatória para mitigar os impactos causados pela supressão de vegetação, podendo incluir restauração ecológica, preservação de áreas remanescentes ou compensação em propriedades de terceiros.',
-    'pnrs': 'Política Nacional de Resíduos Sólidos (PNRS): Lei nº 12.305/2010 que estabelece diretrizes para o manejo adequado dos resíduos sólidos, incluindo os gerados por poda e corte de árvores.',
-    'mtr': 'Manifesto de Transporte de Resíduos (MTR): Documento que garante a rastreabilidade dos resíduos desde a origem até a destinação final, exigido em operações de transporte de resíduos sólidos.',
-    'spi q': 'Sistema de Proteção Individual contra Quedas.'
+  "colar do galho":
+    "Zona especializada na base do galho, responsável pela compartimentalização de ferimentos.",
+  "crista da casca":
+    "Elevação cortical paralela ao ângulo de inserção do galho, indicadora da zona de união.",
+  "lenho de cicatrização":
+    "Tecido formado para selar ferimentos, também conhecido como callus.",
+  "casca inclusa": "Tecido cortical aprisionado em uniões de ângulo agudo.",
+  "lenho de reação":
+    "Madeira com propriedades alteradas por resposta a tensões.",
+  "gemas epicórmicas": "Brotos dormentes no tronco ou galhos principais.",
+  entreno: "Espaço entre dois nós consecutivos no ramo.",
+  no: "Ponto de inserção de folhas, gemas ou ramos.",
+  lenho: "Tecido vegetal com função de sustentação e condução de seiva.",
+  podao: "Tesoura de poda de haste longa para alcance elevado.",
+  "tesourao-poda": "Ferramenta para galhos de até 7 cm de diâmetro.",
+  "serra-poda": "Serra com dentes especiais para madeira verde.",
+  "motosserra-glossario":
+    "Equipamento motorizado para corte de galhos e troncos.",
+  "motopoda-glossario": "Ferramenta motorizada com haste para galhos altos.",
+  "podador-bypass-glossario": "Lâmina deslizante que realiza cortes limpos.",
+  "podador-bigorna": "Lâmina que pressiona o galho contra superfície plana.",
+  hipsometro: "Instrumento para medir altura de árvores.",
+  "poda-conducao": "Direciona crescimento da árvore.",
+  "poda-formacao": "Define estrutura arquitetônica futura.",
+  "poda-limpeza": "Remove galhos mortos, doentes ou mal orientados.",
+  "poda-adequacao": "Adapta a árvore ao espaço urbano ou industrial.",
+  "poda-reducao": "Diminui volume da copa.",
+  "poda-emergencia": "Elimina riscos iminentes.",
+  "poda-raizes": "Deve ser evitada; requer profissional habilitado.",
+  "poda-cabecote": "Poda severa para estimular brotação.",
+  "poda drástica":
+    "Corte indiscriminado com remoção total ou parcial da copa (não recomendada).",
+  "poda-reducao-garfo": "Preserva estrutura natural.",
+  "corte-rente": "Remove o colar do galho (inadequado).",
+  "corte-toco": "Retarda cicatrização.",
+  "poda-tres-cortes": "Técnica que preserva tecidos vitais.",
+  "desbaste-copa": "Remoção seletiva para luz e ventilação.",
+  "elevacao-copa": "Remoção de galhos inferiores.",
+  "reducao-copa": "Corte seletivo para adequação ao espaço.",
+  topping: "Sinônimo de Poda Drástica.",
+  dap: "Diâmetro à Altura do Peito (DAP): Medida padrão a 1,30 m do solo.",
+  "projecao-copa": "Área de sombreamento da copa.",
+  "indice-vitalidade": "Avaliação do estado fitossanitário.",
+  rcr: "Raio Crítico Radicular (RCR): Área de influência e sustentação mecânica das raízes.",
+  "nivel-1-avaliacao": "Nível 1: Análise visual.",
+  "nivel-2-avaliacao": "Nível 2: Inspeção 360º.",
+  "nivel-3-avaliacao": "Nível 3: Métodos avançados para avaliar defeitos.",
+  asv: "Autorização de Supressão de Vegetação (ASV): Documento emitido pelo órgão ambiental competente que autoriza o corte ou supressão de vegetação nativa ou árvores isoladas, mediante justificativa técnica e compensação ambiental.",
+  app: "Área de Preservação Permanente (APP): Espaço protegido por lei, com função ambiental de preservar recursos hídricos, biodiversidade e estabilidade geológica. Intervenções são permitidas apenas em casos de utilidade pública, interesse social ou baixo impacto ambiental.",
+  ctf: "Cadastro Técnico Federal (CTF): Registro obrigatório no IBAMA para pessoas físicas ou jurídicas que realizam atividades potencialmente poluidoras ou utilizadoras de recursos naturais.",
+  art: "Anotação de Responsabilidade Técnica (ART): Documento que formaliza a responsabilidade técnica de um profissional habilitado sobre determinado serviço ou estudo ambiental.",
+  tcra: "Termo de Compromisso de Recuperação Ambiental (TCRA): Instrumento legal que formaliza a obrigação de compensação ambiental por meio de ações de recuperação ou preservação.",
+  "compensacao-ambiental":
+    "Medida obrigatória para mitigar os impactos causados pela supressão de vegetação, podendo incluir restauração ecológica, preservação de áreas remanescentes ou compensação em propriedades de terceiros.",
+  pnrs: "Política Nacional de Resíduos Sólidos (PNRS): Lei nº 12.305/2010 que estabelece diretrizes para o manejo adequado dos resíduos sólidos, incluindo os gerados por poda e corte de árvores.",
+  mtr: "Manifesto de Transporte de Resíduos (MTR): Documento que garante a rastreabilidade dos resíduos desde a origem até a destinação final, exigido em operações de transporte de resíduos sólidos.",
+  "spi q": "Sistema de Proteção Individual contra Quedas.",
 };
 const equipmentData = {
-    'serrote-manual': {
-        desc: 'Utilizado para galhos com diâmetro entre 3 e 12 cm. Permite cortes precisos em locais de difícil acesso.',
-        img: 'serrote-manual.jpg'
-    },
-    'motosserra': {
-        desc: 'Recomendada para galhos com diâmetro superior a 12 cm e para supressão de árvores. Exige treinamento e EPIs específicos devido ao alto risco.',
-        img: 'motosserra.jpg'
-    },
-    'motopoda': {
-        desc: 'Ferramenta com haste extensível que alcança até 6 metros, ideal para podar galhos altos sem a necessidade de escadas ou plataformas.',
-        img: 'motopoda.jpg'
-    },
-    'podador-haste': {
-        desc: 'Semelhante à motopoda em funcionalidade de longo alcance, mas operado manually, oferecendo precisão em galhos finos e médios em altura.',
-        img: 'podao.jpg'
-    },
-    'tesoura-poda': {
-        desc: 'Utilizada para galhos com diâmetro de 3 a 7 cm. Ideal para cortes limpos e rápidos em ramos mais finos.',
-        img: 'tesourao-poda.jpg'
-    },
-    'podador-bypass': {
-        desc: 'Específico para galhos com até 3 a 7 cm de diâmetro. Seu mecanismo de "tesoura" garante um corte limpo que minimiza danos ao tecido vegetal.',
-        img: 'tesoura-by-pass.jpg'
-    },
-    'podador-comum': {
-        desc: 'Para galhos com até 3 a 7 cm de diâmetro. Versátil para a maioria das podas leves e médias.',
-        img: 'podador.jpg'
-    }
+  "serrote-manual": {
+    desc: "Utilizado para galhos com diâmetro entre 3 e 12 cm. Permite cortes precisos em locais de difícil acesso.",
+    img: "serrote-manual.jpg",
+  },
+  motosserra: {
+    desc: "Recomendada para galhos com diâmetro superior a 12 cm e para supressão de árvores. Exige treinamento e EPIs específicos devido ao alto risco.",
+    img: "motosserra.jpg",
+  },
+  motopoda: {
+    desc: "Ferramenta com haste extensível que alcança até 6 metros, ideal para podar galhos altos sem a necessidade de escadas ou plataformas.",
+    img: "motopoda.jpg",
+  },
+  "podador-haste": {
+    desc: "Semelhante à motopoda em funcionalidade de longo alcance, mas operado manually, oferecendo precisão em galhos finos e médios em altura.",
+    img: "podao.jpg",
+  },
+  "tesoura-poda": {
+    desc: "Utilizada para galhos com diâmetro de 3 a 7 cm. Ideal para cortes limpos e rápidos em ramos mais finos.",
+    img: "tesourao-poda.jpg",
+  },
+  "podador-bypass": {
+    desc: 'Específico para galhos com até 3 a 7 cm de diâmetro. Seu mecanismo de "tesoura" garante um corte limpo que minimiza danos ao tecido vegetal.',
+    img: "tesoura-by-pass.jpg",
+  },
+  "podador-comum": {
+    desc: "Para galhos com até 3 a 7 cm de diâmetro. Versátil para a maioria das podas leves e médias.",
+    img: "podador.jpg",
+  },
 };
 const podaPurposeData = {
-    'conducao': {
-        desc: 'Direcionar eixo de crescimento, remover ramos baixos/indesejáveis.',
-        img: 'poda-conducao.jpg'
-    },
-    'limpeza': {
-        desc: 'Remover ramos mortos, secos, doentes, parasitas, tocos - Risco sanitário e queda.',
-        img: 'poda-limpeza.jpg'
-    },
-    'correcao': {
-        desc: 'Remover ramos com defeito estrutural (cruzados, codominantes, V) - Com objetivo de aumentar a estabilidade do indivíduo.',
-        img: 'poda-correcao.jpg'
-    },
-    'adequacao': {
-        desc: 'Resolver conflitos com estruturas urbanas/edificações. Priorizar realocação de equipamentos quando possível.',
-        img: 'poda-adequacao.jpg'
-    },
-    'levantamento': {
-        desc: 'Remover ramos baixos para desobstrução. Podar apenas o mínimo necessário. Diâmetro máximo: 1/3 do ramo origem. Evitar excesso e desbalanceamento da copa.',
-        img: 'poda-levantamento.jpg'
-    },
-    'emergencia': {
-        desc: 'Risco iminente (quedas de pós-evento climático). Minimizar danos futuros quando possível.',
-        img: 'poda-emergencia.jpg'
-    },
-    'raizes': {
-        desc: 'Este tipo de poda deve ser evitado por causar perda estrutural na árvore e aumentar o risco de queda. Sempre que possível, alternativas devem ser estudadas. Para realizar a poda de raízes sempre consulte um profissional habilitado.',
-        img: 'poda-raizes-evitar.jpg'
-    }
+  conducao: {
+    desc: "Direcionar eixo de crescimento, remover ramos baixos/indesejáveis.",
+    img: "poda-conducao.jpg",
+  },
+  limpeza: {
+    desc: "Remover ramos mortos, secos, doentes, parasitas, tocos - Risco sanitário e queda.",
+    img: "poda-limpeza.jpg",
+  },
+  correcao: {
+    desc: "Remover ramos com defeito estrutural (cruzados, codominantes, V) - Com objetivo de aumentar a estabilidade do indivíduo.",
+    img: "poda-correcao.jpg",
+  },
+  adequacao: {
+    desc: "Resolver conflitos com estruturas urbanas/edificações. Priorizar realocação de equipamentos quando possível.",
+    img: "poda-adequacao.jpg",
+  },
+  levantamento: {
+    desc: "Remover ramos baixos para desobstrução. Podar apenas o mínimo necessário. Diâmetro máximo: 1/3 do ramo origem. Evitar excesso e desbalanceamento da copa.",
+    img: "poda-levantamento.jpg",
+  },
+  emergencia: {
+    desc: "Risco iminente (quedas de pós-evento climático). Minimizar danos futuros quando possível.",
+    img: "poda-emergencia.jpg",
+  },
+  raizes: {
+    desc: "Este tipo de poda deve ser evitado por causar perda estrutural na árvore e aumentar o risco de queda. Sempre que possível, alternativas devem ser estudadas. Para realizar a poda de raízes sempre consulte um profissional habilitado.",
+    img: "poda-raizes-evitar.jpg",
+  },
 };
 
 const manualContent = {
-    'conceitos-basicos': {
-        titulo: '💡 Definições, Termos e Técnicas',
-        html: `
+  "conceitos-basicos": {
+    titulo: "💡 Definições, Termos e Técnicas",
+    html: `
             <h3>Termos Estruturais e Anatômicos</h3>
             <p>A correta identificação das partes da árvore é vital. Use o <span class="glossary-term" data-term-key="colar do galho">colar do galho</span> e a <span class="glossary-term" data-term-key="crista da casca">crista da casca</span> como guias.</p>
-            ${imgTag('anatomia-corte.jpg', 'Anatomia correta do corte de galho')}
+            ${imgTag("anatomia-corte.jpg", "Anatomia correta do corte de galho")}
             <p>Termos como <span class="glossary-term" data-term-key="lenho de cicatrização">lenho de cicatrização</span>, <span class="glossary-term" data-term-key="casca inclusa">casca inclusa</span> e <span class="glossary-term" data-term-key="lenho de reação">lenho de reação</span> são importantes para a inspeção.</p>
-            
+
             <h3>Compartimentalização de Árvores</h3>
             <p>As árvores possuem defesas naturais que protegem cortes e ferimentos, como os causados pela poda. Na casca, os ferimentos formam uma camada protetora chamada periderme necrofilática, que impede a entrada de microrganismos. Na madeira, ocorre um processo chamado compartimentalização, que isola a área danificada para evitar que o problema se espalhe pelo restante da árvore.</p>
-            ${imgTag('compartimentalização.jpg', 'Diagrama do processo de compartimentalização')}
+            ${imgTag("compartimentalização.jpg", "Diagrama do processo de compartimentalização")}
 
             <h3>Instrumentos e Equipamentos</h3>
             <ul class="equipment-list">
@@ -150,14 +158,14 @@ const manualContent = {
                 <li><span class="purpose-term" data-term-key="emergencia">Emergência</span></li>
                 <li><span class="purpose-term" data-term-key="raizes">⚠️ Poda de Raízes (Evitar)</span></li>
             </ul>
-        `
-    },
-    'planejamento-inspecao': {
-        titulo: '📋 Planejamento e Inspeção',
-        html: `
+        `,
+  },
+  "planejamento-inspecao": {
+    titulo: "📋 Planejamento e Inspeção",
+    html: `
             <h3>Planejamento</h3>
             <p>Etapa fundamental para garantir a execução <strong>segura e eficiente</strong>.</p>
-            
+
             <h4>Definição do Local, Escopo e Objetivo da Poda e Corte</h4>
             <ul>
                 <li>Identificar o local exato da intervenção, considerando áreas industriais, administrativas ou públicas.</li>
@@ -166,19 +174,19 @@ const manualContent = {
                 <li>Selecionar previamente os galhos e troncos a serem removidos, respeitando critérios técnicos e fitossanitários.</li>
             </ul>
             <h4>Finalidade da Poda</h4>
-            <ul><li><strong>Limpeza:</strong> Remover ramos mortos/secos.</li><li><strong>Correção:</strong> Remover ramos com defeito estrutural (ex: <span class="glossary-term" data-term-key="casca inclusa">casca inclusa</span>). ${imgTag('uniao-v-casca-inclusa.jpg', 'União em V com casca inclusa')}</li><li><strong>Adequação:</strong> Resolver conflitos com estruturas.</li><li><strong>⚠️ Poda de Raízes:</strong> Deve ser <strong>evitada</strong>.</li></ul>
+            <ul><li><strong>Limpeza:</strong> Remover ramos mortos/secos.</li><li><strong>Correção:</strong> Remover ramos com defeito estrutural (ex: <span class="glossary-term" data-term-key="casca inclusa">casca inclusa</span>). ${imgTag("uniao-v-casca-inclusa.jpg", "União em V com casca inclusa")}</li><li><strong>Adequação:</strong> Resolver conflitos com estruturas.</li><li><strong>⚠️ Poda de Raízes:</strong> Deve ser <strong>evitada</strong>.</li></ul>
             <h4>Inspeção Visual Expedita</h4>
             <p>Foco nos riscos críticos:</p>
-            <ul><li>Fendas horizontais.</li><li>Presença de <strong>carpóforos (cogumelos)</strong>. ${imgTag('sinal-podridao.jpg', 'Cogumelos indicando apodrecimento')}</li><li>Galhos mortos > 5 cm.</li><li>Uniões em “V” com <span class="glossary-term" data-term-key="casca inclusa">casca inclusa</span>.</li></ul>
+            <ul><li>Fendas horizontais.</li><li>Presença de <strong>carpóforos (cogumelos)</strong>. ${imgTag("sinal-podridao.jpg", "Cogumelos indicando apodrecimento")}</li><li>Galhos mortos > 5 cm.</li><li>Uniões em “V” com <span class="glossary-term" data-term-key="casca inclusa">casca inclusa</span>.</li></ul>
             <h4>Classificação de Risco</h4>
             <ul><li><strong>🔴 ALTO RISCO:</strong> Intervenção em até <strong>48h</strong>.</li><li><strong>🟠 MÉDIO RISCO:</strong> Intervenção em até <strong>15 dias</strong>.</li><li><strong>🟢 BAIXO RISCO:</strong> Monitoramento anual.</li></ul>
             <h4>Raio Crítico Radicular (RCR)</h4>
             <p><strong><span class="glossary-term" data-term-key="rcr">RCR</span> = 1,5 × <span class="glossary-term" data-term-key="dap">DAP</span></strong>.</p>
-        `
-    },
-    'autorizacao-legal': {
-        titulo: '📜 Termos Legais e Autorização (ASV)',
-        html: `
+        `,
+  },
+  "autorizacao-legal": {
+    titulo: "📜 Termos Legais e Autorização (ASV)",
+    html: `
             <h3>Termos Legais e Normativos</h3>
             <ul>
                 <li><strong><span class="glossary-term" data-term-key="asv">ASV</span> (Autorização de Supressão de Vegetação)</strong></li>
@@ -190,80 +198,80 @@ const manualContent = {
             <p>Toda intervenção deve ter anuência do setor de meio ambiente.</p>
             <h4>Dispensa de Autorização:</h4>
             <ul><li>Indivíduos com <span class="glossary-term" data-term-key="dap">DAP</span> < 0,05 m <strong>fora</strong> de <span class="glossary-term" data-term-key="app">APP</span>.</li><li>Risco iminente (Defesa Civil) - processo *a posteriori*.</li></ul>
-        `
-    },
-    'preparacao-e-isolamento': {
-        titulo: '🚧 Preparação do Local e Isolamento',
-        html: `
+        `,
+  },
+  "preparacao-e-isolamento": {
+    titulo: "🚧 Preparação do Local e Isolamento",
+    html: `
             <h3>Isolamento e Sinalização</h3>
             <p>O isolamento é <strong>obrigatório</strong>.</p>
             <h4>Delimitação do Perímetro de Exclusão (Raio de Perigo)</h4>
-            ${imgTag('isolamento-perimetro.jpg', 'Diagrama de perímetro de segurança')}
+            ${imgTag("isolamento-perimetro.jpg", "Diagrama de perímetro de segurança")}
             <ul><li><strong>Galhos isolados:</strong> Comprimento do galho <strong>+ 50%</strong>.</li><li><strong>Árvore inteira:</strong> Altura total <strong>+ 50%</strong>.</li></ul>
             <p><strong>⛔ Proibição:</strong> Uso de fita zebrada (salvo emergências).</p>
             <h3>Desligamento de Linhas de Energia</h3>
             <p><strong>É proibido</strong> realizar podas em contato com redes ativas.</p>
             <h3>Liberação de Permissão de Trabalho (PT)</h3>
             <p>A PT é <strong>obrigatória</strong>. Qualquer alteração no escopo exige <strong>revalidação da PT</strong>.</p>
-        `
-    },
-    'operacoes-e-tecnicas': {
-        titulo: '✂️ Operações de Poda e Corte',
-        html: `
+        `,
+  },
+  "operacoes-e-tecnicas": {
+    titulo: "✂️ Operações de Poda e Corte",
+    html: `
             <h3>Técnicas de Poda</h3>
             <ul><li><strong>Desbaste da copa:</strong> Limite de <strong>até 25% da copa viva</strong> por intervenção.</li><li><strong>Elevação da copa:</strong> Manter pelo menos <strong>2/3 da altura total</strong> com copa viva.</li><li><strong>Redução da copa:</strong> Preservar ramos laterais com diâmetro <strong>≥ 1/3</strong> do ramo removido.</li></ul>
             <h4>Técnica de Corte: Poda em Três Cortes</h4>
-            ${imgTag('corte-tres-passos.jpg', 'Sequência dos 3 passos para a poda segura')}
+            ${imgTag("corte-tres-passos.jpg", "Sequência dos 3 passos para a poda segura")}
             <p>Aplicar o método para preservar <span class="glossary-term" data-term-key="crista da casca">crista da casca</span> e <span class="glossary-term" data-term-key="colar do galho">colar do galho</span>:</p>
             <ol><li><strong>Corte inferior (alívio):</strong> Fora do colar.</li><li><strong>Corte superior:</strong> Destaca o galho.</li><li><strong>Corte de acabamento:</strong> Rente à crista, preservando o colar.</li></ol>
             <p><strong>⛔ Práticas Proibidas:</strong></p>
             <ul>
-                <li><span class="glossary-term" data-term-key="poda drástica">Poda drástica</span> (<span class="glossary-term" data-term-key="topping">topping</span>). ${imgTag('topping-errado.jpg', 'Exemplo de Poda Drástica')}</li>
-                <li>Cortes rentes. ${imgTag('corte-rente-lesao.jpg', 'Lesão por corte rente')}</li>
+                <li><span class="glossary-term" data-term-key="poda drástica">Poda drástica</span> (<span class="glossary-term" data-term-key="topping">topping</span>). ${imgTag("topping-errado.jpg", "Exemplo de Poda Drástica")}</li>
+                <li>Cortes rentes. ${imgTag("corte-rente-lesao.jpg", "Lesão por corte rente")}</li>
             </ul>
-            ${imgTag('poda-drastica-vs-correta.jpg', 'Comparação visual: Poda Drástica vs Correta')}
+            ${imgTag("poda-drastica-vs-correta.jpg", "Comparação visual: Poda Drástica vs Correta")}
             <h3>Supressão (Corte de Árvore)</h3>
             <p>Corte direcional deixando a <strong>"dobradiça" de 10%</strong> do diâmetro.</p>
             <h4>Segurança Crítica: Rota de Fuga</h4>
-            ${imgTag('rota-fuga-45graus.jpg', 'Diagrama das rotas de fuga')}
+            ${imgTag("rota-fuga-45graus.jpg", "Diagrama das rotas de fuga")}
             <p>Planejar <strong>duas rotas de fuga</strong> livres (ângulo de <strong>45°</strong>).</p>
             <h4>Atenção a Troncos Tensionados</h4>
-            ${imgTag('corte-tronco-tensionado.jpg', 'Técnica de corte em tronco tensionado')}
+            ${imgTag("corte-tronco-tensionado.jpg", "Técnica de corte em tronco tensionado")}
             <h4>Efeito Rebote (Motosserra)</h4>
-            ${imgTag('perigo-rebote.jpg', 'Diagrama do Efeito Rebote')}
+            ${imgTag("perigo-rebote.jpg", "Diagrama do Efeito Rebote")}
             <p>Ocorre ao usar a ponta superior do sabre. <strong>NUNCA use a ponta superior da lâmina para cortar.</strong></p>
-        `
-    },
-    'riscos-e-epis': {
-        titulo: '🛡️ Análise de Risco e EPIs',
-        html: `
+        `,
+  },
+  "riscos-e-epis": {
+    titulo: "🛡️ Análise de Risco e EPIs",
+    html: `
             <h3>Análise de Risco (Perigos Recorrentes)</h3>
             <p>Queda de altura, Queda de ferramentas, Choque elétrico, Corte, Efeito Rebote.</p>
             <h3>Equipamento de Proteção Individual (EPIs)</h3>
-            ${imgTag('epis-motosserra.jpg', 'Operador com EPIs completos')}
+            ${imgTag("epis-motosserra.jpg", "Operador com EPIs completos")}
             <h4>EPIs Anticorte e Impacto</h4>
             <ul><li>Capacete com jugular</li><li>Calça/Blusão/Luva de motosserista</li><li>Viseira/protetor facial</li><li>Perneira</li></ul>
             <h4>EPIs para Trabalho em Altura (SPIQ)</h4>
             <p>Uso de <span class="glossary-term" data-term-key="spi q">SPIQ</span> (Cinto, Talabarte, Trava-queda).</p>
             <p><strong>⚠️ Proibição:</strong> <strong>escalada livre</strong> ou ancoragem nos galhos a serem cortados.</p>
-        `
-    },
-    'gestao-e-desmobilizacao': {
-        titulo: '♻️ Gestão de Resíduos e Desmobilização',
-        html: `
+        `,
+  },
+  "gestao-e-desmobilizacao": {
+    titulo: "♻️ Gestão de Resíduos e Desmobilização",
+    html: `
             <h3>Gestão de Resíduos Arbóreos (PNRS)</h3>
-            ${imgTag('segregacao-residuos.jpg', 'Segregação de resíduos')}
+            ${imgTag("segregacao-residuos.jpg", "Segregação de resíduos")}
             <ul><li><strong>Princípios:</strong> Não geração, redução, reutilização e reciclagem.</li><li><strong>Rastreabilidade:</strong> Emissão de <span class="glossary-term" data-term-key="mtr">Manifesto de Transporte de Resíduos (MTR)</span>.</li></ul>
             <h4>Abastecimento Seguro</h4>
-            ${imgTag('abastecimento-seguro.jpg', 'Abastecimento seguro com bacia de contenção')}
+            ${imgTag("abastecimento-seguro.jpg", "Abastecimento seguro com bacia de contenção")}
             <ul><li>Realizar em área ventilada, com <strong>bacia de contenção</strong> e <strong>Kit de Mitigação Ambiental</strong>.</li></ul>
             <h3>Desmobilização</h3>
             <p>Remover todos os resíduos. Retirar isolamento <strong>somente após liberação formal</strong> do responsável técnico.</p>
-        `
-    },
-    'glossario-geral': {
-        titulo: '📘 Glossário Geral de Termos',
-        html: `
+        `,
+  },
+  "glossario-geral": {
+    titulo: "📘 Glossário Geral de Termos",
+    html: `
             <p>Navegue por todos os termos técnicos, legais e de equipamentos usados neste manual, organizados por categoria.</p>
             <table class="glossary-table">
                 <thead>
@@ -283,7 +291,7 @@ const manualContent = {
                     <tr><td>Entrenó</td><td>Espaço entre dois nós consecutivos no ramo.</td></tr>
                     <tr><td>Nó</td><td>Ponto de inserção de folhas, gemas ou ramos.</td></tr>
                     <tr><td>Lenho</td><td>Tecido vegetal com função de sustentação e condução de seiva.</td></tr>
-                    
+
                     <tr><td colspan="2" class="glossary-category-header">Instrumentos e Equipamentos</td></tr>
                     <tr><td>Podão</td><td>Tesoura de poda de haste longa para alcance elevado.</td></tr>
                     <tr><td>Tesourão de poda</td><td>Ferramenta para galhos de até 7 cm de diâmetro.</td></tr>
@@ -293,7 +301,7 @@ const manualContent = {
                     <tr><td>Podador manual tipo bypass</td><td>Lâmina deslizante que realiza cortes limpos.</td></tr>
                     <tr><td>Podador tipo bigorna</td><td>Lâmina que pressiona o galho contra superfície plana.</td></tr>
                     <tr><td>Hipsômetro</td><td>Instrumento para medir altura de árvores.</td></tr>
-                    
+
                     <tr><td colspan="2" class="glossary-category-header">Técnicas de Poda</td></tr>
                     <tr><td>Poda de condução</td><td>Direciona crescimento da árvore.</td></tr>
                     <tr><td>Poda de formação</td><td>Define estrutura arquitetônica futura.</td></tr>
@@ -332,12 +340,12 @@ const manualContent = {
                     <tr><td>MTR (Manifesto de Transporte de Resíduos)</td><td>Documento que garante a rastreabilidade dos resíduos desde a origem até a destinação final, exigido em operações de transporte de resíduos sólidos.</td></tr>
                 </tbody>
             </table>
-        `
-    },
-    'sobre-autor': {
-        titulo: '👨‍💻 Sobre o Autor',
-        html: `
-            <div id="sobre-o-autor">    
+        `,
+  },
+  "sobre-autor": {
+    titulo: "👨‍💻 Sobre o Autor",
+    html: `
+            <div id="sobre-o-autor">
                 <div class="autor-container">
                     <div class="autor-texto">
                         <p>
@@ -359,21 +367,21 @@ const manualContent = {
                             Fluente em inglês.
                         </p>
                         <p class="autor-links">
-                            <a href="mailto:rafael.ammon@gmail.com">rafael.ammon@gmail.com</a> |    
+                            <a href="mailto:rafael.ammon@gmail.com">rafael.ammon@gmail.com</a> |
                             <a href="https://www.linkedin.com/in/rafael-andrade-ammon-2527a72a/" target="_blank">LinkedIn</a>
                         </p>
                     </div>
                 </div>
             </div>
-        `
-    },
+        `,
+  },
 
-    // (CORRIGIDO v19.3) HTML da Calculadora: HTML estático completo (sem auto-referência)
-    'calculadora-risco': {
-        titulo: '📊 Levantamento de Dados Arbóreo',
-        html: `
+  // (CORRIGIDO v19.3) HTML da Calculadora: HTML estático completo (sem auto-referência)
+  "calculadora-risco": {
+    titulo: "📊 Levantamento de Dados Arbóreo",
+    html: `
             <p>Use o mapa para visualização geoespacial do risco, a aba "Registrar" para coleta e "Resumo" para gerenciar os dados.</p>
-            
+
             <nav class="sub-nav">
                 <button type="button" class="sub-nav-btn" data-target="tab-content-register">
                     Registrar Árvore
@@ -393,7 +401,7 @@ const manualContent = {
                         <div class="form-grid">
                             <div>
                                 <label for="risk-data">Data da Coleta:</label>
-                                <input type="date" id="risk-data" name="risk-data" value="${new Date().toISOString().split('T')[0]}">
+                                <input type="date" id="risk-data" name="risk-data" value="${new Date().toISOString().split("T")[0]}">
                             </div>
                             <div>
                                 <label for="risk-especie">Espécie (Nome/Tag):</label>
@@ -432,14 +440,14 @@ const manualContent = {
                         <div class="photo-upload-container">
                             <label for="tree-photo-input" class="photo-btn">📷 Adicionar Foto</label>
                             <input type="file" id="tree-photo-input" accept="image/*" capture="environment" style="display: none;">
-                            
+
                             <div id="photo-preview-container">
                                 <button type="button" id="remove-photo-btn" style="display:none;">&times;</button>
                             </div>
                         </div>
-                        
+
                     </fieldset>
-                    
+
                     <fieldset class="risk-fieldset">
                         <legend>2. Lista de Verificação de Risco</legend>
                         <table class="risk-table">
@@ -472,40 +480,47 @@ const manualContent = {
                                 <span class="checklist-counter">1 / 16</span>
                                 <button type="button" id="checklist-next">Próxima ❯</button>
                             </div>
+
+                            <!-- Botões de ação dentro do checklist mobile para acessibilidade -->
+                            <div class="risk-buttons-area" style="margin-top: 2rem; width: 100%; display: flex; flex-direction: column; gap: 1rem;">
+                                <button type="submit" id="add-tree-btn">➕ Adicionar Árvore</button>
+                                <button type="button" id="reset-risk-form-btn">🔄 Limpar Campos</button>
+                            </div>
                         </div>
                     </fieldset>
-                    
-                    <div class="risk-buttons-area">
-                        <button type="submit" id="add-tree-btn">➕ Adicionar Árvore</button>
-                        <button type="button" id="reset-risk-form-btn">Limpar Campos</button>
+
+                    <!-- Botões duplicados para desktop (ocultos em mobile) -->
+                    <div class="risk-buttons-area desktop-only">
+                        <button type="submit" id="add-tree-btn-desktop">➕ Adicionar Árvore</button>
+                        <button type="button" id="reset-risk-form-btn-desktop">Limpar Campos</button>
                     </div>
                 </form>
             </div>
-            
+
             <div id="tab-content-summary" class="sub-tab-content">
                 <fieldset class="risk-fieldset">
                     <legend>3. Árvores Cadastradas</legend>
-                    
+
                     <div class="table-filter-container">
                         <input type="text" id="table-filter-input" placeholder="🔎 Filtrar por ID, espécie, local, risco...">
                     </div>
-                    
+
                     <div id="summary-table-container">
                         <p id="summary-placeholder">Nenhuma árvore cadastrada ainda.</p>
                     </div>
-                    
+
                     <div id="import-export-controls" class="risk-buttons-area">
-                        
+
                         <input type="file" id="zip-importer" accept=".zip,application/zip,application/x-zip-compressed" style="display: none;">
                         <input type="file" id="csv-importer" accept="text/csv,application/csv,application/vnd.ms-excel,.csv,text/plain" style="display: none;">
-                        
+
                         <button type="button" id="import-data-btn" class="export-btn zip-import-label">📤 Importar Dados</button>
                         <button type="button" id="export-data-btn" class="export-btn">📥 Exportar Dados</button>
-                        
+
                         <button type="button" id="send-email-btn" class="export-btn">📧 Enviar por Email</button>
                         <button type="button" id="clear-all-btn" class="export-btn">🗑️ Limpar Tabela</button>
                     </div>
-                    
+
                     <div id="zip-status" style="display: none;">
                         <span class="spinner" style="display: inline-block;"></span>
                         <span id="zip-status-text" style="margin-left: 10px; font-weight: bold; color: #004d40;">Processando pacote...</span>
@@ -513,12 +528,12 @@ const manualContent = {
 
                 </fieldset>
             </div>
-            
+
             <div id="tab-content-mapa" class="sub-tab-content mapa-tab">
                 <fieldset class="risk-fieldset">
                     <legend>Mapa de Localização e Risco</legend>
                     <div id="map-container"></div>
-                    
+
                     <div class="form-grid" style="margin-top: 15px; gap: 10px;">
                         <div>
                             <label for="default-utm-zone">Zona UTM Padrão (Ex: 23K):</label>
@@ -529,12 +544,12 @@ const manualContent = {
                     </div>
 
                     <p style="margin-top: 15px; font-size: 0.9em; color: #555;">
-                        Simbologia: <span style="color: #C62828; font-weight: bold;">🔴 Alto Risco</span> | 
-                        <span style="color: #E65100; font-weight: bold;">🟠 Médio Risco</span> | 
+                        Simbologia: <span style="color: #C62828; font-weight: bold;">🔴 Alto Risco</span> |
+                        <span style="color: #E65100; font-weight: bold;">🟠 Médio Risco</span> |
                         <span style="color: #2E7D32; font-weight: bold;">🟢 Baixo Risco</span>
                     </p>
                 </fieldset>
             </div>
-        `
-    }
+        `,
+  },
 };

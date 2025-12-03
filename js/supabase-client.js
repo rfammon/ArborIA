@@ -98,7 +98,8 @@ export const ApiService = {
     if (!_supabase) return { data: [], error: "Offline" };
 
     try {
-      let query = _supabase.from("arvores").select("*");
+      let query = _supabase.from("arvores").select("*").is("deleted_at", null); // Filtrar registros deletados
+
       if (lastSyncTime) {
         query = query.gt("updated_at", lastSyncTime);
       }
@@ -279,14 +280,165 @@ export const ApiService = {
   },
 
   /**
-   * Marca uma árvore como deletada (soft delete)
+   * Insere ou atualiza múltiplas árvores no banco de dados (operação em lote)
+   * Usa CoordinatesService para normalizar coordenadas automaticamente
+   */
+  async upsertTrees(treesData) {
+    if (!_supabase) return { data: [], error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { data: [], error: "Usuário não logado" };
+
+      console.log(`[Supabase] Processando ${treesData.length} árvores em lote`);
+
+      // Preparar payload para cada árvore
+      const dbPayloads = treesData.map((treeData) => {
+        // Usar CoordinatesService para preparar coordenadas
+        const coordsForDB = CoordinatesService.prepareForDatabase(treeData);
+
+        // Montar payload para o banco
+        const dbPayload = {
+          user_id: user.id,
+          id: treeData.id,
+
+          // Informações básicas
+          nome: treeData.nome || treeData.especie || "Nome não especificado",
+          especie: treeData.especie,
+          data: treeData.data,
+          local: treeData.local,
+          avaliador: treeData.avaliador,
+          observacoes: treeData.observacoes,
+
+          // Medidas dendrométricas
+          dap: treeData.dap ? parseFloat(treeData.dap) : 0,
+          altura: treeData.altura ? parseFloat(treeData.altura) : 0,
+
+          // Coordenadas UTM (SISTEMA ÚNICO)
+          easting: coordsForDB.easting,
+          northing: coordsForDB.northing,
+          utmzonenum: coordsForDB.utmzonenum,
+          utmzoneletter: coordsForDB.utmzoneletter,
+
+          // Também salvar em latitude/longitude para compatibilidade com mapas legados
+          latitude: coordsForDB.northing,
+          longitude: coordsForDB.easting,
+
+          // Avaliação de risco
+          pontuacao: parseInt(treeData.pontuacao) || 0,
+          riskfactors: treeData.riskFactors || [],
+          risklevel: treeData.riskLevel,
+          residualrisk: treeData.residualRisk,
+          mitigation: treeData.mitigation,
+          targetcategory: treeData.targetCategory,
+          risco: treeData.risco,
+          riscoclass: treeData.riscoClass,
+
+          // Mídia
+          hasphoto: !!treeData.hasPhoto,
+          image_url: treeData.photoUrl,
+
+          // Timestamp
+          updated_at: new Date().toISOString(),
+        };
+
+        // Remover campos undefined
+        Object.keys(dbPayload).forEach((key) => {
+          if (dbPayload[key] === undefined) delete dbPayload[key];
+        });
+
+        // Remover ID se for local ou numérico (será gerado pelo banco)
+        if (
+          dbPayload.id &&
+          (typeof dbPayload.id === "number" ||
+            String(dbPayload.id).startsWith("local_"))
+        ) {
+          delete dbPayload.id;
+        }
+
+        return dbPayload;
+      });
+
+      console.log(
+        `[Supabase] Executando upsert em lote de ${dbPayloads.length} registros`,
+      );
+
+      // Executar upsert em lote
+      const { data: dbData, error } = await _supabase
+        .from("arvores")
+        .upsert(dbPayloads)
+        .select();
+
+      if (error) {
+        console.error("[Supabase] ❌ Erro no upsert em lote:", error);
+        return { data: [], error };
+      }
+
+      // Mapear dados retornados para o formato da aplicação
+      const mappedData = dbData.map((row) => {
+        // Processar coordenadas usando o serviço centralizado
+        const coords = CoordinatesService.prepareFromDatabase(row);
+
+        return {
+          id: row.id,
+          data: row.data,
+          especie: row.especie,
+          nome: row.nome,
+          local: row.local,
+          avaliador: row.avaliador,
+          observacoes: row.observacoes,
+
+          // Medidas dendrométricas
+          dap: row.dap,
+          altura: row.altura,
+
+          // Coordenadas (todas as versões para compatibilidade)
+          ...coords,
+
+          // Campos TRAQ
+          pontuacao: row.pontuacao,
+          riskFactors: row.riskfactors,
+          riskLevel: row.risklevel,
+          residualRisk: row.residualrisk,
+          mitigation: row.mitigation,
+          targetCategory: row.targetcategory,
+          risco: row.risco,
+          riscoClass: row.riscoclass,
+
+          // Mídia
+          hasPhoto: row.hasphoto || false,
+          photoUrl: row.image_url || null,
+
+          // Timestamps
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        };
+      });
+
+      console.log(`[Supabase] ✓ ${mappedData.length} árvores salvas em lote`);
+      return { data: mappedData, error: null };
+    } catch (error) {
+      console.error("[Supabase] ❌ Erro ao salvar árvores em lote:", error);
+      return { data: [], error: error.message };
+    }
+  },
+
+  /**
+   * Remove permanentemente uma árvore do banco de dados (hard delete)
    */
   async deleteTree(treeId) {
     if (!_supabase) return { error: "Offline" };
-    const { error } = await _supabase
-      .from("arvores")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", treeId);
+
+    console.log("[Supabase] Deletando árvore:", treeId);
+
+    const { error } = await _supabase.from("arvores").delete().eq("id", treeId);
+
+    if (error) {
+      console.error("[Supabase] Erro ao deletar:", error);
+    } else {
+      console.log("[Supabase] Árvore deletada com sucesso");
+    }
+
     return { error };
   },
 

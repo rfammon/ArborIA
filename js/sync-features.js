@@ -194,17 +194,9 @@ export async function saveToSupabase() {
         }
 
         // Atualiza estado local com os dados retornados (que agora têm UUIDs definitivos)
+        // ApiService.upsertTrees já retorna os dados no formato correto
         if (upsertedTrees && upsertedTrees.length > 0) {
-          const transformedUpsertedTrees = upsertedTrees.map((tree) => ({
-            ...tree,
-            coordX: tree.longitude,
-            coordY: tree.latitude,
-            riskFactors: tree.riskfactors || tree.riskFactors,
-            targetCategory: tree.targetcategory || tree.targetCategory,
-            mitigation: tree.mitigation,
-            altura: tree.altura,
-          }));
-          applyTreeChanges(transformedUpsertedTrees, "merge");
+          applyTreeChanges(upsertedTrees, "merge");
           TableUI.render();
           mapUI.updateMapData(true);
         }
