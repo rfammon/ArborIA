@@ -1,5 +1,5 @@
 /**
- * ARBORIA 2.0 - FEATURES PATCH (Fix Database Sync & CRUD)
+ * ARBORIA 2.0 - FEATURES PATCH V2 (Fix Database Sync & CRUD & EXPORTS)
  * Refactored by Js Master
  */
 
@@ -14,7 +14,7 @@ import { RealtimeService } from './realtime.service.js';
 // LÓGICA DE RISCO (Risk Engine)
 // ============================================================ 
 
-const currentRiskAssessment = {
+let currentRiskAssessment = {
     targetCategory: null,
     mitigationAction: 'nenhuma'
 };
@@ -80,6 +80,10 @@ function getReducedFailureProb(failureProb) {
     return reductionMap[failureProb] || 'Improvável';
 }
 
+// ============================================================ 
+// HELPERS (Sanitization & Extraction)
+// ============================================================ 
+
 const sanitizeCoordinate = (coordValue) => {
     if (coordValue && String(coordValue).toLowerCase() !== 'n/a') {
         let num = parseFloat(coordValue);
@@ -103,6 +107,7 @@ export async function handleAddTreeSubmit(event) {
     const form = event.target;
     
     try {
+        // --- 1. DATA EXTRACTION & VALIDATION ---
         let totalScore = 0;
         form.querySelectorAll('.risk-checkbox:checked').forEach(cb => totalScore += parseInt(cb.dataset.weight, 10));
         const checkedRiskFactors = Array.from(form.querySelectorAll('.risk-checkbox')).map(cb => cb.checked ? 1 : 0);
@@ -126,6 +131,7 @@ export async function handleAddTreeSubmit(event) {
             return { success: false }; 
         }
 
+        // --- 2. RISK CALCULATION ENGINE ---
         const failureProb = getFailureProb(totalScore);
         const impactProb = getImpactProb(currentRiskAssessment.targetCategory);
         const initialRisk = runTraqMatrices(failureProb, impactProb, currentRiskAssessment.targetCategory);
@@ -147,6 +153,7 @@ export async function handleAddTreeSubmit(event) {
 
         const classificationClass = riskProfile[initialRisk]?.class || 'risk-low';
 
+        // --- 3. OBJECT CONSTRUCTION ---
         const editingId = state.editingTreeId;
         const mode = editingId === null ? 'add' : 'update';
 
@@ -180,6 +187,7 @@ export async function handleAddTreeSubmit(event) {
             risco: initialRisk,
             riscoClass: classificationClass,
             
+            // Campos de Foto (inicialmente preserva o que tinha ou define defaults)
             hasPhoto: existingTree ? existingTree.hasPhoto : false,
             photoUrl: existingTree ? existingTree.photoUrl : null,
         };
@@ -187,9 +195,11 @@ export async function handleAddTreeSubmit(event) {
         let supabaseId = treeData.id;
         let finalPhotoUrl = treeData.photoUrl;
 
+        // --- 4. SERVER SYNC & ID GENERATION ---
         if (RealtimeService.isSubscribed) {
             utils.showToast(mode === 'add' ? "Criando registro..." : "Atualizando registro...", "info");
             
+            // Para 'add', precisamos primeiro salvar para obter o ID (caso o banco gere)
             if (mode === 'add') {
                 const { data: supabaseData, error: supabaseError } = await ApiService.upsertTree(treeData);
                 if (supabaseError) throw new Error(supabaseError.message);
@@ -201,9 +211,11 @@ export async function handleAddTreeSubmit(event) {
                     throw new Error("Falha ao obter ID do Supabase.");
                 }
             } else {
+                // Update apenas inicia, mas vamos fazer o upsert final com a foto depois
                 supabaseId = editingId;
             }
         } else {
+            // Offline/Guest Mode
             if (mode === 'add') {
                 const maxId = state.registeredTrees.length > 0 
                     ? Math.max(...state.registeredTrees.map(t => Number(t.id) || 0)) 
@@ -215,6 +227,8 @@ export async function handleAddTreeSubmit(event) {
             }
         }
 
+        // --- 5. PHOTO UPLOAD HANDLING ---
+        // Se houver uma NOVA foto na memória (state.currentTreePhoto)
         if (state.currentTreePhoto && supabaseId) {
             try {
                 utils.showToast('Enviando foto...', 'info');
@@ -225,6 +239,8 @@ export async function handleAddTreeSubmit(event) {
                 if (uploadData?.fullUrl) {
                     finalPhotoUrl = uploadData.fullUrl;
                     utils.showToast('Foto enviada!', 'success');
+                    
+                    // Salva no cache local (IndexedDB)
                     await db.saveImageByUrl(finalPhotoUrl, state.currentTreePhoto);
                 } else {
                     throw new Error("Resposta de upload inválida.");
@@ -235,9 +251,11 @@ export async function handleAddTreeSubmit(event) {
             }
         } 
 
+        // Atualiza o objeto com a URL final (nova ou existente)
         treeData.photoUrl = finalPhotoUrl;
         treeData.hasPhoto = !!finalPhotoUrl;
 
+        // --- 6. FINAL SYNC (Always Run to save photoUrl) ---
         if (RealtimeService.isSubscribed) {
             const { error: finalUpsertError } = await ApiService.upsertTree(treeData);
             if (finalUpsertError) console.warn("Erro no sync final da foto: " + finalUpsertError.message);
@@ -245,6 +263,7 @@ export async function handleAddTreeSubmit(event) {
             else utils.showToast("Registro atualizado com sucesso.", "success");
         }
 
+        // --- 7. LOCAL STATE UPDATE ---
         if (state.setLastEvaluatorName) state.setLastEvaluatorName(treeData.avaliador);
 
         let resultTree;
@@ -793,6 +812,9 @@ export function initChecklistFlashCard() {
     console.log("Checklist Flash Card Init");
 }
 
+/**
+ * Handle Clear All Export (explicitly added to solve SyntaxError)
+ */
 export async function handleClearAll() {
     state.setRegisteredTrees([]);
     state.saveDataToStorage(); 
@@ -802,5 +824,6 @@ export async function handleClearAll() {
         console.warn("Could not clear ImageDB:", e);
     }
     utils.showToast("Todos os dados locais foram apagados.", "success");
+    // Force UI refresh
     TableUI.render();
 }

@@ -6,10 +6,9 @@
 import * as State from './state.js';
 import * as features from './features.js'; 
 // [PATCH] Importa as funções corrigidas (incluindo handleEditTree agora)
-import { handleDeleteTree as handleDeleteTreePatch, handleEditTree as handleEditTreePatch } from './features_patch.js';
+import { handleDeleteTree as handleDeleteTreePatch, handleEditTree as handleEditTreePatch } from './features_patch_v2.js';
 
 import { showConfirmModal, openPhotoViewer, showDetailsModal } from './modal.ui.js'; 
-import { getImageFromDB } from './database.js';
 import { debounce } from './utils.js'; 
 import { generateIndividualReport } from './pdf.generator.js';
 
@@ -127,7 +126,7 @@ export const TableUI = {
             ...tree,
             displayId: index + 1
         }));
-        this._lastRenderedTrees = treesWithDisplayId; // Cache for modal
+        this._lastRenderedTrees = treesWithDisplayId; // Cache for display
 
         // Aplica classe de modo compacto
         let tableClass = 'summary-table';
@@ -354,9 +353,7 @@ export const TableUI = {
                     // [PATCH] Substitui pela função do patch
                     showConfirmModal("Excluir Registro?", `Deseja apagar a árvore ID ${treeId}?`, () => handleDeleteTreePatch(treeId));
                 } else if (actionBtn.classList.contains('btn-photo')) {
-                    getImageFromDB(treeId, blob => {
-                        if (blob) openPhotoViewer(URL.createObjectURL(blob));
-                    });
+                    if (tree.photoUrl) openPhotoViewer(tree.photoUrl);
                 }
                 return;
             }
@@ -466,11 +463,11 @@ export const TableUI = {
             }
         ];
 
-        if (tree.hasPhoto) {
+        if (tree.hasPhoto && tree.photoUrl) {
             actions.unshift({
                 text: '📷 Foto',
                 className: 'export-btn',
-                onClick: () => getImageFromDB(tree.id, blob => blob && openPhotoViewer(URL.createObjectURL(blob)))
+                onClick: () => openPhotoViewer(tree.photoUrl)
             });
         }
         

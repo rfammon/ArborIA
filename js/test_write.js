@@ -1,1 +1,1 @@
-export const test = true;
+// Test file

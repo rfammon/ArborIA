@@ -407,3 +407,15 @@ body, html {
         padding: 0 10px; /* Inner padding for forms */
     }
 }
+
+/* Estilos específicos para o botão de registro */
+#register-btn {
+    background-color: var(--teal-light);
+    box-shadow: 0 4px 15px rgba(0, 137, 123, 0.4);
+    text-align: center;
+}
+
+#register-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 137, 123, 0.5);
+}

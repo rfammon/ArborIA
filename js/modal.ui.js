@@ -3,6 +3,8 @@
  * Gerencia visualizadores de fotos e diálogos de confirmação
  */
 
+import { getImageByUrl, saveImageByUrl } from './database.js'; // Import new DB functions
+
 // Module-level variable to store the previously active modal
 let _previousActiveModal = null; // New variable
 
@@ -12,7 +14,7 @@ function closePhotoViewer() {
     if (!dialog) return;
 
     dialog.classList.remove('active'); // Inicia animação de saída
-    
+
     // Aguarda a transição CSS (300ms) antes de esconder e limpar.
     setTimeout(() => {
         dialog.style.display = 'none';
@@ -20,7 +22,7 @@ function closePhotoViewer() {
         if (content) {
             const img = content.querySelector('img');
             if (img && img.src.startsWith('blob:')) {
-                URL.revokeObjectURL(img.src);
+                URL.revokeObjectURL(img.src); // Libera o URL do Blob para economizar memória
             }
             content.innerHTML = ''; // Limpa a imagem para economizar memória
         }
@@ -42,7 +44,7 @@ function closePhotoViewer() {
 export function initPhotoViewer() {
     const dialog = document.getElementById('photo-viewer-dialog');
     const closeBtn = document.getElementById('photo-viewer-close');
-    
+
     if (!dialog) return; // Add this check first
 
     // Ensure it's hidden on initialization
@@ -65,43 +67,57 @@ export function initPhotoViewer() {
 }
 
 /**
- * Abre uma imagem no visualizador de tela cheia.
- * @param {string} imageSrc - URL ou Base64 da imagem.
+ * Abre uma imagem no visualizador de tela cheia com estratégia cache-first.
+ * @param {string} imageSrc - URL da imagem.
  */
-export function openPhotoViewer(imageSrc) {
+export async function openPhotoViewer(imageSrc) {
     const dialog = document.getElementById('photo-viewer-dialog');
     const content = document.getElementById('photo-viewer-content');
-    const actionModal = document.getElementById('action-modal'); // Get reference to action-modal
-    
-    if (!dialog || !content) {
-        
+    const actionModal = document.getElementById('action-modal');
+
+    if (!dialog || !content || !imageSrc) {
+        console.warn("openPhotoViewer: Elementos não encontrados ou imageSrc inválido.");
         return;
     }
 
-    // Store the active action-modal if it exists and is active
-    if (actionModal && actionModal.classList.contains('active')) { // New logic
+    if (actionModal && actionModal.classList.contains('active')) {
         _previousActiveModal = actionModal;
-        // Optionally, you might want to hide the previous modal here if it causes visual issues,
-        // but typically modals are just overlaid. For now, we'll let photo viewer cover it.
     }
 
-    // Injeta a imagem sem estilos inline, para usar a classe do CSS
-    content.innerHTML = `<img src="${imageSrc}" alt="Foto da Árvore">`;
-    
-    // Adiciona listener para fechar ao clicar na própria imagem
-    const img = content.querySelector('img');
-    if (img) {
-        img.addEventListener('click', closePhotoViewer);
-    }
-    
-    // Mostra o container (display: flex)
+    content.innerHTML = `<p style="text-align:center; padding:20px;">Carregando imagem...</p>`; // Placeholder
     dialog.style.display = 'flex';
-    
-    // Pequeno delay para permitir que o navegador renderize antes de aplicar a classe 'active'
-    // Isso garante que a animação de opacidade/scale funcione
-    setTimeout(() => {
-        dialog.classList.add('active');
-    }, 10);
+    setTimeout(() => { dialog.classList.add('active'); }, 10);
+
+    try {
+        let imageBlob = await getImageByUrl(imageSrc);
+
+        if (imageBlob) {
+            console.log("openPhotoViewer: Imagem encontrada no cache.");
+            // Found in cache, display it
+            content.innerHTML = `<img src="${URL.createObjectURL(imageBlob)}" alt="Foto da Árvore">`;
+        } else {
+            console.log("openPhotoViewer: Imagem não encontrada no cache, buscando da rede.");
+            // Not in cache, fetch from network
+            const response = await fetch(imageSrc);
+            if (!response.ok) throw new Error('Falha ao carregar imagem da rede.');
+            imageBlob = await response.blob();
+            
+            // Display and save to cache
+            content.innerHTML = `<img src="${URL.createObjectURL(imageBlob)}" alt="Foto da Árvore">`;
+            await saveImageByUrl(imageSrc, imageBlob);
+            console.log("openPhotoViewer: Imagem carregada da rede e salva no cache.");
+        }
+
+        // Adiciona listener para fechar ao clicar na própria imagem
+        const img = content.querySelector('img');
+        if (img) {
+            img.addEventListener('click', closePhotoViewer);
+        }
+
+    } catch (error) {
+        console.error("Erro ao carregar imagem no visualizador:", error);
+        content.innerHTML = `<p style="text-align:center; color:red; padding:20px;">Erro ao carregar imagem.</p>`;
+    }
 }
 
 /**
@@ -113,7 +129,7 @@ export function openPhotoViewer(imageSrc) {
  */
 export function showConfirmModal(title, message, onConfirm) {
     const modal = document.getElementById('action-modal');
-    
+
     // Fallback de segurança se o modal HTML não existir
     if (!modal) {
         if (confirm(`${title}\n\n${message}`)) {
@@ -127,7 +143,7 @@ export function showConfirmModal(title, message, onConfirm) {
     const descEl = document.getElementById('modal-description');
     if(titleEl) titleEl.textContent = title;
     if(descEl) descEl.textContent = message;
-    
+
     // Configura Botões
     const actionsContainer = modal.querySelector('.modal-actions');
     if (actionsContainer) {

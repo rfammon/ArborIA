@@ -9,9 +9,17 @@ import { SyncUI } from './sync.ui.js';
 import { ApiService } from './supabase-client.js';
 import { SyncService } from './sync.service.js'; 
 
-import * as features from './features.js';
-// [PATCH] Importa funções corrigidas
-import { handleAddTreeSubmit as handleAddTreeSubmitPatch } from './features_patch.js';
+import { 
+    handleAddTreeSubmit, 
+    clearPhotoPreview, 
+    handleGetGPS, 
+    handleImportZip, 
+    exportActionZip, 
+    sendEmailReport, 
+    handleClearAll, 
+    handleTableFilter,
+    initChecklistFlashCard
+} from './features_patch_v2.js';
 
 import { initImageDB, getImageFromDB } from './database.js'; 
 import * as modalUI from './modal.ui.js'; 
@@ -107,12 +115,8 @@ async function openPlanningModule(treeId = null) {
     }));
 
     const treesWithImages = await Promise.all(trees.map(async (tree) => {
-        if (tree.hasPhoto) {
-            return new Promise((resolve) => {
-                getImageFromDB(tree.id, (blob) => {
-                    resolve({ ...tree, image: blob ? URL.createObjectURL(blob) : null });
-                });
-            });
+        if (tree.hasPhoto && tree.photoUrl) {
+            return { ...tree, image: tree.photoUrl }; // Use the URL directly
         }
         return tree;
     }));
@@ -169,7 +173,7 @@ function setupActionButtons() {
     if (riskForm) {
         riskForm.addEventListener('submit', async (e) => {
             // [PATCH] Usa a função corrigida
-            const result = await handleAddTreeSubmitPatch(e); 
+            const result = await handleAddTreeSubmit(e); 
             if (result && result.success) {
                 TableUI.render(); 
                 mapUI.updateMapData(true); 
@@ -181,7 +185,7 @@ function setupActionButtons() {
         const resetBtn = document.getElementById('reset-risk-form-btn');
         if(resetBtn) resetBtn.addEventListener('click', () => {
             riskForm.reset();
-            features.clearPhotoPreview();
+            clearPhotoPreview();
         });
     }
 
@@ -192,8 +196,8 @@ function setupActionButtons() {
         const checklistView = document.getElementById('checklist-flashcard-view');
         if (checklistView) {
           checklistView.classList.add('active'); 
-          if (typeof features.initChecklistFlashCard === 'function') {
-            features.initChecklistFlashCard();
+          if (typeof initChecklistFlashCard === 'function') {
+            initChecklistFlashCard();
           }
         }
       });
@@ -209,7 +213,7 @@ function setupActionButtons() {
 
     // --- GPS ---
     const gpsBtn = document.getElementById('get-gps-btn');
-    if (gpsBtn) gpsBtn.addEventListener('click', features.handleGetGPS);
+    if (gpsBtn) gpsBtn.addEventListener('click', handleGetGPS);
 
     // --- IMPORTAÇÃO / EXPORTAÇÃO ---
     const btnImport = document.getElementById('import-data-btn');
@@ -217,14 +221,14 @@ function setupActionButtons() {
     if (btnImport && inputZip) {
         btnImport.addEventListener('click', () => inputZip.click()); 
         inputZip.addEventListener('change', async (e) => {
-            await features.handleImportZip(e);
+            await handleImportZip(e);
             TableUI.render(); 
             mapUI.updateMapData(true); 
         });
     }
 
     const btnExport = document.getElementById('export-data-btn');
-    if (btnExport) btnExport.addEventListener('click', features.exportActionZip); 
+    if (btnExport) btnExport.addEventListener('click', exportActionZip); 
 
     // --- GERAR PDF ---
     const btnPdf = document.getElementById('generate-pdf-btn');
@@ -239,7 +243,7 @@ function setupActionButtons() {
     }
 
     const btnEmail = document.getElementById('send-email-btn');
-    if (btnEmail) btnEmail.addEventListener('click', features.sendEmailReport);
+    if (btnEmail) btnEmail.addEventListener('click', sendEmailReport);
 
     // --- LIMPAR BANCO ---
     const btnClear = document.getElementById('clear-all-btn');
@@ -249,7 +253,7 @@ function setupActionButtons() {
                 "Excluir Tudo?", 
                 "Esta ação apagará todas as árvores e fotos localmente.", 
                 () => {
-                    features.handleClearAll();
+                    handleClearAll();
                     TableUI.render();
                     mapUI.updateMapData(true); 
                 }
@@ -259,7 +263,7 @@ function setupActionButtons() {
 
     // --- FILTRO E FOTO ---
     const filterInput = document.getElementById('table-filter-input');
-    if(filterInput) filterInput.addEventListener('keyup', features.handleTableFilter);
+    if(filterInput) filterInput.addEventListener('keyup', handleTableFilter);
 
     const photoInput = document.getElementById('tree-photo-input');
     const removePhotoBtn = document.getElementById('remove-photo-btn');
@@ -269,7 +273,7 @@ function setupActionButtons() {
             const file = event.target.files[0];
             if (!file) return;
 
-            features.clearPhotoPreview(); 
+            clearPhotoPreview(); 
             try {
                 utils.showToast('Otimizando foto...', 'success');
                 const optimizedBlob = await utils.optimizeImage(file, 800, 0.7);
@@ -289,7 +293,7 @@ function setupActionButtons() {
     }
 
     if (removePhotoBtn) {
-        removePhotoBtn.addEventListener('click', features.clearPhotoPreview);
+        removePhotoBtn.addEventListener('click', clearPhotoPreview);
     }
     
     // Anexa o listener ao botão de sync. Chamado aqui para o caso de o botão já existir no DOM.

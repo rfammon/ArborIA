@@ -113,6 +113,7 @@ export function setFormMode(mode) {
  */
 export function populateFormForEdit(tree) {
   if (!tree) return;
+  console.log("[DEBUG - calculator.form.ui] populateFormForEdit - tree object:", { id: tree.id, image_url: tree.image_url, hasPhoto: tree.hasPhoto });
   const form = document.getElementById('risk-calculator-form');
   if (!form) return;
 
@@ -159,22 +160,51 @@ export function populateFormForEdit(tree) {
       if (mobileSelect) mobileSelect.value = tree.mitigation;
   }
 
-  // Carrega a foto (se houver)
-  if (tree.hasPhoto) {
-    getImageFromDB(tree.id, (imageBlob) => {
-      if (imageBlob) {
-        const previewContainer = document.getElementById('photo-preview-container');
-        const removePhotoBtn = document.getElementById('remove-photo-btn');
-        const preview = document.createElement('img');
-        preview.id = 'photo-preview';
-        preview.src = URL.createObjectURL(imageBlob);
-        previewContainer.prepend(preview);
-        removePhotoBtn.style.display = 'block';
-        state.setCurrentTreePhoto(imageBlob);
-      } else {
-        showToast(`Foto da Árvore ID ${tree.id} não encontrada no DB.`, 'error');
-      }
-    });
+  // Carrega a foto (se houver e tiver URL válida)
+  if (tree.image_url) {
+    const previewContainer = document.getElementById('photo-preview-container');
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+    const preview = document.createElement('img');
+    preview.id = 'photo-preview';
+
+    // Cache-first strategy
+    db.getImageByUrl(tree.image_url)
+      .then(cachedBlob => {
+        if (cachedBlob) {
+          // Found in cache, display it
+          preview.src = URL.createObjectURL(cachedBlob);
+          previewContainer.prepend(preview);
+          removePhotoBtn.style.display = 'block';
+          state.setCurrentTreePhoto(cachedBlob); // Update state with the cached blob
+        } else {
+          // Not in cache, fetch from network
+          fetch(tree.image_url)
+            .then(response => {
+              if (!response.ok) throw new Error('Network response was not ok.');
+              return response.blob();
+            })
+            .then(networkBlob => {
+              // Display and save to cache
+              preview.src = URL.createObjectURL(networkBlob);
+              previewContainer.prepend(preview);
+              removePhotoBtn.style.display = 'block';
+              state.setCurrentTreePhoto(networkBlob); // Update state with the network blob
+              db.saveImageByUrl(tree.image_url, networkBlob) // Save to cache for next time
+                .catch(cacheError => console.error("Erro ao salvar imagem no cache:", cacheError));
+            })
+            .catch(fetchError => {
+              console.error("Erro ao carregar foto da rede:", fetchError);
+              showToast(`Falha ao carregar foto da rede para ID ${tree.id}.`, 'error');
+            });
+        }
+      })
+      .catch(dbError => {
+        console.error("Erro ao acessar cache de imagens:", dbError);
+        showToast(`Erro ao acessar cache local para foto de ID ${tree.id}.`, 'error');
+      });
+  } else {
+    // If no image_url, ensure photo preview is cleared
+    features.clearPhotoPreview();
   }
 
   // Marca os checkboxes dos Fatores de Risco

@@ -17,8 +17,8 @@ export const RealtimeService = (() => {
         // Adapta o payload para o formato local
         const newTree = {
             ...payload.new,
-            coordX: payload.new.longitude,
-            coordY: payload.new.latitude,
+            coordX: payload.new.longitude || payload.new.coordx || 'N/A',
+            coordY: payload.new.latitude || payload.new.coordy || 'N/A',
             riskFactors: payload.new.riskfactors || [],
             targetCategory: payload.new.targetcategory,
             mitigation: payload.new.mitigation,
@@ -36,8 +36,8 @@ export const RealtimeService = (() => {
         // Adapta o payload para o formato local
         const updatedTree = {
             ...payload.new,
-            coordX: payload.new.longitude,
-            coordY: payload.new.latitude,
+            coordX: payload.new.longitude || payload.new.coordx || 'N/A',
+            coordY: payload.new.latitude || payload.new.coordy || 'N/A',
             riskFactors: payload.new.riskfactors || [],
             targetCategory: payload.new.targetcategory,
             mitigation: payload.new.mitigation,

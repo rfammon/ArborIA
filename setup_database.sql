@@ -76,6 +76,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'arvores' AND column_name = 'risco') THEN ALTER TABLE public.arvores ADD COLUMN risco TEXT; END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'arvores' AND column_name = 'riscoclass') THEN ALTER TABLE public.arvores ADD COLUMN riscoclass TEXT; END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'arvores' AND column_name = 'hasphoto') THEN ALTER TABLE public.arvores ADD COLUMN hasphoto BOOLEAN; END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'arvores' AND column_name = 'image_url') THEN ALTER TABLE public.arvores ADD COLUMN image_url TEXT; END IF;
 END $$;
 
 -- 3. HABILITAR RLS (Row Level Security)

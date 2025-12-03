@@ -19,12 +19,7 @@ async function checkSupabaseConnection() {
 }
 
 function initSupabase() {
-    // Only initialize if _supabase is not already set
-    if (_supabase) {
-        console.warn("Supabase client already initialized. Skipping re-initialization.");
-        return;
-    }
-
+    if (_supabase) return;
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
     try {
         _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -69,6 +64,10 @@ export const ApiService = {
         return user;
     },
 
+    /**
+     * Busca as árvores e converte os nomes das colunas do banco (snake_case)
+     * para o modelo da aplicação (camelCase).
+     */
     async getTrees(lastSyncTime = null) {
         if (!_supabase) return { data: [], error: 'Offline' };
         
@@ -77,9 +76,48 @@ export const ApiService = {
             query = query.gt('updated_at', lastSyncTime);
         }
 
-        const { data, error } = await query;
-        if (error) console.error('Erro ao buscar árvores:', error);
-        return { data, error };
+        const { data: dbData, error } = await query;
+        
+        if (error) {
+            console.error('Erro ao buscar árvores:', error);
+            return { data: [], error };
+        }
+
+        // [FIX-PHOTOS] Mapeamento explícito de Snake Case (DB) para Camel Case (App)
+        const mappedData = dbData.map(row => ({
+            id: row.id,
+            data: row.data,
+            especie: row.especie,
+            nome: row.nome,
+            local: row.local,
+            coordX: row.longitude || row.coordx || 'N/A', // Tenta campos novos e legados
+            coordY: row.latitude || row.coordy || 'N/A',
+            utmZoneNum: row.utmzonenum,
+            utmZoneLetter: row.utmzoneletter,
+            dap: row.dap,
+            altura: row.altura,
+            avaliador: row.avaliador,
+            observacoes: row.observacoes,
+            pontuacao: row.pontuacao,
+            riskFactors: row.riskfactors,
+            
+            // Campos TRAQ
+            riskLevel: row.risklevel,
+            residualRisk: row.residualrisk,
+            mitigation: row.mitigation,
+            targetCategory: row.targetcategory,
+            risco: row.risco,
+            riscoClass: row.riscoclass,
+
+            // [CRITICAL] Mapeamento da Foto
+            hasPhoto: row.hasphoto || false,
+            photoUrl: row.image_url || null, // Mapeia image_url do banco para photoUrl da App
+
+            updated_at: row.updated_at
+        }));
+
+        console.log(`[Sync] ${mappedData.length} árvores carregadas do servidor.`);
+        return { data: mappedData, error: null };
     },
 
     async upsertTree(treeData) {
@@ -87,54 +125,44 @@ export const ApiService = {
         const user = await this.getUser();
         if (!user) return { error: 'Usuário não logado' };
 
-        // [FIX-CRITICAL] Payload agora inclui TODOS os campos de treeData,
-        // resolvendo o erro 'null value in column "nome"' e prevenindo
-        // a perda de dados de outros campos.
         const dbPayload = {
             user_id: user.id,
-            id: treeData.id, // O upsert usará o ID para encontrar o registro a ser atualizado
+            id: treeData.id,
             
-            // --- Dados principais ---
-            nome: treeData.nome || treeData.especie || 'Nome não especificado', // Garante que 'nome' nunca seja nulo
+            nome: treeData.nome || treeData.especie || 'Nome não especificado',
             especie: treeData.especie,
             data: treeData.data,
             local: treeData.local,
             avaliador: treeData.avaliador,
             observacoes: treeData.observacoes,
 
-            // --- Dados Numéricos (com sanitização/fallback) ---
             dap: parseFloat(treeData.dap) || 0,
             altura: parseFloat(treeData.altura) || 0,
             latitude: parseFloat(treeData.coordY) || treeData.latitude || 0,
             longitude: parseFloat(treeData.coordX) || treeData.longitude || 0,
             pontuacao: parseInt(treeData.pontuacao) || 0,
             
-            // --- Coordenadas UTM ---
             utmzonenum: treeData.utmZoneNum,
             utmzoneletter: treeData.utmZoneLetter,
 
-            // --- Análise de Risco (TRAQ) ---
             risklevel: treeData.riskLevel,
             residualrisk: treeData.residualRisk,
             mitigation: treeData.mitigation,
             targetcategory: treeData.targetCategory,
-            riskfactors: treeData.riskFactors, // Deve ser um array ou JSON
+            riskfactors: treeData.riskFactors,
             
-            // --- Metadados ---
-            hasphoto: treeData.hasPhoto,
+            hasphoto: !!treeData.hasPhoto, // Garante boolean
             risco: treeData.risco,
             riscoclass: treeData.riscoClass,
+            image_url: treeData.photoUrl, // Salva a URL no campo correto do banco
             updated_at: new Date().toISOString(),
         };
 
-        // Limpeza de campos undefined para não enviar chaves desnecessárias
+        // Limpeza de campos undefined
         Object.keys(dbPayload).forEach(key => {
-            if (dbPayload[key] === undefined) {
-                delete dbPayload[key];
-            }
+            if (dbPayload[key] === undefined) delete dbPayload[key];
         });
 
-        // Se o ID for numérico (legado) ou "local_", não o envie para que o Supabase gere um UUID
         if (dbPayload.id && (typeof dbPayload.id === 'number' || String(dbPayload.id).startsWith('local_'))) {
             delete dbPayload.id;
         }
@@ -147,65 +175,6 @@ export const ApiService = {
         return { data, error };
     },
 
-    async upsertTrees(treesData) {
-        if (!_supabase) return { error: 'Offline' };
-        const user = await this.getUser();
-        if (!user) return { error: 'Usuário não logado' };
-
-        const payloads = treesData.map(treeData => {
-            const dbPayload = {
-                user_id: user.id,
-                id: treeData.id,
-                nome: treeData.nome || treeData.especie || 'Nome não especificado',
-                especie: treeData.especie,
-                data: treeData.data,
-                local: treeData.local,
-                avaliador: treeData.avaliador,
-                observacoes: treeData.observacoes,
-                dap: parseFloat(treeData.dap) || 0,
-                altura: parseFloat(treeData.altura) || 0,
-                latitude: parseFloat(treeData.coordY) || treeData.latitude || 0,
-                longitude: parseFloat(treeData.coordX) || treeData.longitude || 0,
-                pontuacao: parseInt(treeData.pontuacao) || 0,
-                utmzonenum: treeData.utmZoneNum,
-                utmzoneletter: treeData.utmZoneLetter,
-                risklevel: treeData.riskLevel,
-                residualrisk: treeData.residualRisk,
-                mitigation: treeData.mitigation,
-                targetcategory: treeData.targetCategory,
-                riskfactors: treeData.riskFactors,
-                hasphoto: treeData.hasPhoto,
-                risco: treeData.risco,
-                riscoclass: treeData.riscoClass,
-                updated_at: new Date().toISOString(),
-            };
-
-            // Clean undefined
-            Object.keys(dbPayload).forEach(key => {
-                if (dbPayload[key] === undefined) delete dbPayload[key];
-            });
-
-            // Handle local IDs (don't send them, let Supabase generate UUID)
-            if (dbPayload.id && (typeof dbPayload.id === 'number' || String(dbPayload.id).startsWith('local_'))) {
-                delete dbPayload.id;
-            }
-
-            return dbPayload;
-        });
-
-        const { data, error } = await _supabase
-            .from('arvores')
-            .upsert(payloads)
-            .select();
-
-        return { data, error };
-    },
-    
-    // Alias para compatibilidade com chamadas antigas que esperam saveTree
-    async saveTree(treeData) {
-        return this.upsertTree(treeData);
-    },
-
     async deleteTree(treeId) {
         if (!_supabase) return { error: 'Offline' };
         const { error } = await _supabase
@@ -215,76 +184,12 @@ export const ApiService = {
         return { error };
     },
 
-    async getProfile() {
-        if (!_supabase) return { error: 'Offline' };
-        const user = await this.getUser();
-        if (!user) return { error: 'Usuário não logado' };
-
-        const { data, error } = await _supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-        return { data, error };
-    },
-
-    async upsertProfile(profileData) {
-        if (!_supabase) return { error: 'Offline' };
-        const user = await this.getUser();
-        if (!user) return { error: 'Usuário não logado' };
-
-        const payload = {
-            id: user.id,
-            updated_at: new Date().toISOString(),
-            ...profileData
-        };
-
-        const { data, error } = await _supabase
-            .from('profiles')
-            .upsert(payload)
-            .select();
-        return { data, error };
-    },
-
-    getRealtimeSubscription(tableName, handlers) {
-        if (!_supabase) return null;
-        
-        const channel = _supabase.channel(`public:${tableName}`);
-        
-        channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: tableName }, payload => {
-            if (handlers.INSERT) handlers.INSERT(payload);
-        })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: tableName }, payload => {
-            if (handlers.UPDATE) handlers.UPDATE(payload);
-        })
-        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: tableName }, payload => {
-            if (handlers.DELETE) handlers.DELETE(payload);
-        })
-        .subscribe(status => {
-            if (status === 'SUBSCRIBED') {
-                console.log(`Realtime channel subscribed for table: ${tableName}`);
-            } else if (status === 'CHANNEL_ERROR') {
-                console.error(`Realtime channel error for table: ${tableName}`);
-            } else if (status === 'TIMED_OUT') {
-                console.warn(`Realtime channel timed out for table: ${tableName}`);
-            }
-        });
-
-        return channel;
-    },
-
-    async removeRealtimeSubscription(subscription) {
-        if (subscription) {
-            await _supabase.removeChannel(subscription);
-        }
-    },
-
     async uploadImage(arvoreId, imageFile) {
         if (!_supabase) return { error: 'Offline' };
 
         const formData = new FormData();
         formData.append('arvore_id', arvoreId);
-        formData.append('image', imageFile);
+        formData.append('file', imageFile);
 
         try {
             const { data: { session } } = await _supabase.auth.getSession();
@@ -294,7 +199,7 @@ export const ApiService = {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,
-                    'x-client-info': 'arboria-webapp-v1', // Optional but good practice
+                    'x-client-info': 'arboria-webapp-v1',
                 },
                 body: formData,
             });
@@ -305,10 +210,58 @@ export const ApiService = {
             }
 
             const responseData = await response.json();
+
+            // [FIX-PHOTOS] Garante que a URL pública seja retornada
+            if (responseData.path) {
+                const { data: publicUrlData } = _supabase.storage
+                    .from('arvore-imagens')
+                    .getPublicUrl(responseData.path);
+
+                responseData.fullUrl = publicUrlData.publicUrl;
+            }
+
             return { data: responseData, error: null };
 
         } catch (error) {
             return { data: null, error };
+        }
+    },
+    
+    getSupabaseUrl() {
+        return SUPABASE_URL;
+    },
+
+    getRealtimeSubscription(tableName, handlers) {
+        if (!_supabase) return null;
+
+        const channel = _supabase.channel(`public:${tableName}`);
+
+        if (handlers.INSERT) {
+            channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: tableName }, handlers.INSERT);
+        }
+        if (handlers.UPDATE) {
+            channel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: tableName }, handlers.UPDATE);
+        }
+        if (handlers.DELETE) {
+            channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table: tableName }, handlers.DELETE);
+        }
+
+        channel.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log(`[Realtime] Conectado ao canal ${tableName}`);
+            }
+        });
+
+        return channel;
+    },
+
+    async removeRealtimeSubscription(subscription) {
+        if (!subscription) return;
+        try {
+            await _supabase.removeChannel(subscription);
+            console.log('[Realtime] Canal removido com sucesso.');
+        } catch (error) {
+            console.error('[Realtime] Erro ao remover canal:', error);
         }
     }
 };

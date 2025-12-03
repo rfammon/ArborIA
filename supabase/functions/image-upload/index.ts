@@ -1,127 +1,82 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { Image } from 'https://deno.land/x/imagescript/mod.ts';
+// Importa as ferramentas necessárias (o "kit de campo")
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-// Definição dos cabeçalhos CORS
+// 1. CONFIGURAÇÃO DA PORTARIA (CORS)
+// O '*' permite que tanto o localhost quanto o seu site público "ArborIA 2.0" acessem a função.
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'http://127.0.0.1:5500', // Priorizar para desenvolvimento
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Origin': '*', 
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Max-Age': '86400', // Cache de 24 horas para preflight
-};
+}
 
-serve(async (req: Request) => {
-  // Trata a requisição OPTIONS para o CORS
+serve(async (req) => {
+  // 2. RESPOSTA AO RÁDIO DO GUARDA (Preflight / OPTIONS)
+  // Quando o navegador pergunta "Posso mandar?", respondemos "Sim" imediatamente.
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders, status: 200 });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // 1. EXTRAÇÃO DE DADOS
-    const formData = await req.formData();
-    const imageFile = formData.get('image') as File;
-    const arvoreId = formData.get('arvore_id') as string;
+    // 3. RECEBIMENTO DA AMOSTRA (Arquivo)
+    // Lê o formulário enviado pelo caminhão (Frontend)
+    const formData = await req.formData()
+    const file = formData.get('file')
 
-    if (!imageFile || !arvoreId) {
-      return new Response(JSON.stringify({ error: 'Faltando arquivo de imagem ou ID da árvore.' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      });
+    // Se não tiver árvore no caminhão, rejeita a carga.
+    if (!file) {
+      return new Response(
+        JSON.stringify({ error: 'Nenhum arquivo enviado' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
     }
 
-    // 2. AUTENTICAÇÃO E AUTORIZAÇÃO
-    const supabaseAdminClient = createClient(
+    // 4. AUTENTICAÇÃO NO SISTEMA (Banco de Dados)
+    // Aqui usamos a chave que renomeamos para SERVICE_ROLE_KEY
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SERVICE_ROLE_KEY') ?? ''
-    );
+      Deno.env.get('SERVICE_ROLE_KEY') ?? '' // <--- Atenção: Usando o nome correto sem prefixo SUPABASE_
+    )
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Cabeçalho de autorização ausente.');
-    }
-    
-    const { data: { user } } = await supabaseAdminClient.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Token de usuário inválido.' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
+    // 5. ARMAZENAMENTO NO GALPÃO (Bucket)
+    // Criamos um nome único usando a data/hora para evitar que uma foto sobrescreva outra.
+    // Ex: 1735660000_ipe-roxo.jpg
+    const fileName = `${Date.now()}_${(file as File).name}`
 
-    // 3. VALIDAÇÃO DE PROPRIEDADE
-    const { data: arvoreData, error: arvoreError } = await supabaseAdminClient
-      .from('arvores')
-      .select('id')
-      .eq('id', arvoreId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (arvoreError || !arvoreData) {
-      return new Response(JSON.stringify({ error: 'Acesso negado ou árvore não encontrada.' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 403,
-      });
-    }
-    
-    // 4. PROCESSAMENTO DA IMAGEM
-    const originalBuffer = await imageFile.arrayBuffer();
-    const originalImage = await Image.decode(originalBuffer);
-    
-    originalImage.resize(1200, Image.RESIZE_AUTO);
-
-    const compressedImage = await originalImage.encode(0.8); // Codifica para WebP com 80% de qualidade
-
-    // 5. UPLOAD PARA O STORAGE
-    const imageId = crypto.randomUUID();
-    const storagePath = `${user.id}/${arvoreId}/${imageId}.webp`;
-
-    const { error: uploadError } = await supabaseAdminClient.storage
+    // Envia para o bucket 'arvore-imagens'
+    const { data, error } = await supabase.storage
       .from('arvore-imagens')
-      .upload(storagePath, compressedImage, {
-        contentType: 'image/webp',
-        cacheControl: '3600',
-        upsert: false,
-      });
+      .upload(fileName, file, {
+        contentType: (file as File).type,
+        upsert: false // false = não substitui se já existir (segurança)
+      })
 
-    if (uploadError) throw uploadError;
+    // Se o funcionário do galpão relatar erro, avisamos o motorista.
+    if (error) throw error
 
-    // 6. INSERÇÃO DE METADADOS
-    const originalSizeKb = Math.round(originalBuffer.byteLength / 1024);
-    const compressedSizeKb = Math.round(compressedImage.byteLength / 1024);
+    // 6. RECIBO DE ENTREGA (Sucesso)
+    // Retorna os dados da imagem salva e o link público (se necessário futuramente)
+    const imageUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/arvore-imagens/${fileName}`
 
-    const metadata = {
-      id: imageId,
-      arvore_id: arvoreId,
-      user_id: user.id,
-      storage_path: storagePath,
-      original_filename: imageFile.name,
-      mime_type: 'image/webp',
-      original_size_kb: originalSizeKb,
-      compressed_size_kb: compressedSizeKb,
-    };
-
-    const { error: insertError } = await supabaseAdminClient
-      .from('arvore_imagens')
-      .insert(metadata);
-
-    if (insertError) throw insertError;
-
-    // 7. ATUALIZAÇÃO DA ÁRVORE PRINCIPAL
-    await supabaseAdminClient
-      .from('arvores')
-      .update({ hasphoto: true })
-      .eq('id', arvoreId);
-
-    // 8. RETORNO DE SUCESSO
-    return new Response(JSON.stringify({ success: true, metadata }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 201,
-    });
+    return new Response(
+      JSON.stringify({ 
+        message: 'Upload realizado com sucesso - ArborIA 2.0', 
+        path: data.path,
+        fullUrl: imageUrl
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
+    )
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    // 7. RELATÓRIO DE INCIDENTE (Erro)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      }
+    )
   }
-});
+})
