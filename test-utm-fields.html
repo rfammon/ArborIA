@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Campos UTM - ArborIA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2d5016;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #2d5016;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #1f3810;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f8ff;
+            border-left: 4px solid #2d5016;
+            border-radius: 4px;
+        }
+        .result h3 {
+            margin-top: 0;
+            color: #2d5016;
+        }
+        .result pre {
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .error {
+            background: #ffe6e6;
+            border-left-color: #d32f2f;
+        }
+        .success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+        .warning {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1></h1>🧪 Teste de Campos UTM - ArborIA</h1>
+        <p>Este script testa se os campos UTM estão sendo lidos corretamente do formulário.</p>
+
+        <div class="form-group">
+            <label for="utm-zone-num">Zona UTM (Número):</label>
+            <input type="number" id="utm-zone-num" name="utm-zone-num" placeholder="23" min="1" max="60" value="23">
+        </div>
+
+        <div class="form-group">
+            <label for="utm-zone-letter">Hemisfério (Letra):</label>
+            <input type="text" id="utm-zone-letter" name="utm-zone-letter" placeholder="K" maxlength="1" style="text-transform: uppercase;" value="K">
+        </div>
+
+        <div class="form-group">
+            <label for="risk-coordx">Coordenada X (Easting):</label>
+            <input type="text" id="risk-coordx" name="risk-coordx" placeholder="353657" value="353657">
+        </div>
+
+        <div class="form-group">
+            <label for="risk-coordy">Coordenada Y (Northing):</label>
+            <input type="text" id="risk-coordy" name="risk-coordy" placeholder="7343326" value="7343326">
+        </div>
+
+        <button onclick="testFields()">🔍 Testar Campos</button>
+        <button onclick="testParsing()">🔢 Testar Conversão</button>
+        <button onclick="clearFields()">🗑️ Limpar Campos</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function testFields() {
+            const resultDiv = document.getElementById('result');
+
+            // Capturar valores dos campos
+            const utmZoneNum = document.getElementById('utm-zone-num').value;
+            const utmZoneLetter = document.getElementById('utm-zone-letter').value;
+            const coordX = document.getElementById('risk-coordx').value;
+            const coordY = document.getElementById('risk-coordy').value;
+
+            // Montar objeto de resultado
+            const result = {
+                rawValues: {
+                    utmZoneNum: utmZoneNum,
+                    utmZoneLetter: utmZoneLetter,
+                    coordX: coordX,
+                    coordY: coordY
+                },
+                types: {
+                    utmZoneNum: typeof utmZoneNum,
+                    utmZoneLetter: typeof utmZoneLetter,
+                    coordX: typeof coordX,
+                    coordY: typeof coordY
+                },
+                isEmpty: {
+                    utmZoneNum: utmZoneNum === '',
+                    utmZoneLetter: utmZoneLetter === '',
+                    coordX: coordX === '',
+                    coordY: coordY === ''
+                },
+                length: {
+                    utmZoneNum: utmZoneNum.length,
+                    utmZoneLetter: utmZoneLetter.length
+                }
+            };
+
+            // Análise de problemas
+            const problems = [];
+            if (utmZoneNum === '') problems.push('⚠️ utm-zone-num está VAZIO');
+            if (utmZoneLetter === '') problems.push('⚠️ utm-zone-letter está VAZIO');
+            if (coordX === '') problems.push('⚠️ coordX está VAZIO');
+            if (coordY === '') problems.push('⚠️ coordY está VAZIO');
+
+            const cssClass = problems.length > 0 ? 'warning' : 'success';
+            const status = problems.length > 0 ? '⚠️ PROBLEMAS ENCONTRADOS' : '✅ TODOS OS CAMPOS OK';
+
+            resultDiv.innerHTML = `
+                <div class="result ${cssClass}">
+                    <h3>${status}</h3>
+                    ${problems.length > 0 ? '<ul>' + problems.map(p => '<li>' + p + '</li>').join('') + '</ul>' : ''}
+                    <h4>Valores Brutos:</h4>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        function testParsing() {
+            const resultDiv = document.getElementById('result');
+
+            const utmZoneNum = document.getElementById('utm-zone-num').value;
+            const utmZoneLetter = document.getElementById('utm-zone-letter').value;
+            const coordX = document.getElementById('risk-coordx').value;
+            const coordY = document.getElementById('risk-coordy').value;
+
+            // Testar conversões
+            const parsed = {
+                utmZoneNum_parseInt: parseInt(utmZoneNum, 10),
+                utmZoneNum_isNaN: isNaN(parseInt(utmZoneNum, 10)),
+                utmZoneLetter_upper: utmZoneLetter.toUpperCase(),
+                coordX_parseFloat: parseFloat(coordX),
+                coordY_parseFloat: parseFloat(coordY)
+            };
+
+            // Simular validação do supabase-client.js
+            const dbPayload = {
+                utmzonenum: utmZoneNum && !isNaN(parseInt(utmZoneNum, 10)) ? parseInt(utmZoneNum, 10) : null,
+                utmzoneletter: utmZoneLetter && utmZoneLetter.trim() !== '' ? utmZoneLetter.toUpperCase() : null,
+                easting: parseFloat(coordX) || 0,
+                northing: parseFloat(coordY) || 0
+            };
+
+            // Análise de problemas
+            const problems = [];
+            if (dbPayload.utmzonenum === null) problems.push('❌ utmzonenum será salvo como NULL');
+            if (dbPayload.utmzoneletter === null) problems.push('❌ utmzoneletter será salvo como NULL');
+            if (dbPayload.easting === 0) problems.push('⚠️ easting será salvo como 0');
+            if (dbPayload.northing === 0) problems.push('⚠️ northing será salvo como 0');
+
+            const cssClass = problems.some(p => p.startsWith('❌')) ? 'error' :
+                           problems.length > 0 ? 'warning' : 'success';
+            const status = problems.some(p => p.startsWith('❌')) ? '❌ ERRO: Valores NULL serão salvos' :
+                          problems.length > 0 ? '⚠️ AVISOS ENCONTRADOS' : '✅ CONVERSÃO OK';
+
+            resultDiv.innerHTML = `
+                <div class="result ${cssClass}">
+                    <h3>${status}</h3>
+                    ${problems.length > 0 ? '<ul>' + problems.map(p => '<li>' + p + '</li>').join('') + '</ul>' : ''}
+                    <h4>Valores Parseados:</h4>
+                    <pre>${JSON.stringify(parsed, null, 2)}</pre>
+                    <h4>Payload para o Banco (dbPayload):</h4>
+                    <pre>${JSON.stringify(dbPayload, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        function clearFields() {
+            document.getElementById('utm-zone-num').value = '';
+            document.getElementById('utm-zone-letter').value = '';
+            document.getElementById('risk-coordx').value = '';
+            document.getElementById('risk-coordy').value = '';
+            document.getElementById('result').innerHTML = '';
+        }
+
+        // Testar automaticamente ao carregar
+        window.onload = function() {
+            console.log('🧪 Teste de Campos UTM - ArborIA');
+            console.log('Campos encontrados:', {
+                'utm-zone-num': document.getElementById('utm-zone-num'),
+                'utm-zone-letter': document.getElementById('utm-zone-letter'),
+                'risk-coordx': document.getElementById('risk-coordx'),
+                'risk-coordy': document.getElementById('risk-coordy')
+            });
+        };
+    </script>
+</body>
+</html>

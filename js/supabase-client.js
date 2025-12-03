@@ -1,267 +1,400 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
+import { CoordinatesService } from "./coordinates.service.js";
 
-// CLASSE DE INTEGRAÇÃO COM SUPABASE
-const SUPABASE_URL = 'https://mbfouxrinygecbxmjckg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iZm91eHJpbnlnZWNieG1qY2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0MjQxMTUsImV4cCI6MjA4MDAwMDExNX0.MdYJO6R0IvXFOUQTVhy2QzJHQzmech6xAuLnA1Lhoj0';
+// =====================================================
+// CONFIGURAÇÃO DO SUPABASE
+// =====================================================
+
+const SUPABASE_URL = "https://mbfouxrinygecbxmjckg.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iZm91eHJpbnlnZWNieG1qY2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0MjQxMTUsImV4cCI6MjA4MDAwMDExNX0.MdYJO6R0IvXFOUQTVhy2QzJHQzmech6xAuLnA1Lhoj0";
 
 let _supabase = null;
 
+// =====================================================
+// INICIALIZAÇÃO
+// =====================================================
+
 async function checkSupabaseConnection() {
-    try {
-        if (!_supabase) throw new Error('Cliente Supabase não inicializado.');
-        const { data, error } = await _supabase.auth.getSession();
-        if (error) throw error;
-        return { success: true, session: data.session };
-    } catch (error) {
-        console.error('❌ Falha na conexão com Supabase:', error.message);
-        return { success: false, error: error.message };
-    }
+  try {
+    if (!_supabase) throw new Error("Cliente Supabase não inicializado.");
+    const { data, error } = await _supabase.auth.getSession();
+    if (error) throw error;
+    return { success: true, session: data.session };
+  } catch (error) {
+    console.error("[Supabase] ❌ Falha na conexão:", error.message);
+    return { success: false, error: error.message };
+  }
 }
 
 function initSupabase() {
-    if (_supabase) return;
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
-    try {
-        _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        checkSupabaseConnection();
-    } catch (e) {
-        console.error('❌ Erro ao inicializar cliente Supabase:', e);
-    }
+  if (_supabase) return;
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  try {
+    _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    checkSupabaseConnection();
+    console.log("[Supabase] ✓ Cliente inicializado");
+  } catch (e) {
+    console.error("[Supabase] ❌ Erro ao inicializar:", e);
+  }
 }
 
 initSupabase();
 
+// =====================================================
+// API SERVICE
+// =====================================================
+
 export const ApiService = {
-    
-    async getSession() {
-        if (!_supabase) return null;
-        const { data, error } = await _supabase.auth.getSession();
-        if (error) return null;
-        return data.session;
-    },
+  // ---------------------------------------------------
+  // AUTENTICAÇÃO
+  // ---------------------------------------------------
 
-    async login(email, password) {
-        if (!_supabase) return { error: 'Supabase não inicializado' };
-        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-        return { data, error };
-    },
+  async getSession() {
+    if (!_supabase) return null;
+    const { data, error } = await _supabase.auth.getSession();
+    if (error) return null;
+    return data.session;
+  },
 
-    async register(email, password) {
-        if (!_supabase) return { error: 'Supabase não inicializado' };
-        const { data, error } = await _supabase.auth.signUp({ email, password });
-        return { data, error };
-    },
+  async login(email, password) {
+    if (!_supabase) return { error: "Supabase não inicializado" };
+    const { data, error } = await _supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { data, error };
+  },
 
-    async logout() {
-        if (!_supabase) return;
-        const { error } = await _supabase.auth.signOut();
-        return { error };
-    },
+  async register(email, password) {
+    if (!_supabase) return { error: "Supabase não inicializado" };
+    const { data, error } = await _supabase.auth.signUp({ email, password });
+    return { data, error };
+  },
 
-    async getUser() {
-        if (!_supabase) return null;
-        const { data: { user } } = await _supabase.auth.getUser();
-        return user;
-    },
+  async logout() {
+    if (!_supabase) return;
+    const { error } = await _supabase.auth.signOut();
+    return { error };
+  },
 
-    /**
-     * Busca as árvores e converte os nomes das colunas do banco (snake_case)
-     * para o modelo da aplicação (camelCase).
-     */
-    async getTrees(lastSyncTime = null) {
-        if (!_supabase) return { data: [], error: 'Offline' };
-        
-        let query = _supabase.from('arvores').select('*');
-        if (lastSyncTime) {
-            query = query.gt('updated_at', lastSyncTime);
-        }
+  async getUser() {
+    if (!_supabase) return null;
+    const {
+      data: { user },
+    } = await _supabase.auth.getUser();
+    return user;
+  },
 
-        const { data: dbData, error } = await query;
-        
-        if (error) {
-            console.error('Erro ao buscar árvores:', error);
-            return { data: [], error };
-        }
+  // ---------------------------------------------------
+  // OPERAÇÕES COM ÁRVORES
+  // ---------------------------------------------------
 
-        // [FIX-PHOTOS] Mapeamento explícito de Snake Case (DB) para Camel Case (App)
-        const mappedData = dbData.map(row => ({
-            id: row.id,
-            data: row.data,
-            especie: row.especie,
-            nome: row.nome,
-            local: row.local,
-            coordX: row.longitude || row.coordx || 'N/A', // Tenta campos novos e legados
-            coordY: row.latitude || row.coordy || 'N/A',
-            utmZoneNum: row.utmzonenum,
-            utmZoneLetter: row.utmzoneletter,
-            dap: row.dap,
-            altura: row.altura,
-            avaliador: row.avaliador,
-            observacoes: row.observacoes,
-            pontuacao: row.pontuacao,
-            riskFactors: row.riskfactors,
-            
-            // Campos TRAQ
-            riskLevel: row.risklevel,
-            residualRisk: row.residualrisk,
-            mitigation: row.mitigation,
-            targetCategory: row.targetcategory,
-            risco: row.risco,
-            riscoClass: row.riscoclass,
+  /**
+   * Busca árvores do banco de dados
+   * Usa CoordinatesService para processar coordenadas automaticamente
+   */
+  async getTrees(lastSyncTime = null) {
+    if (!_supabase) return { data: [], error: "Offline" };
 
-            // [CRITICAL] Mapeamento da Foto
-            hasPhoto: row.hasphoto || false,
-            photoUrl: row.image_url || null, // Mapeia image_url do banco para photoUrl da App
+    try {
+      let query = _supabase.from("arvores").select("*");
+      if (lastSyncTime) {
+        query = query.gt("updated_at", lastSyncTime);
+      }
 
-            updated_at: row.updated_at
-        }));
+      const { data: dbData, error } = await query;
 
-        console.log(`[Sync] ${mappedData.length} árvores carregadas do servidor.`);
-        return { data: mappedData, error: null };
-    },
+      if (error) {
+        console.error("[Supabase] ❌ Erro ao buscar árvores:", error);
+        return { data: [], error };
+      }
 
-    async upsertTree(treeData) {
-        if (!_supabase) return { error: 'Offline' };
-        const user = await this.getUser();
-        if (!user) return { error: 'Usuário não logado' };
+      // Mapear cada linha usando CoordinatesService
+      const mappedData = dbData.map((row) => {
+        // Processar coordenadas usando o serviço centralizado
+        const coords = CoordinatesService.prepareFromDatabase(row);
 
-        const dbPayload = {
-            user_id: user.id,
-            id: treeData.id,
-            
-            nome: treeData.nome || treeData.especie || 'Nome não especificado',
-            especie: treeData.especie,
-            data: treeData.data,
-            local: treeData.local,
-            avaliador: treeData.avaliador,
-            observacoes: treeData.observacoes,
+        return {
+          id: row.id,
+          data: row.data,
+          especie: row.especie,
+          nome: row.nome,
+          local: row.local,
+          avaliador: row.avaliador,
+          observacoes: row.observacoes,
 
-            dap: parseFloat(treeData.dap) || 0,
-            altura: parseFloat(treeData.altura) || 0,
-            latitude: parseFloat(treeData.coordY) || treeData.latitude || 0,
-            longitude: parseFloat(treeData.coordX) || treeData.longitude || 0,
-            pontuacao: parseInt(treeData.pontuacao) || 0,
-            
-            utmzonenum: treeData.utmZoneNum,
-            utmzoneletter: treeData.utmZoneLetter,
+          // Medidas dendrométricas
+          dap: row.dap,
+          altura: row.altura,
 
-            risklevel: treeData.riskLevel,
-            residualrisk: treeData.residualRisk,
-            mitigation: treeData.mitigation,
-            targetcategory: treeData.targetCategory,
-            riskfactors: treeData.riskFactors,
-            
-            hasphoto: !!treeData.hasPhoto, // Garante boolean
-            risco: treeData.risco,
-            riscoclass: treeData.riscoClass,
-            image_url: treeData.photoUrl, // Salva a URL no campo correto do banco
-            updated_at: new Date().toISOString(),
+          // Coordenadas (todas as versões para compatibilidade)
+          ...coords,
+
+          // Campos TRAQ
+          pontuacao: row.pontuacao,
+          riskFactors: row.riskfactors,
+          riskLevel: row.risklevel,
+          residualRisk: row.residualrisk,
+          mitigation: row.mitigation,
+          targetCategory: row.targetcategory,
+          risco: row.risco,
+          riscoClass: row.riscoclass,
+
+          // Mídia
+          hasPhoto: row.hasphoto || false,
+          photoUrl: row.image_url || null,
+
+          // Timestamps
+          created_at: row.created_at,
+          updated_at: row.updated_at,
         };
+      });
 
-        // Limpeza de campos undefined
-        Object.keys(dbPayload).forEach(key => {
-            if (dbPayload[key] === undefined) delete dbPayload[key];
-        });
-
-        if (dbPayload.id && (typeof dbPayload.id === 'number' || String(dbPayload.id).startsWith('local_'))) {
-            delete dbPayload.id;
-        }
-
-        const { data, error } = await _supabase
-            .from('arvores')
-            .upsert(dbPayload)
-            .select();
-
-        return { data, error };
-    },
-
-    async deleteTree(treeId) {
-        if (!_supabase) return { error: 'Offline' };
-        const { error } = await _supabase
-            .from('arvores')
-            .update({ deleted_at: new Date().toISOString() })
-            .eq('id', treeId);
-        return { error };
-    },
-
-    async uploadImage(arvoreId, imageFile) {
-        if (!_supabase) return { error: 'Offline' };
-
-        const formData = new FormData();
-        formData.append('arvore_id', arvoreId);
-        formData.append('file', imageFile);
-
-        try {
-            const { data: { session } } = await _supabase.auth.getSession();
-            if (!session) throw new Error("Usuário não autenticado.");
-
-            const response = await fetch(`${SUPABASE_URL}/functions/v1/image-upload`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
-                    'x-client-info': 'arboria-webapp-v1',
-                },
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Falha na requisição: ${errorText}`);
-            }
-
-            const responseData = await response.json();
-
-            // [FIX-PHOTOS] Garante que a URL pública seja retornada
-            if (responseData.path) {
-                const { data: publicUrlData } = _supabase.storage
-                    .from('arvore-imagens')
-                    .getPublicUrl(responseData.path);
-
-                responseData.fullUrl = publicUrlData.publicUrl;
-            }
-
-            return { data: responseData, error: null };
-
-        } catch (error) {
-            return { data: null, error };
-        }
-    },
-    
-    getSupabaseUrl() {
-        return SUPABASE_URL;
-    },
-
-    getRealtimeSubscription(tableName, handlers) {
-        if (!_supabase) return null;
-
-        const channel = _supabase.channel(`public:${tableName}`);
-
-        if (handlers.INSERT) {
-            channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: tableName }, handlers.INSERT);
-        }
-        if (handlers.UPDATE) {
-            channel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: tableName }, handlers.UPDATE);
-        }
-        if (handlers.DELETE) {
-            channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table: tableName }, handlers.DELETE);
-        }
-
-        channel.subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-                console.log(`[Realtime] Conectado ao canal ${tableName}`);
-            }
-        });
-
-        return channel;
-    },
-
-    async removeRealtimeSubscription(subscription) {
-        if (!subscription) return;
-        try {
-            await _supabase.removeChannel(subscription);
-            console.log('[Realtime] Canal removido com sucesso.');
-        } catch (error) {
-            console.error('[Realtime] Erro ao remover canal:', error);
-        }
+      console.log(`[Supabase] ✓ ${mappedData.length} árvores carregadas`);
+      return { data: mappedData, error: null };
+    } catch (error) {
+      console.error("[Supabase] ❌ Erro ao buscar árvores:", error);
+      return { data: [], error: error.message };
     }
+  },
+
+  /**
+   * Insere ou atualiza uma árvore no banco de dados
+   * Usa CoordinatesService para normalizar coordenadas automaticamente
+   */
+  async upsertTree(treeData) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não logado" };
+
+      console.log("[Supabase] Processando dados da árvore:", {
+        id: treeData.id,
+        especie: treeData.especie,
+        coordX: treeData.coordX,
+        coordY: treeData.coordY,
+        utmZoneNum: treeData.utmZoneNum,
+        utmZoneLetter: treeData.utmZoneLetter,
+      });
+
+      // Usar CoordinatesService para preparar coordenadas
+      const coordsForDB = CoordinatesService.prepareForDatabase(treeData);
+
+      console.log("[Supabase] Coordenadas normalizadas:", coordsForDB);
+
+      // Montar payload para o banco
+      const dbPayload = {
+        user_id: user.id,
+        id: treeData.id,
+
+        // Informações básicas
+        nome: treeData.nome || treeData.especie || "Nome não especificado",
+        especie: treeData.especie,
+        data: treeData.data,
+        local: treeData.local,
+        avaliador: treeData.avaliador,
+        observacoes: treeData.observacoes,
+
+        // Medidas dendrométricas
+        dap: treeData.dap ? parseFloat(treeData.dap) : 0,
+        altura: treeData.altura ? parseFloat(treeData.altura) : 0,
+
+        // Coordenadas UTM (SISTEMA ÚNICO)
+        easting: coordsForDB.easting,
+        northing: coordsForDB.northing,
+        utmzonenum: coordsForDB.utmzonenum,
+        utmzoneletter: coordsForDB.utmzoneletter,
+
+        // Também salvar em latitude/longitude para compatibilidade com mapas legados
+        latitude: coordsForDB.northing, // Temporário para compatibilidade
+        longitude: coordsForDB.easting, // Temporário para compatibilidade
+
+        // Avaliação de risco
+        pontuacao: parseInt(treeData.pontuacao) || 0,
+        riskfactors: treeData.riskFactors || [],
+        risklevel: treeData.riskLevel,
+        residualrisk: treeData.residualRisk,
+        mitigation: treeData.mitigation,
+        targetcategory: treeData.targetCategory,
+        risco: treeData.risco,
+        riscoclass: treeData.riscoClass,
+
+        // Mídia
+        hasphoto: !!treeData.hasPhoto,
+        image_url: treeData.photoUrl,
+
+        // Timestamp
+        updated_at: new Date().toISOString(),
+      };
+
+      // Remover campos undefined
+      Object.keys(dbPayload).forEach((key) => {
+        if (dbPayload[key] === undefined) delete dbPayload[key];
+      });
+
+      // Remover ID se for local ou numérico (será gerado pelo banco)
+      if (
+        dbPayload.id &&
+        (typeof dbPayload.id === "number" ||
+          String(dbPayload.id).startsWith("local_"))
+      ) {
+        delete dbPayload.id;
+      }
+
+      console.log("[Supabase] Payload final:", {
+        id: dbPayload.id,
+        nome: dbPayload.nome,
+        easting: dbPayload.easting,
+        northing: dbPayload.northing,
+        utmzonenum: dbPayload.utmzonenum,
+        utmzoneletter: dbPayload.utmzoneletter,
+      });
+
+      // Executar upsert
+      const { data, error } = await _supabase
+        .from("arvores")
+        .upsert(dbPayload)
+        .select();
+
+      if (error) {
+        console.error("[Supabase] ❌ Erro no upsert:", error);
+        return { data: null, error };
+      }
+
+      console.log("[Supabase] ✓ Árvore salva:", data);
+      console.log(
+        "[Supabase] Tipo de retorno:",
+        Array.isArray(data) ? "Array" : typeof data,
+      );
+      console.log("[Supabase] Quantidade de registros:", data?.length);
+      console.log("[Supabase] Primeiro registro ID:", data?.[0]?.id);
+
+      return { data: data, error: null };
+    } catch (error) {
+      console.error("[Supabase] ❌ Erro ao salvar árvore:", error);
+      return { data: null, error: error.message };
+    }
+  },
+
+  /**
+   * Marca uma árvore como deletada (soft delete)
+   */
+  async deleteTree(treeId) {
+    if (!_supabase) return { error: "Offline" };
+    const { error } = await _supabase
+      .from("arvores")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", treeId);
+    return { error };
+  },
+
+  // ---------------------------------------------------
+  // UPLOAD DE IMAGENS
+  // ---------------------------------------------------
+
+  async uploadImage(arvoreId, imageFile) {
+    if (!_supabase) return { error: "Offline" };
+
+    const formData = new FormData();
+    formData.append("arvore_id", arvoreId);
+    formData.append("file", imageFile);
+
+    try {
+      const {
+        data: { session },
+      } = await _supabase.auth.getSession();
+      if (!session) throw new Error("Usuário não autenticado.");
+
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/image-upload`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "x-client-info": "arboria-webapp-v1",
+          },
+          body: formData,
+        },
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Falha na requisição: ${errorText}`);
+      }
+
+      const responseData = await response.json();
+
+      if (responseData.path) {
+        const { data: publicUrlData } = _supabase.storage
+          .from("arvore-imagens")
+          .getPublicUrl(responseData.path);
+
+        responseData.fullUrl = publicUrlData.publicUrl;
+      }
+
+      return { data: responseData, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  // ---------------------------------------------------
+  // REALTIME
+  // ---------------------------------------------------
+
+  getRealtimeSubscription(tableName, handlers) {
+    if (!_supabase) return null;
+
+    const channel = _supabase.channel(`public:${tableName}`);
+
+    if (handlers.INSERT) {
+      channel.on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: tableName },
+        handlers.INSERT,
+      );
+    }
+    if (handlers.UPDATE) {
+      channel.on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: tableName },
+        handlers.UPDATE,
+      );
+    }
+    if (handlers.DELETE) {
+      channel.on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: tableName },
+        handlers.DELETE,
+      );
+    }
+
+    channel.subscribe(async (status) => {
+      if (status === "SUBSCRIBED") {
+        console.log(`[Realtime] ✓ Conectado ao canal ${tableName}`);
+      }
+    });
+
+    return channel;
+  },
+
+  async removeRealtimeSubscription(subscription) {
+    if (!subscription) return;
+    try {
+      await _supabase.removeChannel(subscription);
+      console.log("[Realtime] ✓ Canal removido");
+    } catch (error) {
+      console.error("[Realtime] ❌ Erro ao remover canal:", error);
+    }
+  },
+
+  // ---------------------------------------------------
+  // UTILITÁRIOS
+  // ---------------------------------------------------
+
+  getSupabaseUrl() {
+    return SUPABASE_URL;
+  },
 };
