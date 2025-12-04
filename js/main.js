@@ -1,4 +1,4 @@
-// js/main.js (v2.9 - Patch Applied for CRUD)
+// js/main.js (v2.9 - Patch Applied for CRUD + CSS Injection Fix)
 
 import * as state from "./state.js";
 import { UI } from "./ui.js";
@@ -36,6 +36,21 @@ let pdfGenerator = null;
 // === 1. SELETORES GLOBAIS ===
 const detailView = document.getElementById("detalhe-view");
 const topNavContainer = document.querySelector(".topicos-container");
+
+// === [FIX] INJEÇÃO DINÂMICA DE CSS ===
+// Resolve o problema de empilhamento vertical dos cards do checklist mobile
+// injetando o CSS que estava faltando no index.html
+function injectMobileChecklistCSS() {
+    const linkId = 'mobile-checklist-css';
+    if (!document.getElementById(linkId)) {
+        const link = document.createElement('link');
+        link.id = linkId;
+        link.rel = 'stylesheet';
+        link.href = 'css/modules/02_feature.checklist_mobile.css?v=2.2';
+        document.head.appendChild(link);
+        console.log('CSS do Checklist Mobile injetado dinamicamente.');
+    }
+}
 
 // === 2. LÓGICA DE NAVEGAÇÃO (CORE) ===
 function handleMainNavigation(event, treeId = null) {
@@ -445,6 +460,9 @@ function applyGuestRestrictions() {
 // === 6. INICIALIZAÇÃO PRINCIPAL ===
 async function initApp() {
   console.log("🚀 Initializing ArborIA 2.0...");
+  
+  // [FIX] Injeta CSS faltante
+  injectMobileChecklistCSS();
 
   // 1. Inicializa UI Base (Sync)
   try {

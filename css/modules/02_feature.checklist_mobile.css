@@ -1,45 +1,71 @@
 /**
- * ARBORIA 2.0 - MOBILE CHECKLIST (v82.0 - Flash Card UI + Stepper)
- * Estilo para o Checklist em Modo "Flash Card" (Tela Cheia) com indicador de progresso.
+ * ARBORIA 2.0 - MOBILE CHECKLIST (v82.2 - Single Flashcard UI)
+ * Estilo para o Checklist em Modo "Flash Card" (Tela Cheia) com navegação unitária.
  */
 
-/* --- 1. CONTAINER TELA CHEIA --- */
+/* --- 1. CONTAINER TELA CHEIA (MODAL) --- */
 #checklist-flashcard-view {
-    position: fixed; /* Chave para o overlay */
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(15, 23, 42, 0.95); /* Fundo escuro profundo */
+    background-color: rgba(15, 23, 42, 0.98);
     backdrop-filter: blur(8px);
-    z-index: 9999 !important; /* Acima de tudo, força a ordem */
-    padding: 20px;
-    display: none; /* Oculto por padrão */
-
-    /* Layout Flex para centralizar e permitir interação quando visível */
-    pointer-events: auto;
+    z-index: 9999 !important;
+    padding: 10px;
+    display: none;
+    
+    /* Scroll Behavior Fixes */
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    overflow-y: auto;
 }
 
-/* Garante que o checklist sobrescreva o display:none !important de .modal-overlay */
-#checklist-flashcard-view.modal-overlay.active {
+#checklist-flashcard-view.active {
     display: flex !important;
 }
 
-/* Wrapper interno */
 .mobile-checklist-wrapper-fullscreen {
     width: 100%;
     max-width: 500px;
+    min-height: min-content;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
     position: relative;
     margin: 0 auto;
-    padding: 10px 0;
+    padding-bottom: 40px;
+}
+
+/* Botão Fechar (HUD) */
+#checklist-flashcard-view .hud-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 10001;
+    transition: background 0.2s;
+}
+
+#checklist-flashcard-view .hud-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* --- STEPPER DE PROGRESSO --- */
@@ -48,7 +74,7 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    margin-bottom: 30px;
+    margin: 40px 0 20px 0;
     padding: 0 10px;
 }
 
@@ -58,15 +84,16 @@
     flex-direction: column;
     align-items: center;
     position: relative;
+    cursor: pointer;
 }
 
 .step-item:not(:last-child)::after {
     content: "";
     position: absolute;
-    top: 20px;
+    top: 18px;
     left: 50%;
     width: 100%;
-    height: 3px;
+    height: 2px;
     background: rgba(255, 255, 255, 0.2);
     z-index: 1;
 }
@@ -76,15 +103,16 @@
 }
 
 .step-circle {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    border: 3px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
+    font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.6);
     position: relative;
     z-index: 2;
@@ -92,11 +120,11 @@
 }
 
 .step-item.active .step-circle {
-    background: linear-gradient(135deg, var(--color-forest), var(--color-tech));
+    background: linear-gradient(135deg, var(--color-forest, #2e7d32), var(--color-tech, #00acc1));
     border-color: #00e676;
     color: white;
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 230, 118, 0.4);
+    box-shadow: 0 0 15px rgba(0, 230, 118, 0.4);
 }
 
 .step-item.completed .step-circle {
@@ -107,865 +135,334 @@
 
 .step-item.completed .step-circle::after {
     content: "✓";
-    position: absolute;
-    font-size: 1.2rem;
+}
+.step-item.completed .step-circle span {
+    display: none;
 }
 
 .step-label {
     font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.6);
-    margin-top: 8px;
-    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
     font-weight: 600;
 }
 
-.step-item.active .step-label {
-    color: #00e676;
-}
+.step-item.active .step-label { color: #00e676; }
 
-.step-item.completed .step-label {
-    color: #00e676;
-}
-
-/* --- 2. O FLASH CARD (Cartão de Pergunta) --- */
+/* --- CARDS (CONTAINERS DE CONTEÚDO) --- */
 .mobile-checklist-card,
 #question-card,
 #target-card,
 #risk-card,
 #confirm-card {
     width: 100%;
-    /* Gradiente Inicial: Verde Floresta -> Azul Tech (Neutro/Seguro) */
-    background: linear-gradient(135deg, var(--color-forest), var(--color-tech));
-    border-radius: 24px;
-    padding: 2.5rem 1.5rem;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-    text-align: center;
+    background: linear-gradient(160deg, #263238, #1c2529);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     color: white;
     position: relative;
-    overflow: hidden;
-    transition:
-        background 0.5s ease,
-        box-shadow 0.3s ease,
-        transform 0.3s ease;
-    /* Garante espaço para o conteúdo */
     display: none;
     flex-direction: column;
+    gap: 15px;
+    min-height: 350px; /* Altura mínima maior para o flashcard */
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Animações de Entrada */
+@keyframes fadeInSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.mobile-checklist-card[style*="display: flex"],
+.mobile-checklist-card[style*="display: block"] {
+    animation: fadeInSlideUp 0.3s ease-out forwards;
+}
+
+/* --- SINGLE FLASHCARD LAYOUT (NEW) --- */
+.single-flashcard-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-between;
     gap: 20px;
-    min-height: 400px;
 }
 
-#question-card {
+.flashcard-header {
     display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-@keyframes cardPopIn {
-    from {
-        opacity: 0;
-        transform: scale(0.8) translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
-/* Estado de RISCO DETECTADO (Laranja -> Vermelho) */
-.mobile-checklist-card.answered-yes,
-#question-card.answered-yes {
-    background: linear-gradient(135deg, #f57c00, #d32f2f);
-    box-shadow: 0 15px 35px rgba(211, 47, 47, 0.4);
-    animation: pulseWarning 0.5s ease;
-}
-
-@keyframes pulseWarning {
-    0%,
-    100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.02);
-    }
-}
-
-/* Indicador visual de alerta (Ícone de fundo) */
-.mobile-checklist-card.answered-yes::before,
-#question-card.answered-yes::before {
-    content: "⚠️";
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    font-size: 8rem;
-    opacity: 0.1;
-    pointer-events: none;
-    transform: rotate(15deg);
-}
-
-/* --- TIPOGRAFIA DO CARD --- */
-#flashcard-counter {
-    font-size: 0.85rem;
+.flashcard-counter {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: rgba(255, 255, 255, 0.7);
-    margin: 0;
-    font-weight: 700;
-}
-
-#flashcard-question-text {
-    font-size: 1.3rem;
-    line-height: 1.4;
-    font-weight: 700;
-    color: #ffffff;
-    min-height: 3em; /* Altura mínima para evitar pulos */
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    letter-spacing: 1px;
     text-align: center;
 }
 
-#flashcard-question-weight {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.8);
-    background: rgba(0, 0, 0, 0.2);
-    padding: 5px 15px;
-    border-radius: 20px;
-    display: inline-block;
-}
-
-/* Termos técnicos dentro da pergunta */
-#flashcard-question-text .checklist-term {
-    color: #a7ffeb; /* Verde água neon */
-    border-bottom: 2px dashed rgba(167, 255, 235, 0.5);
-    cursor: help;
-    margin: 0 4px;
-}
-
-/* --- 3. TOGGLE SWITCH (INTERRUPTOR) --- */
-.flashcard-toggle-area {
+.flashcard-progress-bar {
     width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-top: 1rem;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
 }
 
-.mobile-checklist-toggle {
+.flashcard-progress-fill {
+    height: 100%;
+    background: #00e676;
+    transition: width 0.3s ease;
+}
+
+.flashcard-body {
+    flex: 1;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10px 0;
+}
+
+.flashcard-weight-badge {
+    background: rgba(255,255,255,0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 15px;
+    text-transform: uppercase;
+}
+
+.flashcard-question-text {
+    font-size: 1.3rem;
+    line-height: 1.4;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 30px;
+}
+
+.flashcard-interaction-area {
+    display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 15px;
-    background: rgba(0, 0, 0, 0.25);
-    padding: 10px 25px;
-    border-radius: 50px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
 }
 
-/* O Input Checkbox invisível */
-.mobile-checklist-toggle input {
-    display: none;
+.interaction-label {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.6);
+    min-height: 1.2em; /* Evita pulo de layout */
 }
 
-/* O Trilho do Switch */
-.toggle-switch {
+/* Big Toggle Switch */
+.big-toggle-switch {
     position: relative;
     display: inline-block;
-    width: 60px;
-    height: 34px;
-    margin: 0;
+    width: 80px;
+    height: 44px;
 }
 
-.toggle-slider {
+.big-toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+.big-slider {
     position: absolute;
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.3);
-    transition: background-color 0.4s; /* [MELHORIA] Anima a cor do trilho */
-    border-radius: 34px;
-    border: 2px solid rgba(255, 255, 255, 0.6);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255,255,255,0.15);
+    transition: .4s;
+    border-radius: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    border: 2px solid rgba(255,255,255,0.1);
 }
 
-/* A Bolinha do Switch */
-.toggle-slider:before {
+.big-slider:before {
     position: absolute;
     content: "";
-    height: 26px;
-    width: 26px;
+    height: 36px;
+    width: 36px;
     left: 2px;
     bottom: 2px;
     background-color: white;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* [MELHORIA] Anima o movimento da bolinha */
+    transition: .4s;
     border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    z-index: 2;
 }
 
-/* Estado LIGADO (Sim) */
-.mobile-checklist-toggle input:checked + .toggle-slider {
-    background-color: #00e676; /* Verde Neon */
-    border-color: #00e676;
-}
-
-/* [MELHORIA] Move a bolinha para a direita quando ligado */
-.mobile-checklist-toggle input:checked + .toggle-slider:before {
-    transform: translateX(26px);
-}
-
-/* --- 4. NAVEGAÇÃO INFERIOR --- */
-.mobile-checklist-nav {
-    display: flex;
-    width: 100%;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 2rem;
-    padding: 0 10px;
-}
-
-.mobile-checklist-nav button {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    font-weight: 600;
-    padding: 12px 24px;
-    border-radius: 50px;
-    font-size: 0.9rem;
-    backdrop-filter: blur(5px);
-    transition: all 0.2s;
-    cursor: pointer;
-}
-
-.mobile-checklist-nav button:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.mobile-checklist-nav button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-    pointer-events: none;
-    border-color: transparent;
-}
-
-/* Botão Fechar no Topo */
-.mobile-checklist-wrapper-fullscreen .hud-close-btn {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    font-size: 1.2rem;
-    padding: 10px 15px;
-    border-radius: 20px;
-    cursor: pointer;
-}
-
-/* --- ESTILOS DE COR PARA ITENS DA LISTA MOBILE BASEADO NO RISCO --- */
-.summary-list-item.badge-low {
-    background-color: rgba(144, 238, 144, 0.1); /* LightGreen (transparente) */
-    border-left: 5px solid var(--risk-low);
-}
-
-.summary-list-item.badge-medium {
-    background-color: rgba(255, 165, 0, 0.1); /* Orange (transparente) */
-    border-left: 5px solid var(--risk-medium);
-}
-
-.summary-list-item.badge-high {
-    background-color: rgba(255, 99, 71, 0.1); /* Tomato (transparente) */
-    border-left: 5px solid var(--risk-high);
-}
-
-.summary-list-item.badge-extreme {
-    background-color: rgba(106, 0, 0, 0.1); /* Dark Red (transparente) */
-    border-left: 5px solid var(--risk-extreme);
-}
-
-.summary-list-item {
-    border-radius: 8px;
-    margin-bottom: 10px;
-    padding: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: background-color 0.3s ease;
-    display: flex; /* Ensure flex behavior */
-    justify-content: space-between; /* Space out main info and risk info */
-    align-items: center; /* Vertically align items */
-    width: 100%; /* Ensure it takes full width */
-    box-sizing: border-box; /* Include padding in width calculation */
-    overflow: hidden; /* Hide any overflow within the item */
-}
-
-/* New styles to address overflow in the mobile list container */
-.summary-list-mobile {
-    width: 100%; /* Ensure it takes full width */
-    overflow-x: hidden; /* Hide horizontal overflow */
-    box-sizing: border-box; /* Include padding in width calculation */
-    padding: 0 10px; /* Add some horizontal padding to the list itself */
-}
-
-.summary-list-item .item-main-info {
-    flex-grow: 1; /* Allow main info to take available space */
-    min-width: 0; /* Allow content to shrink if needed */
-    overflow: hidden; /* Hide content overflow within main info */
-    white-space: nowrap; /* Prevent text wrapping for now, will handle specific elements */
-    text-overflow: ellipsis; /* Add ellipsis for overflowing text */
-    padding-right: 10px; /* Space between main info and risk info */
-}
-
-.summary-list-item .item-main-info strong.item-species,
-.summary-list-item .item-main-info p.item-location {
-    overflow: hidden; /* Hide content overflow */
-    white-space: nowrap; /* Keep text on single line */
-    text-overflow: ellipsis; /* Add ellipsis for overflowing text */
-    display: block; /* Ensure it respects width for ellipsis */
-}
-
-.summary-list-item .item-risk-info {
-    flex-shrink: 0; /* Prevent risk info from shrinking */
-    margin-left: auto; /* Push risk info to the right */
-}
-
-/* --- ANIMAÇÕES DE TRANSIÇÃO DO FLASH CARD --- */
-/* Base para todas as animações de entrada/saída */
-.mobile-checklist-card.is-animating {
-    pointer-events: none; /* Desabilita cliques durante a animação */
-}
-
-@keyframes swipeInFromRight {
-    from {
-        opacity: 0 !important;
-        transform: translateX(100%) !important;
-    }
-    to {
-        opacity: 1 !important;
-        transform: translateX(0) !important;
-    }
-}
-
-@keyframes swipeOutToLeft {
-    from {
-        opacity: 1 !important;
-        transform: translateX(0) !important;
-    }
-    to {
-        opacity: 0 !important;
-        transform: translateX(-100%) !important;
-    }
-}
-
-@keyframes swipeInFromLeft {
-    from {
-        opacity: 0 !important;
-        transform: translateX(-100%) !important;
-    }
-    to {
-        opacity: 1 !important;
-        transform: translateX(0) !important;
-    }
-}
-
-@keyframes swipeOutToRight {
-    from {
-        opacity: 1 !important;
-        transform: translateX(0) !important;
-    }
-    to {
-        opacity: 0 !important;
-        transform: translateX(100%) !important;
-    }
-}
-
-.mobile-checklist-card.swipe-in-from-right {
-    animation: swipeInFromRight 0.3s ease-out forwards !important;
-}
-
-.mobile-checklist-card.swipe-out-to-left {
-    animation: swipeOutToLeft 0.3s ease-in forwards !important;
-}
-
-.mobile-checklist-card.swipe-in-from-left {
-    animation: swipeInFromLeft 0.3s ease-out forwards !important;
-}
-
-.mobile-checklist-card.swipe-out-to-right {
-    animation: swipeOutToRight 0.3s ease-in forwards !important;
-}
-
-/* REFACTOR GRÁFICO PARA OS ELEMENTOS DO FLASH CARD */
-
-/* Ajustes para o Container Principal */
-#checklist-flashcard-view {
-    padding: 10px; /* Reduz o padding geral para melhor aproveitamento do espaço */
-    /* display: none; */ /* REMOVED: Visibility controlled by .modal-overlay and active class */
-}
-
-/* Ajustes para o Wrapper Interno */
-.mobile-checklist-wrapper-fullscreen {
-    max-width: 90%; /* Limita a largura para mobile */
-    height: auto; /* Altura flexível */
-    min-height: 80%; /* Garante altura mínima */
-    justify-content: space-between; /* Espaço entre card e navegação */
-    padding: 20px 0; /* Padding vertical para o conteúdo */
-}
-
-/* Card Principal */
-.mobile-checklist-card {
-    padding: 2rem 1.5rem; /* Padding interno */
-    margin-bottom: 20px; /* Espaço entre o card e a navegação */
-    flex-grow: 1; /* Permite que o card ocupe o espaço disponível */
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* Centraliza verticalmente o conteúdo do card */
-    align-items: center; /* Centraliza horizontalmente o conteúdo do card */
-}
-
-/* Counter do Flashcard */
-#flashcard-counter {
-    font-size: 0.9rem;
-    margin-bottom: 15px; /* Espaço abaixo do contador */
-}
-
-/* Texto da Pergunta */
-#flashcard-question-text {
-    font-size: 1.2rem;
-    margin-bottom: 30px; /* Espaço abaixo da pergunta */
-    flex-grow: 0; /* Não permite que a pergunta cresça muito */
-    min-height: 4em; /* Aumenta a altura mínima para melhor alinhamento */
-}
-
-/* Área do Toggle */
-.flashcard-toggle-area {
-    margin-top: 20px; /* Aumenta o espaço acima do toggle */
-    gap: 20px; /* Aumenta o espaçamento entre o "SIM", "NÃO" e o switch */
-}
-
-/* Navegação Inferior */
-.mobile-checklist-nav {
-    margin-top: 20px; /* Aumenta o espaço acima da navegação */
-    gap: 15px; /* Espaçamento entre os botões */
-    justify-content: space-around; /* Distribui os botões uniformemente */
-}
-
-.mobile-checklist-nav .btn {
-    flex: 1; /* Botões ocupam largura igual */
-    max-width: 48%; /* Limita a largura para não ficarem muito grandes */
-    font-size: 0.9rem; /* Ajusta o tamanho da fonte */
-    padding: 12px 10px; /* Ajusta o padding */
-}
-
-/* Botão Fechar (HUD) dentro do Flashcard View */
-#checklist-flashcard-view .hud-close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
+.slider-icon-no, .slider-icon-yes {
     font-size: 1rem;
-    padding: 8px 12px;
-    border-radius: 50%; /* Botão redondo */
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    z-index: 3001; /* Garante que esteja acima do card */
+    z-index: 1;
 }
 
-#checklist-flashcard-view .hud-close-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+.slider-icon-no { color: rgba(255,255,255,0.4); }
+.slider-icon-yes { color: rgba(255,255,255,0.4); }
+
+input:checked + .big-slider {
+    background-color: rgba(255, 87, 34, 0.2);
+    border-color: #ff5722;
 }
 
-/* Ajustes finos de proporção para telas pequenas (mobile) */
-@media (max-width: 480px) {
-    .mobile-checklist-wrapper-fullscreen {
-        max-width: 100%;
-        padding: 10px 0;
-    }
+input:checked + .big-slider .slider-icon-yes { color: #ff5722; }
 
-    .mobile-checklist-card,
-    #question-card,
-    #target-card,
-    #risk-card,
-    #confirm-card {
-        padding: 1.5rem 1rem;
-        min-height: 350px;
-        gap: 16px;
-    }
-
-    #flashcard-question-text {
-        font-size: 1.1rem;
-    }
-
-    .mobile-checklist-nav {
-        margin-top: 16px;
-        gap: 12px;
-    }
-
-    #risk-stepper {
-        margin-bottom: 20px;
-    }
-
-    .step-circle {
-        width: 35px;
-        height: 35px;
-        font-size: 0.9rem;
-    }
-
-    .step-label {
-        font-size: 0.65rem;
-    }
+input:checked + .big-slider:before {
+    transform: translateX(36px);
+    background-color: #ff5722;
 }
-</text>
 
-
-/* --- [NOVO] Estilos para o Card de Seleção de Alvo --- */
+/* --- SELEÇÃO DE ALVO (STEP 2) --- */
 .target-options-container {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    margin-top: 20px;
     width: 100%;
+    margin-top: 10px;
 }
 
 .form-group-radio {
     display: flex;
     align-items: center;
-    border: 2px solid #005a4f;
-    border-radius: 10px;
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
     padding: 15px;
-    background-color: #00796b;
-    color: white;
     cursor: pointer;
-    transition:
-        background-color 0.2s,
-        border-color 0.2s;
+    transition: all 0.2s;
 }
 
 .form-group-radio:hover {
-    background-color: #00695c;
+    background: rgba(255,255,255,0.12);
 }
 
-.form-group-radio input[type="radio"] {
-    display: none;
-}
-
-.form-group-radio input[type="radio"]:checked + label {
-    font-weight: bold;
-}
-
-.form-group-radio input[type="radio"]:checked + label::before {
-    content: "✔";
-    font-size: 1.2rem;
-    color: #a7ffeb;
-    margin-right: 15px;
-    font-weight: bold;
+.form-group-radio:has(input:checked) {
+    background: rgba(0, 230, 118, 0.15);
+    border-color: #00e676;
 }
 
 .form-group-radio label {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     width: 100%;
     cursor: pointer;
+}
+
+.form-group-radio label strong {
+    font-size: 1rem;
+    color: white;
+    display: block;
+    margin-bottom: 4px;
 }
 
 .form-group-radio label small {
-    display: block;
-    margin-top: 4px;
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 300;
-}
-
-.form-group-radio:has(input[type="radio"]:checked) {
-    background-color: #004d40;
-    border-color: #a7ffeb;
-}
-
-/* Select de mitigação */
-#mitigation-action {
-    background-color: #ffffff !important;
-    color: #333333 !important;
-    border: 1px solid #ccc;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 1rem;
-    width: 100%;
-    margin-top: 10px;
-}
-#mitigation-action option {
-    color: #333333 !important;
-    background-color: #ffffff !important;
-}
-
-/* --- ESTILOS PARA RESUMO E OUTRAS ETAPAS --- */
-.checklist-summary {
-    width: 100%;
-    text-align: left;
-}
-
-.checklist-summary h3 {
-    margin-bottom: 20px;
-    text-align: center;
-    font-size: 1.4rem;
-}
-
-.summary-stats {
-    display: flex;
-    justify-content: space-around;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.stat-item {
-    flex: 1;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 15px;
-    border-radius: 12px;
-    text-align: center;
-}
-
-.stat-label {
-    display: block;
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 5px;
-    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
 }
 
-.stat-value {
-    display: block;
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #00e676;
-}
-
-.risk-factors-list {
-    list-style: none;
-    padding: 0;
+/* --- RESUMO E CONFIRMAÇÃO (STEP 3 & 4) --- */
+.risk-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
     margin: 15px 0;
 }
 
-.risk-factors-list li {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 10px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    border-left: 4px solid #f57c00;
-}
-
-.no-risks {
-    text-align: center;
-    padding: 20px;
-    background: rgba(0, 230, 118, 0.1);
-    border-radius: 12px;
-    color: #00e676;
-    font-weight: 600;
-}
-
-.risk-calculation-summary h3,
-.confirmation-summary h3 {
-    margin-bottom: 20px;
-    text-align: center;
-    font-size: 1.4rem;
-}
-
-.risk-metrics {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
 .metric-card {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 15px;
-    border-radius: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background: rgba(0,0,0,0.3);
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
 }
 
 .metric-card.primary {
-    background: rgba(0, 230, 118, 0.15);
-    border: 2px solid #00e676;
+    grid-column: span 2;
+    background: rgba(0, 230, 118, 0.1);
+    border: 1px solid #00e676;
+    margin-top: 5px;
 }
 
 .metric-label {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.8);
+    display: block;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 5px;
 }
 
 .metric-value {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: white;
-}
-
-.metric-value.risk-baixo {
-    color: #4caf50;
-}
-
-.metric-value.risk-moderado {
-    color: #ff9800;
-}
-
-.metric-value.risk-alto {
-    color: #ff5722;
-}
-
-.metric-value.risk-extremo {
-    color: #d32f2f;
-}
-
-.mitigation-section,
-.residual-risk-section {
-    margin: 20px 0;
-    text-align: left;
-}
-
-.mitigation-section h4,
-.residual-risk-section h4 {
-    margin-bottom: 10px;
     font-size: 1.1rem;
-}
-
-.helper-text {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
-    line-height: 1.4;
-}
-
-.residual-value {
-    display: inline-block;
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 1.3rem;
     font-weight: bold;
-    margin: 10px 0;
 }
 
-.residual-value.risk-baixo {
-    background: rgba(76, 175, 80, 0.2);
-    color: #4caf50;
-    border: 2px solid #4caf50;
-}
-
-.residual-value.risk-moderado {
-    background: rgba(255, 152, 0, 0.2);
-    color: #ff9800;
-    border: 2px solid #ff9800;
-}
-
-.residual-value.risk-alto {
-    background: rgba(255, 87, 34, 0.2);
-    color: #ff5722;
-    border: 2px solid #ff5722;
-}
-
-.residual-value.risk-extremo {
-    background: rgba(211, 47, 47, 0.2);
-    color: #d32f2f;
-    border: 2px solid #d32f2f;
-}
-
-.confirm-section {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 12px;
-    text-align: left;
-}
-
-.confirm-section h4 {
-    margin-bottom: 8px;
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.confirm-section p {
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.risk-badge {
-    display: inline-block;
-    padding: 5px 15px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 1rem;
-}
-
-.risk-badge.risk-baixo {
-    background: #4caf50;
-    color: white;
-}
-
-.risk-badge.risk-moderado {
-    background: #ff9800;
-    color: white;
-}
-
-.risk-badge.risk-alto {
-    background: #ff5722;
-    color: white;
-}
-
-.risk-badge.risk-extremo {
-    background: #d32f2f;
-    color: white;
-}
-
-.confirm-actions {
-    margin-top: 20px;
-    padding: 15px;
-    background: rgba(0, 230, 118, 0.1);
-    border-radius: 12px;
-    border: 1px dashed #00e676;
-}
-
-/* --- CONTROLE DE VISIBILIDADE DOS BOTÕES (MOBILE/DESKTOP) --- */
-
-/* Oculta os botões dentro do checklist mobile no desktop */
-@media (min-width: 769px) {
-    .mobile-checklist-wrapper .risk-buttons-area {
-        display: none !important;
-    }
-}
-
-/* Oculta os botões duplicados do desktop no mobile */
-@media (max-width: 768px) {
-    .risk-buttons-area.desktop-only {
-        display: none !important;
-    }
-
-    /* Garante que os botões dentro do checklist mobile sejam visíveis */
-    .mobile-checklist-wrapper .risk-buttons-area {
-        display: flex !important;
-    }
-}
-
-/* Estilo dos botões dentro do checklist mobile */
-.mobile-checklist-wrapper .risk-buttons-area button {
+/* Botão de Conclusão */
+.btn-finish-action {
     width: 100%;
-    padding: 15px;
-    font-size: 1rem;
-    font-weight: bold;
-    border-radius: 12px;
+    background: #00e676;
+    color: #003300;
     border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 20px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
-.mobile-checklist-wrapper .risk-buttons-area button[type="submit"] {
-    background: linear-gradient(135deg, #00796b, #004d40);
-    color: white;
-}
-
-.mobile-checklist-wrapper .risk-buttons-area button[type="button"] {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.mobile-checklist-wrapper .risk-buttons-area button:active {
+.btn-finish-action:active {
     transform: scale(0.98);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* --- NAVEGAÇÃO INFERIOR --- */
+.mobile-checklist-nav {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.mobile-checklist-nav button {
+    flex: 1;
+    padding: 14px;
+    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.05);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mobile-checklist-nav button:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.mobile-checklist-nav button#flashcard-next {
+    background: white;
+    color: #1c2529;
+    border-color: white;
+}
+
+/* Ajustes Mobile Small */
+@media (max-width: 380px) {
+    .step-circle { width: 30px; height: 30px; font-size: 0.8rem; }
+    .step-label { font-size: 0.6rem; }
+    .mobile-checklist-card { padding: 15px; min-height: 300px; }
+    .flashcard-question-text { font-size: 1.1rem; }
 }

@@ -414,3 +414,189 @@ tr.row-risk-extreme { background-color: rgba(33, 33, 33, 0.08) !important; }
 .rotating {
     animation: spin 1s linear infinite;
 }
+
+/* --- [PATCH] UX MOBILE CHECKLIST REFACTOR --- */
+
+/* Garante que o wrapper ocupe a tela e role corretamente */
+.mobile-checklist-wrapper-fullscreen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 100vh; /* Limite da viewport */
+    width: 100%;
+    background-color: #263238; /* Fundo escuro padrão */
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10000;
+    overflow-y: auto; /* Permite rolagem vertical */
+    padding-bottom: 80px; /* Espaço para nav inferior */
+    box-sizing: border-box;
+}
+
+/* Stepper Fixo no Topo */
+#risk-stepper {
+    position: sticky;
+    top: 0;
+    background-color: #263238;
+    z-index: 100;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 0;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-around;
+}
+
+/* Cards sem altura fixa e com display block para evitar cortes */
+.mobile-checklist-card {
+    height: auto !important;
+    min-height: unset !important;
+    display: block !important;
+    padding: 20px;
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+/* Lista de Perguntas (Substitui o Slide Card) */
+.question-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 60px;
+}
+
+.question-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 15px;
+    border-left: 4px solid transparent;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.question-item.active-risk {
+    border-left-color: #e53935;
+    background: rgba(229, 57, 53, 0.1);
+}
+
+.question-content {
+    flex: 1;
+}
+
+.question-text {
+    font-size: 1rem;
+    color: #eceff1;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.question-meta {
+    font-size: 0.75rem;
+    color: #b0bec5;
+    font-weight: 600;
+}
+
+/* Toggle Switch Ajustado para Lista */
+.list-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.list-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.list-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #455a64;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.list-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .list-slider {
+    background-color: #e53935; /* Vermelho para Risco */
+}
+
+input:checked + .list-slider:before {
+    transform: translateX(22px);
+}
+
+/* Correção para o Card de Alvo não cortar */
+#target-card {
+    padding-bottom: 120px;
+}
+
+.target-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group-radio {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.form-group-radio input[type="radio"] {
+    margin-top: 4px;
+    width: 20px;
+    height: 20px;
+}
+
+.form-group-radio label {
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: #eceff1;
+}
+
+.form-group-radio label small {
+    display: block;
+    margin-top: 4px;
+    color: #b0bec5;
+    font-size: 0.85rem;
+}
+
+/* Navegação Inferior */
+.mobile-checklist-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #1c2529;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 10001;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.5);
+    box-sizing: border-box;
+}
