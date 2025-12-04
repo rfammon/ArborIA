@@ -121,7 +121,7 @@ function getReducedFailureProb(failureProb) {
 
 let currentCardIndex = 0;
 let flashCardListenersAttached = false;
-let flashcardStep = "checklist"; // 'checklist', 'target', 'residual'
+let flashcardStep = "checklist"; // 'checklist', 'target', 'risk', 'confirm'
 
 const getFlashCardElements = () => {
   const container = document.getElementById("checklist-flashcard-view");
@@ -132,24 +132,49 @@ const getFlashCardElements = () => {
     closeBtn: document.getElementById("close-checklist-btn"),
     questionCard: document.getElementById("question-card"),
     targetCard: document.getElementById("target-card"),
-    residualRiskCard: document.getElementById("residual-risk-card"),
+    riskCard: document.getElementById("risk-card"), // ID corrigido
+    confirmCard: document.getElementById("confirm-card"), // Novo card
     counter: document.getElementById("flashcard-counter"),
     questionBox: document.getElementById("flashcard-question-text"),
     toggleInput: document.getElementById("flashcard-toggle-input"),
     btnPrev: document.getElementById("flashcard-prev"),
     btnNext: document.getElementById("flashcard-next"),
+    confirmSaveBtn: document.getElementById("confirm-save-btn"),
     dataRows: document.querySelectorAll("#checklist-data-table tbody tr"),
+    stepperItems: document.querySelectorAll("#risk-stepper .step-item"),
   };
 };
 
 function showCard(cardToShow) {
   const els = getFlashCardElements();
   if (!els) return;
-  ["questionCard", "targetCard", "residualRiskCard"].forEach((cardKey) => {
+  
+  // Lista de todos os cards possíveis
+  const allCards = ["questionCard", "targetCard", "riskCard", "confirmCard"];
+  
+  allCards.forEach((cardKey) => {
     if (els[cardKey]) {
+      // Se for o card a mostrar, display: flex. Senão, display: none.
       els[cardKey].style.display = cardKey === cardToShow ? "flex" : "none";
     }
   });
+}
+
+function updateStepper(stepIndex) {
+    const els = getFlashCardElements();
+    if (!els || !els.stepperItems) return;
+    
+    els.stepperItems.forEach((item, index) => {
+        if (index < stepIndex) {
+            item.classList.add('completed');
+            item.classList.remove('active');
+        } else if (index === stepIndex) {
+            item.classList.add('active');
+            item.classList.remove('completed');
+        } else {
+            item.classList.remove('active', 'completed');
+        }
+    });
 }
 
 function updateFlashcardUI() {
@@ -158,6 +183,8 @@ function updateFlashcardUI() {
 
   if (flashcardStep === "checklist") {
     showCard("questionCard");
+    updateStepper(0);
+    
     const row = els.dataRows[currentCardIndex];
     const sourceCheckbox = row.querySelector('input[type="checkbox"]');
     const questionCell = row.cells[1].cloneNode(true);
@@ -170,22 +197,94 @@ function updateFlashcardUI() {
     els.questionBox.innerHTML = questionCell.innerHTML;
     els.toggleInput.checked = sourceCheckbox.checked;
     updateCardVisuals(els.questionCard, sourceCheckbox.checked);
+    
     els.btnPrev.disabled = currentCardIndex === 0;
     els.btnNext.textContent =
       currentCardIndex === els.dataRows.length - 1
         ? "Avançar para Alvo ❯"
         : "Próxima ❯";
+    els.btnNext.style.display = "block"; // Garante visibilidade
+
   } else if (flashcardStep === "target") {
     showCard("targetCard");
-    els.counter.textContent = "Etapa 2 de 3: Alvo";
+    updateStepper(1);
+    els.counter.textContent = "Etapa 2 de 4: Alvo";
     els.btnPrev.disabled = false;
-    els.btnNext.textContent = "Avançar para Mitigação ❯";
-  } else if (flashcardStep === "residual") {
-    showCard("residualRiskCard");
-    els.counter.textContent = "Etapa 3 de 3: Risco Residual";
+    els.btnNext.textContent = "Avançar para Risco ❯";
+    els.btnNext.style.display = "block";
+
+  } else if (flashcardStep === "risk") {
+    showCard("riskCard");
+    updateStepper(2);
+    els.counter.textContent = "Etapa 3 de 4: Análise de Risco";
     els.btnPrev.disabled = false;
-    els.btnNext.textContent = "Concluir e Salvar";
+    els.btnNext.textContent = "Revisar e Confirmar ❯";
+    els.btnNext.style.display = "block";
+    
+    // Renderiza resumo parcial se necessário
+    renderRiskSummary(els);
+
+  } else if (flashcardStep === "confirm") {
+    showCard("confirmCard");
+    updateStepper(3);
+    els.counter.textContent = "Etapa 4 de 4: Confirmação";
+    els.btnPrev.disabled = false;
+    els.btnNext.style.display = "none"; // Esconde botão padrão, usa o específico do card
+    
+    renderConfirmationSummary(els);
   }
+}
+
+function renderRiskSummary(els) {
+    // Calcula risco preliminar para exibir
+    let totalScore = 0;
+    document.querySelectorAll(".risk-checkbox:checked").forEach((cb) => (totalScore += parseInt(cb.dataset.weight, 10)));
+    
+    const failureProb = getFailureProb(totalScore);
+    const impactProb = getImpactProb(currentRiskAssessment.targetCategory || 1);
+    const risk = runTraqMatrices(failureProb, impactProb, currentRiskAssessment.targetCategory || 1);
+    
+    const container = document.getElementById('risk-summary');
+    if(container) {
+        container.innerHTML = `
+            <div class="risk-metrics">
+                <div class="metric-card">
+                    <span class="metric-label">Prob. Falha</span>
+                    <span class="metric-value">${failureProb}</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-label">Impacto</span>
+                    <span class="metric-value">${impactProb}</span>
+                </div>
+                <div class="metric-card primary">
+                    <span class="metric-label">Risco Calculado</span>
+                    <span class="metric-value" style="color: var(--risk-${risk === 'Moderado' ? 'medium' : risk === 'Baixo' ? 'low' : 'high'})">${risk}</span>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function renderConfirmationSummary(els) {
+    const container = document.getElementById('confirm-summary');
+    if(container) {
+        const mitigation = document.getElementById("mitigation-action").value;
+        const mitigationText = document.querySelector(`#mitigation-action option[value="${mitigation}"]`).text;
+        
+        container.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-check-circle" style="font-size: 3rem; color: #00e676; margin-bottom: 15px;"></i>
+                <h3>Pronto para Salvar</h3>
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">
+                    A avaliação foi concluída. Verifique os dados abaixo:
+                </p>
+                <ul style="text-align: left; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; list-style: none;">
+                    <li style="margin-bottom: 8px;"><strong>Alvo:</strong> Categoria ${currentRiskAssessment.targetCategory}</li>
+                    <li style="margin-bottom: 8px;"><strong>Mitigação:</strong> ${mitigationText}</li>
+                </ul>
+            </div>
+        `;
+    }
 }
 
 function handleFlashcardToggle() {
@@ -218,9 +317,12 @@ function setupFlashCardListeners() {
   els.toggleInput.addEventListener("change", handleFlashcardToggle);
   els.toggleInput._handler = handleFlashcardToggle;
 
+  // Botão Anterior
   els.btnPrev.addEventListener("click", (e) => {
     e.preventDefault();
-    if (flashcardStep === "residual") {
+    if (flashcardStep === "confirm") {
+        flashcardStep = "risk";
+    } else if (flashcardStep === "risk") {
       flashcardStep = "target";
     } else if (flashcardStep === "target") {
       flashcardStep = "checklist";
@@ -230,6 +332,7 @@ function setupFlashCardListeners() {
     updateFlashcardUI();
   });
 
+  // Botão Próximo
   els.btnNext.addEventListener("click", (e) => {
     e.preventDefault();
     if (flashcardStep === "checklist") {
@@ -240,39 +343,44 @@ function setupFlashCardListeners() {
       }
     } else if (flashcardStep === "target") {
       const targetInput = document.querySelector(
-        'input[name="target_category"]:checked',
+        'input[name="target-category"]:checked',
       );
       if (!targetInput) {
         utils.showToast("Por favor, selecione a taxa de ocupação.", "error");
         return;
       }
       currentRiskAssessment.targetCategory = targetInput.value;
-      flashcardStep = "residual";
-    } else if (flashcardStep === "residual") {
+      flashcardStep = "risk";
+    } else if (flashcardStep === "risk") {
       const mitigationInput = document.getElementById("mitigation-action");
       currentRiskAssessment.mitigationAction = mitigationInput.value;
-      closeChecklistFlashCard();
-      utils.showToast("Checklist preenchido!", "success");
-      // Dispara o submit do formulário principal diretamente
-      const form = document.getElementById("risk-calculator-form");
-      if (form) {
-        // Usa requestSubmit() para disparar validações e eventos de submit
-        if (form.requestSubmit) {
-          form.requestSubmit();
-        } else {
-          // Fallback para navegadores antigos
-          const submitEvent = new Event("submit", {
-            bubbles: true,
-            cancelable: true,
-          });
-          form.dispatchEvent(submitEvent);
-        }
-      } else {
-        utils.showToast("Erro: Formulário não encontrado", "error");
-      }
+      flashcardStep = "confirm";
     }
     updateFlashcardUI();
   });
+  
+  // Botão Salvar Final
+  if(els.confirmSaveBtn) {
+      els.confirmSaveBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          closeChecklistFlashCard();
+          utils.showToast("Checklist preenchido!", "success");
+          
+          const form = document.getElementById("risk-calculator-form");
+          if (form) {
+            if (form.requestSubmit) {
+              form.requestSubmit();
+            } else {
+              const submitEvent = new Event("submit", {
+                bubbles: true,
+                cancelable: true,
+              });
+              form.dispatchEvent(submitEvent);
+            }
+          }
+      });
+  }
+  
   flashCardListenersAttached = true;
 }
 
@@ -286,14 +394,12 @@ export function initChecklistFlashCard(retry = 0) {
   setupFlashCardListeners();
   currentCardIndex = 0;
   flashcardStep = "checklist";
+  
   // Limpa a avaliação anterior
   currentRiskAssessment = { targetCategory: null, mitigationAction: "nenhuma" };
-  // Limpa o estado dos radio buttons (mobile e desktop) e select
-  document
-    .querySelectorAll(
-      'input[name="target_category"], input[name="target_category_desktop"]',
-    )
-    .forEach((radio) => (radio.checked = false));
+  
+  // Limpa inputs
+  document.querySelectorAll('input[name="target-category"]').forEach((radio) => (radio.checked = false));
   document.getElementById("mitigation-action").value = "nenhuma";
 
   updateFlashcardUI();
@@ -778,13 +884,24 @@ export function handleZoomToPoint(id) {
     return;
   }
 
+  // Limpa qualquer estado anterior
   state.setZoomTargetCoords(latLonCoords);
   state.setHighlightTargetId(id);
   state.setOpenInfoBoxId(id);
 
-  document
-    .querySelector('.sub-nav-btn[data-target="tab-content-mapa"]')
-    .click();
+  // Primeiro, muda para a calculadora-view (onde está a sub-aba mapa)
+  const calculatorNavBtn = document.querySelector('.topico-btn[data-target="calculadora-view"]');
+  if (calculatorNavBtn) {
+    calculatorNavBtn.click();
+  }
+
+  // Espera um pouco e depois muda para a sub-aba do mapa
+  setTimeout(() => {
+    const mapTabBtn = document.querySelector('.sub-nav-btn[data-target="tab-content-mapa"]');
+    if (mapTabBtn) {
+      mapTabBtn.click();
+    }
+  }, 300);
 }
 
 export function handleMapMarkerClick(id) {

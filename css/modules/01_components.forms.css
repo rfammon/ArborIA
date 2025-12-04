@@ -66,7 +66,9 @@ select {
     font-size: 1rem;
     color: var(--color-text-dark);
     background-color: var(--color-white);
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    transition:
+        border-color 0.2s ease-in-out,
+        box-shadow 0.2s ease-in-out;
     vertical-align: middle;
     text-align: left;
 }
@@ -86,10 +88,602 @@ textarea {
     min-height: 80px;
 }
 
+/* --- CORREÇÕES PARA FORMULÁRIO DE REGISTRO --- */
+/* Garante visibilidade dos elementos do formulário */
+
+#risk-calculator-form {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#risk-calculator-form fieldset {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#risk-calculator-form .form-grid {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#risk-calculator-form .form-grid > div {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Inputs e Labels do formulário de risco */
+#risk-calculator-form input[type="text"],
+#risk-calculator-form input[type="number"],
+#risk-calculator-form input[type="date"],
+#risk-calculator-form textarea,
+#risk-calculator-form select {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #1a202c !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+    font-size: 1rem !important;
+}
+
+/* --- CORREÇÃO ESPECÍFICA PARA MITIGATION-ACTION --- */
+/* Garante que o dropdown de mitigação tenha texto visível */
+
+#mitigation-action {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+    font-size: 1rem !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Options dentro do dropdown */
+#mitigation-action option {
+    background-color: #1a202c !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    padding: 8px !important;
+}
+
+/* Focus states */
+#mitigation-action:focus {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: #00e676 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2) !important;
+    color: #ffffff !important;
+}
+
+#mitigation-action:focus option {
+    background-color: #1a202c !important;
+    color: #ffffff !important;
+}
+
+/* Hover states para options */
+#mitigation-action option:hover,
+#mitigation-action option:checked {
+    background-color: #00e676 !important;
+    color: #1a202c !important;
+}
+
+/* --- CORREÇÃO ESPECÍFICA PARA MITIGATION-ACTION-DESKTOP --- */
+/* Estilo adequado à identidade visual do ArborIA */
+
+#mitigation-action-desktop {
+    background: var(--gradient-surface) !important;
+    color: var(--color-text-main) !important;
+    border: 2px solid var(--color-border) !important;
+    padding: 12px 16px !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: all var(--transition-fast) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+/* Options dentro do dropdown desktop */
+#mitigation-action-desktop option {
+    background-color: var(--color-white) !important;
+    color: var(--color-text-main) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    padding: 10px 12px !important;
+    border: none !important;
+    font-weight: 400 !important;
+}
+
+/* Options com hover e seleção */
+#mitigation-action-desktop option:hover,
+#mitigation-action-desktop option:checked {
+    background: var(--gradient-main) !important;
+    color: var(--color-white) !important;
+    font-weight: 500 !important;
+}
+
+/* Focus states para desktop */
+#mitigation-action-desktop:focus {
+    border-color: var(--color-accent) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(var(--color-accent), 0.2) !important;
+    background: var(--color-white) !important;
+}
+
+#mitigation-action-desktop:focus option {
+    background-color: var(--color-white) !important;
+    color: var(--color-text-main) !important;
+}
+
+#mitigation-action-desktop:focus option:checked {
+    background: var(--gradient-main) !important;
+    color: var(--color-white) !important;
+    font-weight: 500 !important;
+}
+
+/* Estilo quando o dropdown está aberto */
+#mitigation-action-desktop:active {
+    border-color: var(--color-forest) !important;
+    box-shadow: 0 0 0 3px rgba(var(--color-forest-rgb), 0.2) !important;
+}
+
+#risk-calculator-form label {
+    color: #2d3748 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    font-weight: 600 !important;
+}
+
+/* Botões do formulário */
+#risk-calculator-form .btn {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#risk-calculator-form .btn-primary {
+    background: var(--gradient-main) !important;
+    color: white !important;
+    opacity: 1 !important;
+}
+
+#risk-calculator-form .btn-secondary {
+    background-color: transparent !important;
+    border-color: var(--color-forest) !important;
+    color: var(--color-forest) !important;
+    opacity: 1 !important;
+}
+
+/* Ícones dos botões */
+#risk-calculator-form .button-icon {
+    opacity: 1 !important;
+    visibility: visible !important;
+    filter: none !important;
+}
+
+#risk-calculator-form .btn-primary .button-icon {
+    filter: invert(1) brightness(2) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5)) !important;
+}
+
+/* Ícones FontAwesome */
+#risk-calculator-form .fas,
+#risk-calculator-form .far,
+#risk-calculator-form .fab {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Container de GPS */
+.gps-button-container {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Container de upload de foto */
+.photo-upload-container {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Status do GPS */
+#gps-status {
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: var(--color-text-muted) !important;
+}
+
+/* Container de preview de foto */
+#photo-preview-container {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Botão remover foto */
+#remove-photo-btn {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* --- CORREÇÕES GLOBAIS PARA ÍCONES --- */
+/* Garante que todos os ícones FontAwesome sejam visíveis */
+.fas,
+.far,
+.fab,
+.fal,
+.fad,
+.fass,
+.fasr,
+.fasl {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+}
+
+/* Ícones específicos do formulário */
+.fa-location-crosshairs,
+.fa-camera,
+.fa-user,
+.fa-calendar,
+.fa-map-marker-alt,
+.fa-ruler,
+.fa-tree {
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: inherit !important;
+}
+
+/* Ícones dentro de botões */
+.btn .fas,
+.btn .far,
+.btn .fab {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Ícones dentro de botões primários */
+.btn-primary .fas,
+.btn-primary .far,
+.btn-primary .fab {
+    color: white !important;
+    opacity: 1 !important;
+}
+
+/* Ícones dentro de botões secundários */
+.btn-secondary .fas,
+.btn-secondary .far,
+.btn-secondary .fab {
+    color: var(--color-forest) !important;
+    opacity: 1 !important;
+}
+
+/* --- CORREÇÕES PARA IMAGENS DOS BOTÕES --- */
+/* Garante que as imagens dos botões sejam visíveis */
+#risk-calculator-form img.button-icon {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+    width: auto !important;
+    height: 20px !important;
+    filter: none !important;
+}
+
+/* Imagens dos botões primários */
+#risk-calculator-form .btn-primary img.button-icon {
+    filter: brightness(0) invert(1) !important;
+}
+
+/* Imagens dos botões secundários */
+#risk-calculator-form .btn-secondary img.button-icon {
+    filter: none !important;
+}
+
+/* Imagens específicas */
+img[src="img/icons/clinometro.png"],
+img[src="img/icons/dap.png"] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-block !important;
+    width: auto !important;
+    height: 20px !important;
+}
+
+/* --- CORREÇÕES ADICIONAIS PARA FORMULÁRIO --- */
+/* Garante que todos os elementos filhos do formulário sejam visíveis */
+#risk-calculator-form * {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Exceções para elementos que devem permanecer ocultos */
+#risk-calculator-form [style*="display:none"],
+#risk-calculator-form [style*="display: none"],
+#risk-calculator-form .hidden,
+#risk-calculator-form [hidden] {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* Força visibilidade de elementos específicos */
+#risk-calculator-form input,
+#risk-calculator-form button,
+#risk-calculator-form label,
+#risk-calculator-form textarea,
+#risk-calculator-form select,
+#risk-calculator-form img,
+#risk-calculator-form i,
+#risk-calculator-form span,
+#risk-calculator-form div {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Fieldset do formulário de risco */
+#risk-calculator-form fieldset.risk-fieldset {
+    opacity: 1 !important;
+    visibility: visible !important;
+    border: 1px solid var(--color-light-gray) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 1.5rem !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+}
+
+/* Legend do fieldset */
+#risk-calculator-form legend {
+    opacity: 1 !important;
+    visibility: visible !important;
+    font-size: 1.1em !important;
+    font-weight: bold !important;
+    color: var(--color-primary-dark) !important;
+    padding: 0 0.5rem !important;
+    margin-left: -0.5rem !important;
+}
+
+/* --- CORREÇÃO PARA INPUT DUPLICADO --- */
+/* Esconde inputs duplicados sem formatação */
+input[type="file"][style*="opacity: 1 !important"][style*="visibility: visible !important"][style*="background-color: rgb(255, 255, 255) !important"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* Garante que apenas o input correto seja visível */
+#tree-photo-input:not([style*="display: none"]) {
+    display: none !important;
+}
+
+/* Mostra apenas o label correto */
+.photo-upload-container label[for="tree-photo-input"].btn {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: inline-flex !important;
+}
+
+/* --- CORREÇÕES PARA ABA DE MAPA GIS --- */
+/* Garante visibilidade dos elementos do mapa */
+
+#tab-content-mapa {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#tab-content-mapa fieldset {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#tab-content-mapa legend {
+    opacity: 1 !important;
+    visibility: visible !important;
+    font-size: 1.1em !important;
+    font-weight: bold !important;
+    color: var(--color-primary-dark) !important;
+}
+
+#tab-content-mapa h4 {
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: #2d3748 !important;
+}
+
+#tab-content-mapa label {
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: #2d3748 !important;
+    font-weight: 600 !important;
+}
+
+#tab-content-mapa input[type="text"] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    background-color: #ffffff !important;
+    color: #1a202c !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+#tab-content-mapa input[type="radio"] {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#tab-content-mapa .btn {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#tab-content-mapa .btn-secondary {
+    background-color: transparent !important;
+    border-color: var(--color-forest) !important;
+    color: var(--color-forest) !important;
+    opacity: 1 !important;
+}
+
+/* Ícones do mapa */
+#tab-content-mapa .fas,
+#tab-content-mapa .far,
+#tab-content-mapa .fab {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#tab-content-mapa .btn-secondary .fas,
+#tab-content-mapa .btn-secondary .far,
+#tab-content-mapa .btn-secondary .fab {
+    color: var(--color-forest) !important;
+    opacity: 1 !important;
+}
+
+/* Container do mapa */
+#map-container {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Info box do mapa */
+#map-info-box {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Filtros de legenda */
+#map-legend-filter {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.legend-filter-grid {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.legend-filter {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.legend-dot {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* --- CORES DOS FILTROS DE RISCO NO MAPA --- */
+/* Garante que as cores dos filtros correspondam às classes de risco */
+
+#filter-alto + label .legend-dot {
+    background-color: #d32f2f !important; /* Vermelho - Alto Risco */
+}
+
+#filter-medio + label .legend-dot {
+    background-color: #f57c00 !important; /* Laranja - Médio Risco */
+}
+
+#filter-baixo + label .legend-dot {
+    background-color: #2e7d32 !important; /* Verde - Baixo Risco */
+}
+
+/* Cores dos textos dos filtros para corresponder aos riscos */
+#filter-alto + label {
+    color: #d32f2f !important; /* Vermelho - Alto Risco */
+    font-weight: 700 !important;
+}
+
+#filter-medio + label {
+    color: #f57c00 !important; /* Laranja - Médio Risco */
+    font-weight: 700 !important;
+}
+
+#filter-baixo + label {
+    color: #2e7d32 !important; /* Verde - Baixo Risco */
+    font-weight: 700 !important;
+}
+
+/* Filtro "Todos" mantém cor padrão */
+#filter-todos + label {
+    color: #2d3748 !important;
+    font-weight: 600 !important;
+}
+
+/* Estados hover para melhor UX */
+#filter-alto:hover + label,
+#filter-alto:checked + label {
+    color: #b71c1c !important; /* Vermelho mais escuro */
+    font-weight: 800 !important;
+}
+
+#filter-medio:hover + label,
+#filter-medio:checked + label {
+    color: #e65100 !important; /* Laranja mais escuro */
+    font-weight: 800 !important;
+}
+
+#filter-baixo:hover + label,
+#filter-baixo:checked + label {
+    color: #1b5e20 !important; /* Verde mais escuro */
+    font-weight: 800 !important;
+}
+
+/* Estados hover para os dots */
+#filter-alto:hover + label .legend-dot,
+#filter-alto:checked + label .legend-dot {
+    background-color: #b71c1c !important;
+    box-shadow: 0 0 8px rgba(211, 47, 47, 0.4) !important;
+}
+
+#filter-medio:hover + label .legend-dot,
+#filter-medio:checked + label .legend-dot {
+    background-color: #e65100 !important;
+    box-shadow: 0 0 8px rgba(245, 124, 0, 0.4) !important;
+}
+
+#filter-baixo:hover + label .legend-dot,
+#filter-baixo:checked + label .legend-dot {
+    background-color: #1b5e20 !important;
+    box-shadow: 0 0 8px rgba(46, 125, 50, 0.4) !important;
+}
+
+/* --- FORÇAR CORES INLINE DO HTML --- */
+/* Garante que as cores definidas inline no HTML sejam respeitadas */
+
+#filter-alto + label .legend-dot[style*="background-color"] {
+    background-color: #d32f2f !important;
+}
+
+#filter-medio + label .legend-dot[style*="background-color"] {
+    background-color: #f57c00 !important;
+}
+
+#filter-baixo + label .legend-dot[style*="background-color"] {
+    background-color: #2e7d32 !important;
+}
+
+/* Garante que os dots tenham tamanho e forma consistentes */
+.legend-dot {
+    width: 12px !important;
+    height: 12px !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+    margin-right: 8px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Estados checked para garantir visibilidade */
+#filter-alto:checked + label,
+#filter-medio:checked + label,
+#filter-baixo:checked + label,
+#filter-todos:checked + label {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
 /* Estilo para campos obrigatórios */
 input:required:not(:placeholder-shown) + label::after,
 select:required:not(:placeholder-shown) + label::after {
-    content: ' *';
+    content: " *";
     color: var(--color-danger);
     margin-left: 0.25rem;
 }
@@ -123,7 +717,7 @@ select:required:not(:placeholder-shown) + label::after {
     right: 0;
     bottom: 0;
     background-color: var(--color-text-muted); /* Cor de fundo para 'Não' */
-    transition: .4s;
+    transition: 0.4s;
     border-radius: 28px; /* Totalmente arredondado */
 }
 
@@ -135,9 +729,9 @@ select:required:not(:placeholder-shown) + label::after {
     left: 4px;
     bottom: 4px;
     background-color: white;
-    transition: .4s;
+    transition: 0.4s;
     border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .form-switch input:checked + .slider {
@@ -151,7 +745,6 @@ select:required:not(:placeholder-shown) + label::after {
 .form-switch input:checked + .slider:before {
     transform: translateX(22px); /* Movimento do círculo */
 }
-
 
 /* Estilos para validação de erro */
 .input-error {
@@ -168,7 +761,8 @@ select:required:not(:placeholder-shown) + label::after {
 }
 
 /* Readonly fields */
-input[readonly], textarea[readonly] {
+input[readonly],
+textarea[readonly] {
     background-color: var(--color-light-gray);
     cursor: not-allowed;
 }
@@ -331,7 +925,8 @@ input:checked + .toggle-slider:before {
     margin-top: 1rem;
 }
 
-.risk-table th, .risk-table td {
+.risk-table th,
+.risk-table td {
     border: 1px solid var(--color-border);
     padding: 0.75rem;
     text-align: left;
@@ -343,7 +938,8 @@ input:checked + .toggle-slider:before {
     color: var(--color-text-dark);
 }
 
-.risk-table td:first-child, .risk-table td:nth-child(3) {
+.risk-table td:first-child,
+.risk-table td:nth-child(3) {
     text-align: center;
 }
 

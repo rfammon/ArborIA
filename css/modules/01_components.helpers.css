@@ -19,9 +19,161 @@
 
 /* Helper class to hide elements on mobile screens */
 @media (max-width: 768px) {
-  .hide-on-mobile {
-    display: none !important;
-  }
+   .hide-on-mobile {
+     display: none !important;
+     visibility: hidden !important;
+     opacity: 0 !important;
+   }
+   
+    /* Garante que os formulários desktop fiquem ocultos em mobile */
+    #target-selection-desktop,
+    #mitigation-selection-desktop,
+    #checklist-data-table-fieldset {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      top: -9999px !important;
+      left: -9999px !important;
+      width: 0 !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+     /* Garante que elementos com as classes também fiquem ocultos em mobile */
+     .target-selection-desktop,
+     .mitigation-selection-desktop {
+       display: none !important;
+       visibility: hidden !important;
+       opacity: 0 !important;
+       position: absolute !important;
+       top: -9999px !important;
+       left: -9999px !important;
+       width: 0 !important;
+       height: 0 !important;
+       overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+     }
+    
+    /* Garante que o mapa não seja afetado pelas regras dos formulários */
+    #tab-content-mapa {
+      position: relative !important;
+      z-index: auto !important;
+    }
+    
+    /* Garante que todas as abas possam ser ativadas em mobile */
+    .sub-tab-content {
+      transition: none !important;
+    }
+    
+    /* Remove estilos que possam impedir a navegação */
+    .sub-tab-content[style*="display: none"] {
+      display: none !important;
+    }
+    
+    .sub-tab-content[style*="display: block"] {
+      display: block !important;
+    }
+   
+    /* Garante que apenas o formulário 1 e o botão do modal apareçam em mobile */
+    #risk-calculator-form fieldset:not(.hide-on-mobile):not([id*="desktop"]):not([id*="checklist-data-table"]) {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: relative !important;
+      z-index: auto !important;
+    }
+    
+    /* Garante que os formulários 2, 3 e 4 fiquem completamente ocultos e não ocupem espaço em mobile */
+    #risk-calculator-form fieldset.hide-on-mobile,
+    #risk-calculator-form fieldset[id*="desktop"],
+    #risk-calculator-form fieldset[id*="checklist-data-table"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      top: -9999px !important;
+      left: -9999px !important;
+      width: 0 !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    /* Garante que o mapa apareça APENAS na aba correta */
+    #tab-content-mapa {
+      display: none !important; /* Controlado pela navegação de abas */
+      visibility: hidden !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      z-index: -1 !important;
+    }
+    
+    /* Quando a aba do mapa está ativa */
+    #tab-content-mapa.active {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: relative !important;
+      z-index: auto !important;
+    }
+    
+    /* Garante que o mapa NUNCA apareça em outras abas */
+    #tab-content-register #tab-content-mapa,
+    #tab-content-summary #tab-content-mapa {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      z-index: -1000 !important;
+    }
+}
+
+ /* --- VISIBILIDADE DESKTOP (TELAS MAIORES) --- */
+@media (min-width: 769px) {
+   /* Garante visibilidade em desktop - formulários devem aparecer verticalmente */
+   #target-selection-desktop,
+   #mitigation-selection-desktop,
+   #checklist-data-table-fieldset {
+     display: block !important;
+     visibility: visible !important;
+     opacity: 1 !important;
+     position: relative !important;
+     z-index: auto !important;
+     margin-bottom: 1.5rem !important;
+   }
+   
+   #tab-content-mapa {
+     display: none !important; /* Mantém oculto por padrão mesmo em desktop */
+     visibility: hidden !important;
+     opacity: 0 !important;
+     position: absolute !important;
+     z-index: -1 !important;
+   }
+   
+   /* Apenas quando ativo explicitamente */
+   #tab-content-mapa.active {
+     display: block !important;
+     visibility: visible !important;
+     opacity: 1 !important;
+     position: relative !important;
+     z-index: auto !important;
+   }
+   
+    /* Garante que elementos com as classes também apareçam em desktop */
+    .target-selection-desktop,
+    .mitigation-selection-desktop {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: relative !important;
+      z-index: auto !important;
+    }
+}
 }
 
 /* --- TOAST NOTIFICATION (FIX z-index) --- */

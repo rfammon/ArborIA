@@ -2401,9 +2401,12 @@ input:checked + .toggle-slider:before {
 }
 
 /* Quando ativo, volta a ser clicável */
+#checklist-flashcard-view.active,
 #checklist-flashcard-view:not([style*="display:none"]):not([style*="display: none"]) {
     display: flex !important;
     pointer-events: auto;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 /* Wrapper interno */

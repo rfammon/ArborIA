@@ -260,10 +260,24 @@
 /* Em telas maiores (Desktop), a tabela aparece e o botão de flashcard some */
 @media (min-width: 769px) {
   #checklist-data-table-fieldset {
-    display: block;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: auto !important;
   }
   #open-flashcard-btn {
     display: none !important; /* Oculta o botão de "Avaliar Fatores de Risco" */
+  }
+  
+  /* Garante que os formulários 2, 3 e 4 apareçam verticalmente */
+  #target-selection-desktop,
+  #mitigation-selection-desktop {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: auto !important;
   }
 }
 

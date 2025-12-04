@@ -80,7 +80,12 @@ function handleMainNavigation(event, treeId = null) {
     // [MAP FIX] Se a última sub-aba ativa era o mapa, força resize
     const mapTab = document.getElementById("tab-content-mapa");
     if (mapTab && mapTab.style.display === "block") {
-      setTimeout(() => mapUI.prepareMapForScreenshot(), 100);
+      setTimeout(() => {
+        // Força múltiplos ciclos de resize
+        window.dispatchEvent(new Event('resize'));
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 800);
+      }, 100);
     }
   } else if (targetId === "clinometro-view") {
     clinometer.startClinometer();
@@ -233,6 +238,16 @@ function setupActionButtons() {
       resetBtn.addEventListener("click", () => {
         riskForm.reset();
         clearPhotoPreview();
+        
+        // Garante que o mapa permaneça oculto após limpar formulário
+        const mapTab = document.getElementById("tab-content-mapa");
+        if (mapTab && !mapTab.classList.contains('active')) {
+          mapTab.style.display = 'none';
+          mapTab.style.visibility = 'hidden';
+          mapTab.style.opacity = '0';
+          mapTab.style.position = 'absolute';
+          mapTab.style.zIndex = '-1';
+        }
       });
   }
 
@@ -240,7 +255,25 @@ function setupActionButtons() {
   const openFlashcardBtn = document.getElementById("open-flashcard-btn");
   if (openFlashcardBtn) {
     openFlashcardBtn.addEventListener("click", () => {
+      console.log("Main: Botão de flashcard clicado");
+      
+      // Debug antes de tentar abrir
+      ChecklistMobileService.debug();
+      
+      // Inicializa o serviço antes de abrir
+      ChecklistMobileService.init();
       ChecklistMobileService.open();
+      
+      // Debug depois de tentar abrir
+      setTimeout(() => {
+        ChecklistMobileService.debug();
+      }, 100);
+      
+      // Força a exibição completa após 200ms
+      setTimeout(() => {
+        console.log("Forçando exibição completa do modal...");
+        ChecklistMobileService.forceShow();
+      }, 200);
     });
   }
 
@@ -463,6 +496,419 @@ async function initApp() {
   
   // [FIX] Injeta CSS faltante
   injectMobileChecklistCSS();
+  
+  // [FIX] Listener para redimensionamento
+  window.addEventListener('resize', () => {
+    setTimeout(() => {
+      forceMobileLayout();
+      debugMobileFormVisibility();
+      ensureSingleTabVisible();
+    }, 100);
+  });
+  
+  // [FIX] Força visibilidade do formulário após carregar
+  setTimeout(() => {
+    forceFormVisibility();
+    forceMapVisibility();
+    // debugFilterColors();
+    // debugMitigationDropdown();
+    forceMitigationVisibility();
+    // debugMobileFormVisibility();
+    forceMobileLayout();
+    // debugMapVisibility();
+    // testTabNavigation();
+    forceTabNavigation();
+    ensureSingleTabVisible();
+  }, 2500);
+  
+  // [DEBUG] Adiciona função global para teste do modal
+  window.testChecklistModal = () => {
+    const container = document.getElementById("checklist-flashcard-view");
+    if (container) {
+      container.style.cssText = `
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 999999 !important;
+        background-color: rgba(255, 0, 0, 0.5) !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+      `;
+      console.log("Modal de teste visível (fundo vermelho)");
+    } else {
+      console.error("Container não encontrado");
+    }
+  };
+  
+  window.testSimpleModal = () => {
+    const container = document.getElementById("checklist-flashcard-view");
+    if (container) {
+      container.innerHTML = `
+        <div style="
+          background: white;
+          padding: 20px;
+          border-radius: 10px;
+          color: black;
+          text-align: center;
+        ">
+          <h2>TESTE SIMPLES</h2>
+          <p>Se você consegue ver isso, o modal funciona!</p>
+          <button onclick="this.parentElement.parentElement.style.display='none'">Fechar</button>
+        </div>
+      `;
+      container.style.cssText = `
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 999999 !important;
+        background-color: rgba(0, 0, 0, 0.8) !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+      `;
+      console.log("Modal simples visível");
+    } else {
+      console.error("Container não encontrado");
+    }
+  };
+  
+  window.debugFormElements = () => {
+    const form = document.getElementById("risk-calculator-form");
+    if (form) {
+      console.log("=== DEBUG FORMULÁRIO ===");
+      console.log("Formulário encontrado:", form);
+      console.log("Formulário visível:", form.offsetParent !== null);
+      console.log("Formulário opacity:", window.getComputedStyle(form).opacity);
+      
+      // Verifica inputs
+      const inputs = form.querySelectorAll("input");
+      console.log("Inputs encontrados:", inputs.length);
+      inputs.forEach((input, index) => {
+        console.log(`Input ${index + 1}:`, {
+          id: input.id,
+          type: input.type,
+          visible: input.offsetParent !== null,
+          opacity: window.getComputedStyle(input).opacity,
+          display: window.getComputedStyle(input).display,
+          visibility: window.getComputedStyle(input).visibility
+        });
+      });
+      
+      // Verifica botões
+      const buttons = form.querySelectorAll("button");
+      console.log("Botões encontrados:", buttons.length);
+      buttons.forEach((button, index) => {
+        console.log(`Botão ${index + 1}:`, {
+          id: button.id,
+          className: button.className,
+          visible: button.offsetParent !== null,
+          opacity: window.getComputedStyle(button).opacity,
+          display: window.getComputedStyle(button).display,
+          visibility: window.getComputedStyle(button).visibility
+        });
+      });
+      
+      // Verifica ícones
+      const icons = form.querySelectorAll("i, img.button-icon");
+      console.log("Ícones encontrados:", icons.length);
+      icons.forEach((icon, index) => {
+        console.log(`Ícone ${index + 1}:`, {
+          tagName: icon.tagName,
+          className: icon.className,
+          src: icon.src || "N/A",
+          visible: icon.offsetParent !== null,
+          opacity: window.getComputedStyle(icon).opacity,
+          display: window.getComputedStyle(icon).display,
+          visibility: window.getComputedStyle(icon).visibility
+        });
+      });
+      
+      console.log("========================");
+    } else {
+      console.error("Formulário não encontrado");
+    }
+  };
+  
+  window.forceFormVisibility = () => {
+    const form = document.getElementById("risk-calculator-form");
+    if (form) {
+      console.log("Forçando visibilidade do formulário...");
+      
+      // Força visibilidade do formulário
+      form.style.cssText = `
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
+      `;
+      
+      // Força visibilidade de todos os elementos
+      const allElements = form.querySelectorAll("*");
+      allElements.forEach(element => {
+        element.style.cssText = `
+          opacity: 1 !important;
+          visibility: visible !important;
+        `;
+      });
+      
+      // Força estilos específicos para inputs
+      const inputs = form.querySelectorAll("input");
+      inputs.forEach(input => {
+        input.style.cssText = `
+          opacity: 1 !important;
+          visibility: visible !important;
+          background-color: #ffffff !important;
+          color: #1a202c !important;
+          border: 1px solid #e2e8f0 !important;
+        `;
+      });
+      
+      // Força estilos específicos para botões
+      const buttons = form.querySelectorAll("button");
+      buttons.forEach(button => {
+        button.style.cssText = `
+          opacity: 1 !important;
+          visibility: visible !important;
+        `;
+      });
+      
+      // Força estilos específicos para ícones
+      const icons = form.querySelectorAll("i, img");
+      icons.forEach(icon => {
+        icon.style.cssText = `
+          opacity: 1 !important;
+          visibility: visible !important;
+        `;
+      });
+      
+      console.log("Visibilidade do formulário forçada");
+      debugFormElements();
+    } else {
+      console.error("Formulário não encontrado");
+    }
+  };
+  
+  window.debugMapElements = () => {
+    const mapTab = document.getElementById("tab-content-mapa");
+    if (mapTab) {
+      console.log("=== DEBUG MAPA ===");
+      console.log("Aba do mapa encontrada:", mapTab);
+      console.log("Aba do mapa visível:", mapTab.offsetParent !== null);
+      console.log("Aba do mapa opacity:", window.getComputedStyle(mapTab).opacity);
+      
+      // Verifica inputs
+      const inputs = mapTab.querySelectorAll("input");
+      console.log("Inputs encontrados:", inputs.length);
+      inputs.forEach((input, index) => {
+        console.log(`Input ${index + 1}:`, {
+          id: input.id,
+          type: input.type,
+          visible: input.offsetParent !== null,
+          opacity: window.getComputedStyle(input).opacity,
+          display: window.getComputedStyle(input).display,
+          visibility: window.getComputedStyle(input).visibility
+        });
+      });
+      
+      // Verifica botões
+      const buttons = mapTab.querySelectorAll("button");
+      console.log("Botões encontrados:", buttons.length);
+      buttons.forEach((button, index) => {
+        console.log(`Botão ${index + 1}:`, {
+          id: button.id,
+          className: button.className,
+          visible: button.offsetParent !== null,
+          opacity: window.getComputedStyle(button).opacity,
+          display: window.getComputedStyle(button).display,
+          visibility: window.getComputedStyle(button).visibility
+        });
+      });
+      
+      // Verifica ícones
+      const icons = mapTab.querySelectorAll("i, span.legend-dot");
+      console.log("Ícones encontrados:", icons.length);
+      icons.forEach((icon, index) => {
+        console.log(`Ícone ${index + 1}:`, {
+          tagName: icon.tagName,
+          className: icon.className,
+          visible: icon.offsetParent !== null,
+          opacity: window.getComputedStyle(icon).opacity,
+          display: window.getComputedStyle(icon).display,
+          visibility: window.getComputedStyle(icon).visibility
+        });
+      });
+      
+      console.log("====================");
+    } else {
+      console.error("Aba do mapa não encontrada");
+    }
+  };
+  
+  window.forceMapVisibility = () => {
+    const mapTab = document.getElementById("tab-content-mapa");
+    if (mapTab) {
+      console.log("Forçando visibilidade dos elementos do mapa...");
+      
+      // NÃO força display: block - respeita navegação de abas
+      // Apenas garante que os elementos dentro do mapa sejam visíveis quando a aba estiver ativa
+      
+      // Força visibilidade de todos os elementos internos
+      const allElements = mapTab.querySelectorAll("*");
+      allElements.forEach(element => {
+        element.style.cssText = `
+          opacity: 1 !important;
+          visibility: visible !important;
+        `;
+      });
+      
+      // Força estilos específicos para inputs
+      const inputs = mapTab.querySelectorAll("input");
+      inputs.forEach(input => {
+        input.style.cssText = `
+          opacity: 1 !important;
+          visibility: visible !important;
+        `;
+      });
+      
+      // Força estilos específicos para botões
+      const buttons = mapTab.querySelectorAll("button");
+      buttons.forEach(button => {
+        button.style.cssText = `
+          opacity: 1 !important;
+          visibility: visible !important;
+        `;
+      });
+      
+      // Força estilos específicos para ícones
+      const icons = mapTab.querySelectorAll("i, span");
+      icons.forEach(icon => {
+        icon.style.cssText = `
+          opacity: 1 !important;
+          visibility: visible !important;
+        `;
+      });
+      
+      console.log("Visibilidade dos elementos do mapa forçada");
+      debugMapElements();
+    } else {
+      console.error("Aba do mapa não encontrada");
+    }
+  };
+  
+// Função de debug de cores simplificada
+window.debugFilterColors = () => {
+  const mapTab = document.getElementById("tab-content-mapa");
+  if (mapTab) {
+    console.log("=== DEBUG CORES DOS FILTROS ===");
+    
+    const filters = [
+      { id: 'filter-todos', name: 'Todos', expectedColor: '#2d3748' },
+      { id: 'filter-alto', name: 'Alto', expectedColor: '#d32f2f' },
+      { id: 'filter-medio', name: 'Médio', expectedColor: '#f57c00' },
+      { id: 'filter-baixo', name: 'Baixo', expectedColor: '#2e7d32' }
+    ];
+    
+    filters.forEach(filter => {
+      const input = document.getElementById(filter.id);
+      const label = input ? input.nextElementSibling : null;
+      const dot = label ? label.querySelector('.legend-dot') : null;
+      
+      if (input && label && dot) {
+        const labelColor = window.getComputedStyle(label).color;
+        const dotBgColor = window.getComputedStyle(dot).backgroundColor;
+        
+        console.log(filter.name + ':', {
+          labelColor: labelColor,
+          expectedLabelColor: filter.expectedColor,
+          dotBgColor: dotBgColor,
+          expectedDotColor: filter.expectedColor
+        });
+      } else {
+        console.error(filter.name + ': Elementos não encontrados');
+      }
+    });
+    
+    console.log("===============================");
+  } else {
+    console.error("Aba do mapa não encontrada");
+  }
+};
+  
+  window.debugMitigationDropdown = () => {
+    const mitigationSelect = document.getElementById("mitigation-action");
+    if (mitigationSelect) {
+      console.log("=== DEBUG MITIGATION DROPDOWN ===");
+      console.log("Select encontrado:", mitigationSelect);
+      console.log("Select visível:", mitigationSelect.offsetParent !== null);
+      console.log("Select cor do texto:", window.getComputedStyle(mitigationSelect).color);
+      console.log("Select background:", window.getComputedStyle(mitigationSelect).backgroundColor);
+      console.log("Select opacity:", window.getComputedStyle(mitigationSelect).opacity);
+      
+      // Verifica as options
+      const options = mitigationSelect.querySelectorAll("option");
+      console.log("Options encontradas:", options.length);
+      options.forEach((option, index) => {
+        console.log(`Option ${index + 1}:`, {
+          text: option.text,
+          value: option.value,
+          color: window.getComputedStyle(option).color,
+          background: window.getComputedStyle(option).backgroundColor,
+          opacity: window.getComputedStyle(option).opacity,
+          visible: option.offsetParent !== null
+        });
+      });
+      
+      console.log("=====================================");
+    } else {
+      console.error("Dropdown mitigation-action não encontrado");
+    }
+  };
+  
+  window.forceMitigationVisibility = () => {
+    const mitigationSelect = document.getElementById("mitigation-action");
+    if (mitigationSelect) {
+      console.log("Forçando visibilidade do dropdown mitigation-action...");
+      
+      // Força estilos do select principal
+      mitigationSelect.style.cssText = `
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        padding: 10px !important;
+        border-radius: 8px !important;
+        font-size: 1rem !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      `;
+      
+      // Força estilos das options
+      const options = mitigationSelect.querySelectorAll("option");
+      options.forEach(option => {
+        option.style.cssText = `
+          background-color: #1a202c !important;
+          color: #ffffff !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+          padding: 8px !important;
+        `;
+      });
+      
+      console.log("Visibilidade do dropdown forçada");
+      debugMitigationDropdown();
+    } else {
+      console.error("Dropdown mitigation-action não encontrado");
+    }
+  };
 
   // 1. Inicializa UI Base (Sync)
   try {
@@ -561,5 +1007,271 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./service-worker.js").catch((err) => {});
   });
 }
+
+window.debugMobileFormVisibility = () => {
+  console.log("=== DEBUG FORMULÁRIOS MOBILE ===");
+  console.log("Viewport width:", window.innerWidth);
+  console.log("Is mobile:", window.innerWidth <= 768);
+  
+  const forms = [
+    { 
+      id: 'target-selection-desktop', 
+      name: '2. Taxa de Ocupação do Alvo',
+      hasClass: true 
+    },
+    { 
+      id: 'mitigation-selection-desktop', 
+      name: '3. Mitigação de Risco',
+      hasClass: true 
+    },
+    { 
+      id: 'checklist-data-table-fieldset', 
+      name: '4. Fatores de Risco',
+      hasClass: true
+    }
+  ];
+  
+  forms.forEach(form => {
+    const element = document.getElementById(form.id);
+    if (element) {
+      const isVisible = element.offsetParent !== null;
+      const display = window.getComputedStyle(element).display;
+      const hasHideClass = element.classList.contains('hide-on-mobile');
+      
+      console.log(form.name + ':', {
+        id: form.id,
+        visible: isVisible,
+        display: display,
+        hasHideClass: hasHideClass,
+        shouldBeHidden: window.innerWidth <= 768 && hasHideClass
+      });
+    } else {
+      console.error(form.name + ': Elemento não encontrado (ID: ' + form.id + ')');
+    }
+  });
+  
+  console.log("==============================");
+};
+
+window.forceTabNavigation = () => {
+  console.log("Forçando navegação de abas em mobile...");
+  
+  // Encontra todos os botões de sub-navegação
+  const subNavButtons = document.querySelectorAll('.sub-nav-btn');
+  
+  subNavButtons.forEach(btn => {
+    // Remove listeners antigos para evitar duplicação
+    btn.replaceWith(btn.cloneNode(true));
+  });
+  
+  // Re-adiciona os listeners
+  const newButtons = document.querySelectorAll('.sub-nav-btn');
+  
+  newButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const targetTabId = btn.getAttribute('data-target');
+      const parentSection = btn.closest('.content-section');
+      
+      console.log(`Clicado: ${btn.textContent.trim()} -> ${targetTabId}`);
+      
+      if (!parentSection) return;
+      
+      // 1. Atualiza botões
+      const siblings = parentSection.querySelectorAll('.sub-nav-btn');
+      siblings.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // 2. Atualiza Conteúdo
+      const tabContents = parentSection.querySelectorAll('.sub-tab-content');
+      tabContents.forEach(content => {
+        content.style.display = 'none';
+        content.classList.remove('active');
+      });
+      
+      const targetContent = document.getElementById(targetTabId);
+      if (targetContent) {
+        targetContent.style.display = 'block';
+        targetContent.classList.add('active');
+        console.log(`Ativada aba: ${targetTabId}`);
+        
+        // 3. Trigger resize se for mapa
+        if (targetTabId && targetTabId.includes('mapa')) {
+           setTimeout(() => {
+             if (window.mapUI && window.mapUI.triggerMapResize) {
+               window.mapUI.triggerMapResize();
+             }
+           }, 100);
+        }
+      }
+    });
+  });
+  
+  console.log("Navegação de abas forçada");
+};
+
+window.ensureSingleTabVisible = () => {
+  console.log("Garantindo que apenas uma aba esteja visível...");
+  
+  const allTabs = document.querySelectorAll('.sub-tab-content');
+  const activeButtons = document.querySelectorAll('.sub-nav-btn.active');
+  
+  // Encontra a aba que deve estar visível
+  let targetTabId = null;
+  activeButtons.forEach(btn => {
+    if (btn.classList.contains('active')) {
+      targetTabId = btn.getAttribute('data-target');
+    }
+  });
+  
+  // Oculta todas as abas
+  allTabs.forEach(tab => {
+    tab.style.display = 'none';
+    tab.classList.remove('active');
+  });
+  
+  // Mostra apenas a aba correta
+  if (targetTabId) {
+    const targetTab = document.getElementById(targetTabId);
+    if (targetTab) {
+      targetTab.style.display = 'block';
+      targetTab.classList.add('active');
+      console.log(`Aba visível: ${targetTabId}`);
+    }
+  }
+  
+  console.log("Verificação de abas concluída");
+};
+
+window.debugMapVisibility = () => {
+  const mapTab = document.getElementById("tab-content-mapa");
+  const registerTab = document.getElementById("tab-content-register");
+  
+  console.log("=== DEBUG MAPA VISIBILITY ===");
+  console.log("Viewport width:", window.innerWidth);
+  console.log("Is mobile:", window.innerWidth <= 768);
+  
+  if (mapTab) {
+    console.log("Mapa tab:", {
+      id: mapTab.id,
+      visible: mapTab.offsetParent !== null,
+      display: window.getComputedStyle(mapTab).display,
+      classes: mapTab.className,
+      active: mapTab.classList.contains('active')
+    });
+  }
+  
+  if (registerTab) {
+    console.log("Register tab:", {
+      id: registerTab.id,
+      visible: registerTab.offsetParent !== null,
+      display: window.getComputedStyle(registerTab).display,
+      classes: registerTab.className
+    });
+  }
+  
+  // Verifica se o mapa está vazando para outras abas
+  const allTabs = document.querySelectorAll('.sub-tab-content');
+  console.log("Todas as abas:");
+  allTabs.forEach((tab, index) => {
+    console.log(`Tab ${index + 1}:`, {
+      id: tab.id,
+      display: window.getComputedStyle(tab).display,
+      visible: tab.offsetParent !== null
+    });
+  });
+  
+  console.log("=============================");
+};
+
+window.testTabNavigation = () => {
+  console.log("=== TESTE NAVEGAÇÃO ABAS ===");
+  
+  // Encontra os botões de sub-navegação
+  const subNavButtons = document.querySelectorAll('.sub-nav-btn');
+  console.log("Botões de sub-navegação encontrados:", subNavButtons.length);
+  
+  subNavButtons.forEach((btn, index) => {
+    const target = btn.getAttribute('data-target');
+    console.log(`Botão ${index + 1}:`, {
+      text: btn.textContent.trim(),
+      target: target,
+      active: btn.classList.contains('active')
+    });
+  });
+  
+  // Testa ativação da aba do mapa
+  const mapButton = document.querySelector('[data-target="tab-content-mapa"]');
+  const mapTab = document.getElementById('tab-content-mapa');
+  
+  if (mapButton && mapTab) {
+    console.log("Testando ativação do mapa...");
+    
+    // Simula clique no botão do mapa
+    mapButton.click();
+    
+    setTimeout(() => {
+      console.log("Após clique no mapa:", {
+        buttonActive: mapButton.classList.contains('active'),
+        tabDisplay: window.getComputedStyle(mapTab).display,
+        tabVisible: mapTab.offsetParent !== null
+      });
+    }, 100);
+  } else {
+    console.error("Botão ou aba do mapa não encontrados", { mapButton, mapTab });
+  }
+  
+  console.log("==============================");
+};
+
+window.forceMobileLayout = () => {
+  console.log("Forçando layout mobile...");
+  
+  if (window.innerWidth <= 768) {
+    // Força ocultação dos elementos que não devem aparecer em mobile
+    const elementsToHide = [
+      'target-selection-desktop',
+      'mitigation-selection-desktop', 
+      'checklist-data-table-fieldset'
+    ];
+    
+    elementsToHide.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.style.cssText = `
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+        `;
+        console.log(`Ocultado: ${id}`);
+      }
+    });
+    
+    // Força ocultação por classes também
+    const classElements = document.querySelectorAll('.target-selection-desktop, .mitigation-selection-desktop, .hide-on-mobile');
+    classElements.forEach(element => {
+      element.style.cssText = `
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+      `;
+    });
+    
+    // Garante que o mapa possa ser ativado quando clicado, mas não força display
+    const mapTab = document.getElementById('tab-content-mapa');
+    if (mapTab) {
+      // Remove apenas estilos que impedem ativação, mas respeita display da navegação
+      mapTab.style.removeProperty('visibility');
+      mapTab.style.removeProperty('opacity');
+      console.log("Mapa liberado para ativação (respeitando navegação)");
+    }
+    
+    console.log("Layout mobile forçado");
+  } else {
+    console.log("Não é mobile, não foi necessário forçar layout");
+  }
+};
 
 document.addEventListener("DOMContentLoaded", initApp);

@@ -22,9 +22,18 @@ function handleMapFilterChange(e) {
   const selectedRisk = e.target.value;
   if (!state.mapMarkerGroup) return;
   
+  console.log('Filter changed to:', selectedRisk); // Debug
+  
   state.mapMarkerGroup.eachLayer(layer => {
     if (layer.options.isTreeMarker) {
-        if (selectedRisk === 'Todos' || layer.options.riskLevel === selectedRisk) {
+        const layerRisk = layer.options.riskLevel;
+        console.log('Layer risk:', layerRisk, 'Selected:', selectedRisk); // Debug
+        
+        // Normalização para comparação mais robusta
+        const normalizedLayerRisk = normalizeRiskLevel(layerRisk);
+        const normalizedSelectedRisk = normalizeRiskLevel(selectedRisk);
+        
+        if (selectedRisk === 'Todos' || normalizedLayerRisk === normalizedSelectedRisk) {
             layer.setStyle({ opacity: 1, fillOpacity: 0.6 });
             if(layer.getTooltip()) layer.openTooltip();
             layer.bringToFront();
@@ -35,6 +44,22 @@ function handleMapFilterChange(e) {
     }
   });
   hideMapInfoBox();
+}
+
+// Função para normalizar níveis de risco para comparação
+function normalizeRiskLevel(risk) {
+    if (!risk) return 'Baixo Risco';
+    
+    const riskLower = risk.toLowerCase();
+    if (riskLower.includes('alto') || riskLower === 'risk-high' || riskLower === 'high') {
+        return 'Alto Risco';
+    } else if (riskLower.includes('médio') || riskLower === 'risk-medium' || riskLower === 'medium') {
+        return 'Médio Risco';
+    } else if (riskLower.includes('baixo') || riskLower === 'risk-low' || riskLower === 'low') {
+        return 'Baixo Risco';
+    }
+    
+    return risk; // Retorna original se não reconhecer
 }
 
 function hideMapInfoBox() {
@@ -165,6 +190,9 @@ function renderMapMarkers() {
 
       // [MUDANÇA] L.circle usa metros (Geográfico), L.circleMarker usa pixels (Tela)
       // Usamos L.circle para representar a projeção real da copa/queda no terreno.
+      // Normaliza o nível de risco para consistência
+      const normalizedRisk = normalizeRiskLevel(tree.risco);
+      
       const circle = L.circle(coords, { 
           color: color, 
           weight: 1, // Borda fina
@@ -172,7 +200,7 @@ function renderMapMarkers() {
           fillOpacity: 0.5, // Transparente para ver o que está embaixo (zona de alvo)
           radius: radiusInMeters, 
           isTreeMarker: true, 
-          riskLevel: tree.risco 
+          riskLevel: normalizedRisk // Usa valor normalizado
       });
       
       // Configuração do Rótulo (Label dentro do ponto)
@@ -205,30 +233,46 @@ export async function prepareMapForScreenshot() {
 
     if (currentLayerType !== 'satellite') {
         toggleMapLayer(); 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
     }
     
     const bounds = state.mapMarkerGroup.getBounds();
     if (bounds.isValid() && state.registeredTrees.length > 0) {
-        // padding reduzido e zoom alto para ver detalhes
-        map.fitBounds(bounds, { padding: [20, 20], maxZoom: 20, animate: false });
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16, animate: false });
+        
+        // Aguarda carregamento dos tiles
+        await new Promise(resolve => setTimeout(resolve, 1500));
     } else {
-        map.setView([-15.78, -47.92], 4, { animate: false }); 
+        map.setView([0, 0], 2, { animate: false }); 
     }
 
-    await new Promise(r => setTimeout(r, 2000)); 
+    await new Promise(r => setTimeout(r, 1000)); 
     return true;
 }
 
 // === OUTRAS FEATURES ===
 export function zoomToAllPoints() {
     if (!state.mapMarkerGroup || !state.mapInstance) return;
-    const bounds = state.mapMarkerGroup.getBounds();
-    if (bounds.isValid() && state.registeredTrees.length > 0) {
-        state.mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 20 });
-        showToast("Zoom ajustado.", "success");
-    } else {
-        showToast("Nenhum ponto válido.", "warning");
+    
+    try {
+        const bounds = state.mapMarkerGroup.getBounds();
+        if (bounds.isValid() && state.registeredTrees.length > 0) {
+            state.mapInstance.fitBounds(bounds, { 
+                padding: [40, 40], 
+                maxZoom: 16,
+                animate: true 
+            });
+            
+            // Força carregamento das tiles
+            setTimeout(forceTileReload, 200);
+            
+            showToast("Zoom ajustado para todos os pontos.", "success");
+        } else {
+            showToast("Nenhum ponto para exibir.", "warning");
+        }
+    } catch (error) {
+        console.error('Error zooming to all points:', error);
+        showToast("Erro ao ajustar zoom.", "error");
     }
 }
 
@@ -236,10 +280,22 @@ export function toggleMapLayer() {
     const map = state.mapInstance;
     if (!map || !osmLayer || !satelliteLayer) return;
 
-    if (currentLayerType === 'osm') {
-        map.removeLayer(osmLayer); map.addLayer(satelliteLayer); currentLayerType = 'satellite';
-    } else {
-        map.removeLayer(satelliteLayer); map.addLayer(osmLayer); currentLayerType = 'osm';
+    try {
+        if (currentLayerType === 'osm') {
+            map.removeLayer(osmLayer);
+            map.addLayer(satelliteLayer);
+            currentLayerType = 'satellite';
+        } else {
+            map.removeLayer(satelliteLayer);
+            map.addLayer(osmLayer);
+            currentLayerType = 'osm';
+        }
+        
+        // Força redesenho imediato
+        setTimeout(forceTileReload, 100);
+        
+    } catch (error) {
+        console.error('Error toggling map layer:', error);
     }
 }
 
@@ -254,47 +310,226 @@ export function setupMapListeners() {
   if (locBtn) locBtn.addEventListener('click', toggleUserLocation);
 }
 
-// [REATORADO] Deve ser chamado uma vez na inicialização do aplicativo
+// [COMPLETAMENTE RECONSTRUÍDO] Configuração robusta do mapa
 export function setupMap() {
     const mapContainer = document.getElementById('map-container');
-    if (!mapContainer || typeof L === 'undefined' || state.mapInstance) return; // Executa apenas uma vez
+    if (!mapContainer || typeof L === 'undefined' || state.mapInstance) return;
 
-    const map = L.map('map-container', { tap: false, preferCanvas: true }).setView([-15.78, -47.92], 4);
+    // Inicializa o mapa com configuração robusta
+    const map = L.map('map-container', {
+        center: [0, 0],
+        zoom: 2,
+        zoomControl: true,
+        worldCopyJump: true,
+        preferCanvas: false
+    });
+    
     state.setMapInstance(map);
     state.setMapMarkerGroup(L.featureGroup().addTo(map));
     map.on('click', hideMapInfoBox);
 
-    osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 22, maxNativeZoom: 19, attribution: '© OpenStreetMap' });
-    satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 22, maxNativeZoom: 19, attribution: 'Tiles &copy; Esri' });
+    // Configura camadas OSM
+    osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    });
+
+    // Configura camada Google Satellite
+    satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '© Google Maps',
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+    });
     
+    // Adiciona camada padrão
     satelliteLayer.addTo(map);
     currentLayerType = 'satellite';
 
-    updateMapData(true); // Carga inicial de dados e ajuste de zoom
+    // Inicialização robusta baseada na lógica do botão "focar tudo"
+    initializeMapWithRetry(map, 3);
 }
 
-// [NOVO] Chamado para atualizar os marcadores quando os dados mudam
-export function updateMapData(fitBounds = false) {
+// Função de inicialização baseada na lógica do botão "focar tudo"
+function initializeMapWithRetry(map, maxRetries) {
+    let retryCount = 0;
+    
+    function tryInitialize() {
+        try {
+            map.invalidateSize();
+            
+            // Força carregamento dos tiles primeiro
+            if (satelliteLayer) {
+                satelliteLayer.redraw();
+            }
+            
+            // Aguarda um pouco e usa a mesma lógica do botão "focar tudo"
+            setTimeout(() => {
+                if (state.mapMarkerGroup && state.registeredTrees.length > 0) {
+                    // Usa exatamente a mesma lógica do zoomToAllPoints
+                    const bounds = state.mapMarkerGroup.getBounds();
+                    if (bounds.isValid()) {
+                        map.fitBounds(bounds, { 
+                            padding: [40, 40], 
+                            maxZoom: 16,
+                            animate: false 
+                        });
+                        
+                        // Força carregamento das tiles como no botão + ciclos adicionais
+                        setTimeout(() => {
+                            map.invalidateSize();
+                            if (currentLayerType === 'satellite' && satelliteLayer) {
+                                satelliteLayer.redraw();
+                            }
+                        }, 200);
+                        
+                        // Ciclo adicional para garantir tiles
+                        setTimeout(() => {
+                            map.invalidateSize();
+                            if (currentLayerType === 'satellite' && satelliteLayer) {
+                                satelliteLayer.redraw();
+                            }
+                        }, 600);
+                        
+                        // Ciclo final para garantir estabilidade
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 1200);
+                    }
+                } else {
+                    // Se não há dados, mantém vista mundial
+                    map.setView([0, 0], 2);
+                    setTimeout(() => {
+                        if (satelliteLayer) satelliteLayer.redraw();
+                    }, 200);
+                    
+                    // Ciclos adicionais para garantir tiles
+                    setTimeout(() => {
+                        map.invalidateSize();
+                        if (satelliteLayer) satelliteLayer.redraw();
+                    }, 600);
+                    
+                    setTimeout(() => {
+                        map.invalidateSize();
+                    }, 1200);
+                }
+            }, 500);
+            
+        } catch (error) {
+            console.warn('Map initialization attempt failed:', error);
+            retryCount++;
+            
+            if (retryCount < maxRetries) {
+                setTimeout(tryInitialize, 800 * retryCount);
+            } else {
+                console.error('Map initialization failed after all retries');
+                // Fallback final: vista mundial
+                try {
+                    map.setView([0, 0], 2);
+                    if (satelliteLayer) satelliteLayer.redraw();
+                } catch (fallbackError) {
+                    console.error('Final fallback failed:', fallbackError);
+                }
+            }
+        }
+    }
+    
+    // Inicia tentativa após delay maior para garantir DOM pronto
+    setTimeout(tryInitialize, 500);
+}
+
+// [SIMPLIFICADO] Atualiza marcadores - inicialização agora é tratada separadamente
+export function updateMapData(fitToBounds = false) {
     const map = state.mapInstance;
     if (!map) return;
 
-    const bounds = renderMapMarkers();
+    try {
+        // Renderiza marcadores e obtém bounds
+        const bounds = renderMapMarkers();
 
-    if (state.zoomTargetCoords) {
-        map.setView(state.zoomTargetCoords, 20);
-        if (state.openInfoBoxId !== null) {
-            const t = state.registeredTrees.find(x => x.id === state.openInfoBoxId);
-            if(t) setTimeout(() => showMapInfoBox(t), 500);
+        // Se há coordenadas alvo específicas (zoom para árvore individual)
+        if (state.zoomTargetCoords) {
+            map.setView(state.zoomTargetCoords, 16);
+            
+            if (state.openInfoBoxId !== null) {
+                const tree = state.registeredTrees.find(x => x.id === state.openInfoBoxId);
+                if(tree) setTimeout(() => showMapInfoBox(tree), 500);
+            }
+            
+            // Força carregamento de tiles
+            forceTileReload();
+            
+            // Limpa estado após 3 segundos
+            setTimeout(() => {
+                state.setZoomTargetCoords(null);
+                state.setOpenInfoBoxId(null);
+            }, 3000);
+            return;
         }
-        setTimeout(() => {
-            state.setZoomTargetCoords(null);
-            state.setOpenInfoBoxId(null);
-        }, 1000);
-    } else if (fitBounds && bounds && bounds.isValid() && state.registeredTrees.length > 0) {
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 19 });
-    }
 
-    setTimeout(() => map.invalidateSize(), 100);
+        // Apenas se for chamado explicitamente (não na inicialização)
+        if (fitToBounds && bounds && bounds.isValid() && state.registeredTrees.length > 0) {
+            map.fitBounds(bounds, { 
+                padding: [40, 40], 
+                maxZoom: 16,
+                animate: true 
+            });
+            
+            // Força carregamento das tiles após ajuste
+            setTimeout(forceTileReload, 200);
+            return;
+        }
+
+        // Se não há pontos, mantém vista mundial
+        if (state.registeredTrees.length === 0) {
+            map.setView([0, 0], 2);
+            setTimeout(forceTileReload, 200);
+        }
+        
+    } catch (error) {
+        console.error('Error updating map data:', error);
+        // Fallback: tenta manter mapa funcional
+        try {
+            map.setView([0, 0], 2);
+        } catch (fallbackError) {
+            console.error('Fallback failed:', fallbackError);
+        }
+    }
+}
+
+// Função dedicada para forçar recarregamento de tiles com múltiplos ciclos
+function forceTileReload() {
+    const map = state.mapInstance;
+    if (!map) return;
+    
+    try {
+        map.invalidateSize();
+        
+        // Força redesenho da camada ativa
+        if (currentLayerType === 'satellite' && satelliteLayer) {
+            satelliteLayer.redraw();
+        } else if (currentLayerType === 'osm' && osmLayer) {
+            osmLayer.redraw();
+        }
+        
+        // Múltiplos ciclos para garantir carregamento completo
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+                if (currentLayerType === 'satellite' && satelliteLayer) {
+                    satelliteLayer.redraw();
+                } else if (currentLayerType === 'osm' && osmLayer) {
+                    osmLayer.redraw();
+                }
+            }
+        }, 300);
+        
+        setTimeout(() => {
+            if (map) map.invalidateSize();
+        }, 700);
+        
+    } catch (error) {
+        console.warn('Tile reload failed:', error);
+    }
 }
 
 // Mantido para compatibilidade com chamadas antigas

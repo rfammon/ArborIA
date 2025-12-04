@@ -116,7 +116,9 @@ const getFlashCardElements = () => {
         closeBtn: document.getElementById('close-checklist-btn'),
         questionCard: document.getElementById('question-card'),
         targetCard: document.getElementById('target-card'),
-        residualRiskCard: document.getElementById('residual-risk-card'),
+        // [CORREÇÃO] ID corrigido de 'residual-risk-card' para 'risk-card' conforme HTML
+        residualRiskCard: document.getElementById('risk-card'), 
+        confirmCard: document.getElementById('confirm-card'), // Adicionado caso precise futuramente
         counter: document.getElementById('flashcard-counter'),
         questionBox: document.getElementById('flashcard-question-text'), 
         toggleInput: document.getElementById('flashcard-toggle-input'), 
@@ -129,9 +131,48 @@ const getFlashCardElements = () => {
 function showCard(cardToShow) {
     const els = getFlashCardElements();
     if (!els) return;
-    ['questionCard', 'targetCard', 'residualRiskCard'].forEach(cardKey => {
+    
+    // Lista de todos os cards possíveis
+    const allCards = ['questionCard', 'targetCard', 'residualRiskCard', 'confirmCard'];
+    
+    allCards.forEach(cardKey => {
         if (els[cardKey]) {
-            els[cardKey].style.display = (cardKey === cardToShow) ? 'flex' : 'none';
+            if (cardKey === cardToShow) {
+                // Mostra o card ativo
+                els[cardKey].style.display = 'flex';
+                // Opcional: Adicionar classe para controle CSS extra se necessário
+                els[cardKey].classList.add('active-card');
+            } else {
+                // Oculta explicitamente os outros
+                els[cardKey].style.display = 'none';
+                els[cardKey].classList.remove('active-card');
+            }
+        }
+    });
+    
+    // Atualiza o stepper visualmente
+    updateStepper(cardToShow);
+}
+
+function updateStepper(activeCardKey) {
+    const steps = document.querySelectorAll('.step-item');
+    if (!steps.length) return;
+    
+    // Mapeamento simples: 0=Checklist, 1=Target, 2=Risk, 3=Confirm
+    let activeIndex = 0;
+    if (activeCardKey === 'targetCard') activeIndex = 1;
+    else if (activeCardKey === 'residualRiskCard') activeIndex = 2;
+    else if (activeCardKey === 'confirmCard') activeIndex = 3;
+    
+    steps.forEach((step, index) => {
+        if (index < activeIndex) {
+            step.classList.add('completed');
+            step.classList.remove('active');
+        } else if (index === activeIndex) {
+            step.classList.add('active');
+            step.classList.remove('completed');
+        } else {
+            step.classList.remove('active', 'completed');
         }
     });
 }
@@ -215,7 +256,7 @@ function setupFlashCardListeners() {
                 flashcardStep = 'target';
             }
         } else if (flashcardStep === 'target') {
-            const targetInput = document.querySelector('input[name="target_category"]:checked');
+            const targetInput = document.querySelector('input[name="target-category"]:checked'); // [CORREÇÃO] name="target-category" conforme HTML
             if (!targetInput) {
                 utils.showToast("Por favor, selecione a taxa de ocupação.", "error");
                 return;
@@ -248,7 +289,7 @@ export function initChecklistFlashCard(retry = 0) {
     // Limpa a avaliação anterior
     currentRiskAssessment = { targetCategory: null, mitigationAction: 'nenhuma' };
     // Limpa o estado dos radio buttons (mobile e desktop) e select
-    document.querySelectorAll('input[name="target_category"], input[name="target_category_desktop"]').forEach(radio => radio.checked = false);
+    document.querySelectorAll('input[name="target-category"], input[name="target_category_desktop"]').forEach(radio => radio.checked = false);
     document.getElementById('mitigation-action').value = 'nenhuma';
     
     updateFlashcardUI();

@@ -437,14 +437,7 @@ const manualContent = {
                             <textarea id="risk-obs" name="risk-obs" rows="3" placeholder="Ex: Cavidade no tronco, presença de pragas, galho sobre telhado..."></textarea>
                         </div>
 
-                        <div class="photo-upload-container">
-                            <label for="tree-photo-input" class="photo-btn">📷 Adicionar Foto</label>
-                            <input type="file" id="tree-photo-input" accept="image/*" capture="environment" style="display: none;">
 
-                            <div id="photo-preview-container">
-                                <button type="button" id="remove-photo-btn" style="display:none;">&times;</button>
-                            </div>
-                        </div>
 
                     </fieldset>
 

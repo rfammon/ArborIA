@@ -133,6 +133,8 @@ export const UI = {
         // 4. Se for Mapa, dispara resize para evitar área cinza
         if (targetId.includes('map') || targetId === 'calculadora-view') {
             this.triggerMapResize();
+            setTimeout(() => this.triggerMapResize(), 300);
+            setTimeout(() => this.triggerMapResize(), 800);
         }
     },
 
@@ -192,7 +194,10 @@ export const UI = {
 
                 // 3. Fix Específico para Mapa (Leaflet)
                 if (targetTabId && targetTabId.includes('mapa')) {
+                   // Força múltiplos resize para garantir inicialização completa
                    this.triggerMapResize();
+                   setTimeout(() => this.triggerMapResize(), 300);
+                   setTimeout(() => this.triggerMapResize(), 800);
                 }
             });
         });
@@ -227,9 +232,30 @@ export const UI = {
      * Helper: Dispara evento de resize para corrigir mapas Leaflet
      */
     triggerMapResize() {
-        setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
-        }, 200);
+        // Força resize imediato e depois com delay
+        window.dispatchEvent(new Event('resize'));
+        
+        // Força invalidateSize no mapa se existir
+        if (window.state && window.state.mapInstance) {
+            window.state.mapInstance.invalidateSize();
+            
+            // Força redesenho dos tiles
+            setTimeout(() => {
+                if (window.state.mapInstance) {
+                    window.state.mapInstance.invalidateSize();
+                    
+                    // Redesenha layers se existirem
+                    const layers = window.state.mapInstance._layers;
+                    if (layers) {
+                        Object.values(layers).forEach(layer => {
+                            if (layer.redraw) {
+                                layer.redraw();
+                            }
+                        });
+                    }
+                }
+            }, 100);
+        }
     },
 
     /**

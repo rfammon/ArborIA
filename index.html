@@ -418,6 +418,7 @@
                             </fieldset>
 
                             <fieldset
+                                id="target-selection-desktop"
                                 class="risk-fieldset target-selection-desktop hide-on-mobile"
                             >
                                 <legend>2. Taxa de Ocupação do Alvo</legend>
@@ -506,6 +507,7 @@
                             </fieldset>
 
                             <fieldset
+                                id="mitigation-selection-desktop"
                                 class="risk-fieldset mitigation-selection-desktop hide-on-mobile"
                             >
                                 <legend>3. Mitigação de Risco</legend>
@@ -557,7 +559,7 @@
                             </div>
 
                             <fieldset
-                                class="risk-fieldset"
+                                class="risk-fieldset hide-on-mobile"
                                 id="checklist-data-table-fieldset"
                             >
                                 <legend>4. Fatores de Risco</legend>
@@ -1547,7 +1549,9 @@
                     </div>
                 </div>
 
-                <!-- Card 1: Perguntas do Checklist -->
+                <!-- Container do Carrossel de Cards -->
+                <div class="flashcard-carousel-container">
+                    <!-- Card 1: Perguntas do Checklist -->
                 <div id="question-card" class="mobile-checklist-card">
                     <p id="flashcard-counter">Pergunta 1 de 16</p>
                     <h3 id="flashcard-question-text">
@@ -1569,7 +1573,7 @@
                 </div>
 
                 <!-- Card 2: Seleção de Alvo -->
-                <div id="target-card" style="display: none">
+                <div id="target-card" class="mobile-checklist-card">
                     <h3>🎯 Seleção do Alvo</h3>
                     <p class="helper-text">
                         Com que frequência o alvo (pessoas ou propriedades) está
@@ -1631,7 +1635,7 @@
                 </div>
 
                 <!-- Card 3: Cálculo de Risco e Mitigação -->
-                <div id="risk-card" style="display: none">
+                <div id="risk-card" class="mobile-checklist-card">
                     <div id="risk-summary"></div>
 
                     <div class="mitigation-section">
@@ -1649,12 +1653,14 @@
                 </div>
 
                 <!-- Card 4: Confirmação Final -->
-                <div id="confirm-card" style="display: none">
+                <div id="confirm-card" class="mobile-checklist-card">
                     <div id="confirm-summary"></div>
                     <button id="confirm-save-btn" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 20px;">
                         ✓ Confirmar e Salvar
                     </button>
                 </div>
+                </div>
+                <!-- Fim do Container do Carrossel -->
 
                 <div class="mobile-checklist-nav">
                     <button id="flashcard-prev" class="btn btn-secondary">

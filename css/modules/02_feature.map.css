@@ -14,6 +14,11 @@
   position: relative;
   z-index: 1; /* Base */
   margin-bottom: 1rem;
+  
+  /* Força renderização otimizada */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
 }
 
 /* No Mobile, o mapa deve ser mais alto para exploração */
@@ -21,6 +26,14 @@
   #map-container {
     height: 65vh;
     border-radius: var(--radius-md); /* Mantém arredondado mesmo no mobile */
+    
+    /* Otimizações adicionais para mobile */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000;
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000;
   }
 }
 
@@ -195,4 +208,32 @@
 }
 .map-label-clean::before {
   display: none;
+}
+
+/* --- OTIMIZAÇÕES DE RENDERIZAÇÃO --- */
+.leaflet-container {
+  /* Força aceleração de hardware */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000;
+  -webkit-perspective: 1000;
+}
+
+.leaflet-tile-pane {
+  /* Otimizações para tiles */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.leaflet-marker-pane,
+.leaflet-overlay-pane {
+  /* Otimizações para marcadores e overlays */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
