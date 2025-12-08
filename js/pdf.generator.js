@@ -20,7 +20,7 @@ function utmToLatLon(easting, northing, zoneNum, hemisphere) {
 
     let x = easting - 500000.0;
     let y = northing;
-    
+
     if (hemisphere === 'S') {
         y -= 10000000.0;
     }
@@ -33,10 +33,10 @@ function utmToLatLon(easting, northing, zoneNum, hemisphere) {
     const M = y / k0;
     const mu = M / (a * (1 - eccSquared / 4 - 3 * eccSquared * eccSquared / 64 - 5 * eccSquared * eccSquared * eccSquared / 256));
 
-    const phi1Rad = mu + (3 * e1 / 2 - 27 * e1 * e1 * e1 / 32) * Math.sin(2 * mu) 
-                   + (21 * e1 * e1 / 16 - 55 * e1 * e1 * e1 * e1 / 32) * Math.sin(4 * mu)
-                   + (151 * e1 * e1 * e1 / 96) * Math.sin(6 * mu);
-    
+    const phi1Rad = mu + (3 * e1 / 2 - 27 * e1 * e1 * e1 / 32) * Math.sin(2 * mu)
+        + (21 * e1 * e1 / 16 - 55 * e1 * e1 * e1 * e1 / 32) * Math.sin(4 * mu)
+        + (151 * e1 * e1 * e1 / 96) * Math.sin(6 * mu);
+
     const N1 = a / Math.sqrt(1 - eccSquared * Math.sin(phi1Rad) * Math.sin(phi1Rad));
     const T1 = Math.tan(phi1Rad) * Math.tan(phi1Rad);
     const C1 = eccPrimeSquared * Math.cos(phi1Rad) * Math.cos(phi1Rad);
@@ -44,7 +44,7 @@ function utmToLatLon(easting, northing, zoneNum, hemisphere) {
     const D = x / (N1 * k0);
 
     let lat = phi1Rad - (N1 * Math.tan(phi1Rad) / R1) * (D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * eccPrimeSquared) * D * D * D * D / 24
-            + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * eccPrimeSquared - 3 * C1 * C1) * D * D * D * D * D * D / 720);
+        + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * eccPrimeSquared - 3 * C1 * C1) * D * D * D * D * D * D / 720);
     lat = lat * 180 / Math.PI;
 
     let lon = (D - (1 + 2 * T1 + C1) * D * D * D / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * eccPrimeSquared + 24 * T1 * T1) * D * D * D * D * D / 120) / Math.cos(phi1Rad);
@@ -118,16 +118,16 @@ function getRiskFactorsHTML(riskFactors) {
     if (!riskFactors || riskFactors.length === 0) {
         return '<p style="color: #546e7a; font-style: italic; margin: 0;">Nenhum fator de risco crítico identificado.</p>';
     }
-    
+
     const factorsList = riskFactors
         .map((checked, index) => checked ? `<li>${RISK_LABELS[index]}</li>` : '')
         .filter(item => item !== '')
         .join('');
-    
+
     if (!factorsList) {
         return '<p style="color: #546e7a; font-style: italic; margin: 0;">Nenhum fator de risco crítico identificado.</p>';
     }
-    
+
     return `<ul style="margin: 0; padding-left: 20px; color: #37474f;">${factorsList}</ul>`;
 }
 
@@ -143,11 +143,12 @@ export async function generateGeneralReport(trees) {
 
     // ========== SEÇÃO 1: TABELA RESUMIDA ==========
     let tableRowsHTML = '';
-    for (const tree of trees) {
+    trees.forEach((tree, index) => {
         const rowClass = getRiskRowClass(tree.risco);
         const badgeClass = getRiskBadgeClass(tree.risco);
-        
-        let mainFactor = 'Nenhum';
+        const displayId = String(index + 1).padStart(3, '0');
+
+        let mainFactor = '-';
         if (tree.riskFactors && tree.riskFactors.length > 0) {
             const firstIndex = tree.riskFactors.findIndex(f => f === true);
             if (firstIndex !== -1) {
@@ -156,39 +157,51 @@ export async function generateGeneralReport(trees) {
         }
 
         tableRowsHTML += `
-            <tr class="${rowClass}">
-                <td style="font-weight: 600;">${tree.id}</td>
-                <td>${tree.especie}</td>
-                <td style="font-size: 0.8rem;">${tree.coordY || 'N/A'}, ${tree.coordX || 'N/A'}</td>
-                <td style="text-align: center;">${tree.dap || 'N/A'} cm</td>
-                <td style="text-align: center;">${tree.altura || 'N/A'} m</td>
-                <td>${mainFactor}</td>
-                <td style="text-align: center;">
-                    <span class="risk-badge ${badgeClass}">${tree.risco}</span>
+            <tr>
+                <td style="font-weight: 700;">${displayId}</td>
+                <td><span style="font-weight: 600;">${tree.especie}</span></td>
+                <td style="font-family: monospace; font-size: 8pt;">${tree.coordY || ''}, ${tree.coordX || ''}</td>
+                <td style="text-align: center;">${tree.dap || '-'}</td>
+                <td style="text-align: center;">${tree.altura || '-'}</td>
+                <td style="font-size: 8pt;">${mainFactor}</td>
+                <td style="text-align: right;">
+                    <span class="badge ${badgeClass}">${tree.risco}</span>
                 </td>
             </tr>
         `;
-    }
+    });
 
     // ========== SEÇÃO 2: FICHAS DETALHADAS ==========
     let detailCardsHTML = '';
-    for (const tree of trees) {
-        const imageUrl = await blobToDataURL(await getImageFromDB(tree.id));
+
+    // Usando for...in ou forEach para pegar index
+    for (let i = 0; i < trees.length; i++) {
+        const tree = trees[i];
+        const displayId = String(i + 1).padStart(3, '0');
+
+        let imageUrl = tree.image || tree.image_url || tree.photoUrl;
+        if (!imageUrl) {
+            try {
+                imageUrl = await blobToDataURL(await getImageFromDB(tree.id));
+            } catch (e) {
+                console.error(`Erro ao carregar imagem para árvore ${tree.id}:`, e);
+            }
+        }
         const riskColor = getRiskColor(tree.risco);
         const riskFactorsHTML = getRiskFactorsHTML(tree.riskFactors);
 
         detailCardsHTML += `
             <div class="detail-card">
-                <div class="detail-card-header" style="border-top: 4px solid ${riskColor}; background-color: #f8f9fa; padding: 6px 10px;">
-                    <span style="font-weight: 600; font-size: 0.9rem;">ID: ${tree.id} - ${tree.especie}</span>
-                    <span style="float: right; font-size: 0.8rem;">${tree.risco}</span>
+                <div class="detail-card-header" style="border-left: 5px solid ${riskColor}; background-color: #f8f9fa; padding: 8px 12px; border-bottom: 1px solid #eee;">
+                    <span style="font-weight: 700; font-size: 1rem; color: #333;">#${displayId} - ${tree.especie}</span>
+                    <span style="float: right; font-size: 0.8rem; font-weight: 600; color: #555;">${tree.risco}</span>
                 </div>
                 <div class="detail-card-body">
                     <div style="flex: 0 0 130px;">
-                        ${imageUrl 
-                            ? `<img src="${imageUrl}" alt="Foto de ${tree.especie}" class="detail-card-photo">` 
-                            : `<div class="detail-card-photo" style="display: flex; align-items: center; justify-content: center; background: #f5f5f5; color: #999; font-size: 0.8rem;">Sem imagem</div>`
-                        }
+                        ${imageUrl
+                ? `<img src="${imageUrl}" alt="Foto de ${tree.especie}" class="detail-card-photo">`
+                : `<div class="detail-card-photo" style="display: flex; align-items: center; justify-content: center; background: #f5f5f5; color: #999; font-size: 0.8rem;">Sem imagem</div>`
+            }
                     </div>
                     <div class="detail-card-info">
                         <p><strong>Espécie:</strong> ${tree.especie}</p>
@@ -210,243 +223,144 @@ export async function generateGeneralReport(trees) {
     const reportHTML = `
         <style>
             /* Reset Global */
-            html, body {
-                margin: 0;
-                padding: 0;
-                background: white; /* Fundo branco para a aplicação */
-                font-family: Arial, sans-serif;
-            }
+            html, body { margin: 0; padding: 0; background: white; font-family: 'Helvetica Neue', Arial, sans-serif; color: #111; line-height: 1.3; }
+            @page { size: A4; margin: 10mm 15mm; }
 
-            /* Configuração de Página para Impressão - Margens Estreitas 5mm */
-            @page {
-                size: A4;
-                margin: 5mm;
-            }
+            /* Preview */
+            #report-preview-overlay { background: #f5f5f5 !important; padding: 40px 0; }
+            .report-wrapper-preview { width: 210mm; min-height: 297mm; margin: 0 auto; background: white; padding: 10mm; box-shadow: 0 10px 30px rgba(0,0,0,0.1); box-sizing: border-box; }
 
-            /* --- MODO TELA (PREVIEW WYSIWYG) --- */
-            @media screen {
-                /* Container Pai (O que envolve a folha na tela) */
-                #report-preview-overlay {
-                    background: white !important; /* Tela inteira branca */
-                    padding: 20px;
-                    display: flex;
-                    justify-content: center;
-                    overflow-y: auto;
-                }
-
-                /* Override nos estilos inline do utils.js para garantir controle total */
-                #report-paper {
-                    padding: 0 !important;
-                    width: auto !important;
-                    background: transparent !important;
-                    box-shadow: none !important;
-                    display: block !important;
-                }
-
-                /* A "Folha" na tela */
-                .report-wrapper-preview {
-                    width: 210mm; /* Largura A4 Fixa */
-                    min-height: 297mm; /* Altura A4 Mínima */
-                    margin: 0 auto;
-                    background: white;
-                    padding: 5mm; /* Simula a margem da impressão (visual apenas) */
-                    box-sizing: border-box; /* Garante que 210mm inclui o padding */
-                    /* Sem sombra ou borda conforme pedido de "fundo branco", mas útil para debug visual se o fundo fosse colorido. 
-                       Como o fundo é branco, a folha se funde. */
-                }
-            }
-
-            /* --- MODO IMPRESSÃO --- */
             @media print {
-                body {
-                    background: white;
-                }
-
-                .report-wrapper-preview {
-                    width: 100%;
-                    padding: 0; /* Importante: A margem vem do @page */
-                    margin: 0;
-                }
-
-                /* Esconde elementos de UI da tela se vazarem */
-                .no-print, button, #btn-close-report, #btn-print-report {
-                    display: none !important;
-                }
-                
-                /* Layout de Alta Densidade */
-                .detail-card {
-                    page-break-inside: avoid !important;
-                    break-inside: avoid !important;
-                    display: block;
-                }
-                
-                tr { page-break-inside: avoid; }
-                .section-header { page-break-after: avoid; }
+                .report-wrapper-preview { width: 100%; padding: 0; margin: 0; box-shadow: none; }
+                body { background: white; }
+                .no-print { display: none !important; }
             }
 
-            /* --- ESTILOS DE CONTEÚDO (Compartilhado) --- */
+            /* Professional Typography */
+            h2, h3, h4 { margin: 0; color: #000; }
             
-            /* Tabela Principal */
-            .report-container {
+            /* Header */
+            .report-header { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; border-bottom: 2px solid #000 !important; border-image: none !important; padding-bottom: 8px !important; margin-bottom: 15px !important; }
+            .header-logo h2 { font-size: 24pt; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+            .header-logo span { color: #2e7d32; }
+            .header-info p { font-size: 9pt; color: #555; text-align: right; margin: 2px 0; }
+            
+            /* Page Break Fix for Container */
+            .report-container > tbody > tr { page-break-inside: auto !important; }
+            .report-container > thead > tr { page-break-inside: auto !important; }
+
+            /* Sections */
+            .section-header { 
                 width: 100%;
-                margin-top: 0; /* Topo Absoluto */
+                margin-top: 15px !important;
+                margin-bottom: 8px !important;
+                font-size: 11pt !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.5px !important;
+                color: #000 !important;
+                background: none !important;
+                border-bottom: 1px solid #000 !important;
+                padding-bottom: 3px !important;
+                border-radius: 0 !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
             }
 
-            /* Cabeçalho */
-            .report-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 2px solid #0d47a1;
-                padding-bottom: 10px;
-                margin-bottom: 15px;
-            }
-
-            .section-header {
-                margin-top: 15px;
-                font-size: 1.1rem;
-                color: #222;
-                border-bottom: 1px solid #ccc;
-                padding-bottom: 4px;
-            }
-
-            /* Tabela de Dados */
-            .report-table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 10px 0;
-                font-size: 9pt; /* Fonte reduzida para densidade */
-            }
-            .report-table th, .report-table td {
-                border: 1px solid #ddd;
-                padding: 4px 6px;
-                text-align: left;
-            }
-            .report-table th {
-                background-color: #f2f2f2;
-                font-weight: bold;
-                text-transform: uppercase;
+            /* Table */
+            .report-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 15px; }
+            .report-table th { 
+                text-align: left; 
+                padding: 10px 4px; 
+                border-top: 2px solid #000; 
+                border-bottom: 2px solid #000; 
+                font-weight: 700; 
+                text-transform: uppercase; 
                 font-size: 8pt;
+                background: white !important;
+                color: #000;
             }
+            .report-table td { padding: 8px 4px; border-bottom: 1px solid #eee; color: #333; }
+            .report-table tr:last-child td { border-bottom: 1px solid #000; }
+            .report-table { page-break-before: auto; page-break-after: auto; }
+            
+            /* Map */
+            #rep-map-all { width: 100%; height: 250px; background: #eee; border: 1px solid #ddd; margin-bottom: 15px; page-break-before: auto; page-break-after: avoid; page-break-inside: avoid; }
 
-            /* Mapa */
-            #rep-map-all {
-                width: 100%;
-                height: 350px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                margin-top: 10px;
-                margin-bottom: 20px;
-            }
-
-            /* Cards de Árvores (Alta Densidade) */
-            .detail-card {
-                 border: 1px solid #cfd8dc;
-                 border-radius: 4px;
-                 overflow: hidden;
-                 background: #fff;
-                 margin-bottom: 10px;
-                 font-size: 10pt; /* Fonte reduzida */
-            }
-            .detail-card-body {
-                display: flex;
-                gap: 10px;
-                padding: 8px;
-            }
-            .detail-card-photo {
-                width: 100%;
-                height: 100px;
-                object-fit: cover;
-                border-radius: 2px;
-                background: #f0f0f0;
-                border: 1px solid #eee;
-            }
-            .detail-card-info p {
-                margin: 2px 0;
-                line-height: 1.3;
-            }
-            .detail-card-factors {
-                margin-top: 5px;
-                font-size: 9pt;
-            }
-            .detail-card-factors ul {
-                padding-left: 15px;
-                margin: 0;
-            }
-
-            /* Indicadores de Risco */
-            .row-risk-extreme { border-left: 4px solid #212121; }
-            .row-risk-high { border-left: 4px solid #c62828; }
-            .row-risk-medium { border-left: 4px solid #f57c00; }
-            .row-risk-low { border-left: 4px solid #2e7d32; }
-
-            .risk-badge {
-                padding: 2px 6px;
-                border-radius: 4px;
-                color: white;
-                font-size: 8pt;
-                font-weight: bold;
-                display: inline-block;
-            }
-            .risk-badge.extreme { background-color: #212121; }
-            .risk-badge.high { background-color: #c62828; }
-            .risk-badge.medium { background-color: #f57c00; }
-            .risk-badge.low { background-color: #2e7d32; }
-
+            /* Cards */
+            .detail-card { display: flex; gap: 20px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px; page-break-inside: avoid !important; page-break-before: auto; page-break-after: auto; }
+            .detail-card:last-child { border-bottom: none; }
+            .card-image-container { flex: 0 0 120px; }
+            .card-image { width: 120px; height: 120px; object-fit: cover; border-radius: 2px; background: #f0f0f0; }
+            .card-content { flex: 1; }
+            
+            .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 10px; }
+            .card-title { font-weight: 700; font-size: 11pt; color: #000; }
+            
+            .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; font-size: 9pt; }
+            .info-item { display: flex; flex-direction: column; }
+            .info-label { font-size: 7.5pt; text-transform: uppercase; color: #777; font-weight: 600; }
+            .info-value { font-weight: 500; color: #000; }
+            
+            .risk-factors { font-size: 9pt; background: #fafafa; padding: 10px; border-radius: 4px; border: 1px solid #eee; }
+            
+            /* Badges */
+            .badge { padding: 3px 8px; border-radius: 2px; font-size: 7pt; font-weight: 700; text-transform: uppercase; color: white; letter-spacing: 0.5px; }
+            .badge.low { background: #2e7d32; }
+            .badge.medium { background: #f57c00; }
+            .badge.high { background: #c62828; }
+            .badge.extreme { background: #000; }
+            
+            .footer { margin-top: 20px; text-align: right; font-size: 8pt; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+            .page-number:after { content: counter(page); }
         </style>
 
         <div class="report-wrapper-preview">
+            <div class="report-header">
+                <div class="header-logo">
+                    <h2>Arbor<span>IA</span></h2>
+                    <div style="font-size: 10pt; font-weight: 500; color: #333; margin-top: 5px;">Relatório Geral de Inventário</div>
+                </div>
+                <div class="header-info">
+                    <p><strong>Data de Emissão:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+                    <p>Status: <strong>Finalizado</strong></p>
+                </div>
+            </div>
+            
             <table class="report-container">
-                <thead>
-                    <tr>
-                        <td>
-                            <div class="report-header">
-                                <div>
-                                    <h2 style="color: #0d47a1; font-weight: 800; font-size: 1.6rem; margin: 0;">Arbor<span style="color: #1b5e20;">IA</span></h2>
-                                    <p style="font-size: 1rem; color: #37474f; font-weight: 500; margin: 0;">Relatório Geral de Inventário Arbóreo</p>
-                                </div>
-                                <div style="text-align: right;">
-                                    <p style="font-size: 0.8rem; color: #546e7a; margin: 0;"><strong>Emissão:</strong> ${new Date().toLocaleDateString('pt-BR', { dateStyle: 'long' })}</p>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </thead>
-                
                 <tbody>
                     <tr>
                         <td>
-                            <h3 class="section-header">📊 Resumo Executivo</h3>
+                            <h3 class="section-header">Resumo Executivo</h3>
                             <table class="report-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 5%;">ID</th>
-                                        <th style="width: 20%;">Espécie</th>
-                                        <th style="width: 18%;">Coordenadas</th>
-                                        <th style="width: 8%;">DAP</th>
-                                        <th style="width: 8%;">Altura</th>
-                                        <th style="width: 21%;">Fator Principal</th>
-                                        <th style="width: 12%;">Risco</th>
+                                        <th style="width: 50px;">ID</th>
+                                        <th>Espécie</th>
+                                        <th>Coordenadas</th>
+                                        <th style="text-align:center;">DAP (cm)</th>
+                                        <th style="text-align:center;">Alt (m)</th>
+                                        <th>Fator Principal</th>
+                                        <th style="text-align:right;">Risco</th>
                                     </tr>
                                 </thead>
                                 <tbody>${tableRowsHTML}</tbody>
                             </table>
                             
-                            <h3 class="section-header">🗺️ Distribuição Espacial das Árvores</h3>
+                            <h3 class="section-header">Distribuição Espacial</h3>
                             <div id="rep-map-all"></div>
 
-                            <h3 class="section-header">🌳 Fichas Técnicas Individuais</h3>
+                            <h3 class="section-header">Fichas Técnicas</h3>
                             ${detailCardsHTML}
                         </td>
                     </tr>
                 </tbody>
-
                 <tfoot>
                     <tr>
                         <td>
-                            <div class="footer" style="width: 100%; text-align: right; font-size: 10pt; padding-top: 10px; color: #555;">
-                                Página <span class="page-number"></span>
-                            </div>
+                           <div class="footer">
+                                ArborIA - Sistema de Inventário Arbóreo &bull; Página <span class="page-number"></span>
+                           </div> 
                         </td>
                     </tr>
                 </tfoot>
@@ -456,14 +370,52 @@ export async function generateGeneralReport(trees) {
 
     // ========== CALLBACK DO MAPA ==========
     const mapRenderCallback = () => {
-        const L = window.L;
-        const map = L.map('rep-map-all').setView([-15.78, -47.92], 4);
-        L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
-            attribution: '© Google Maps',
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        }).addTo(map);
+        console.log('[GeneralReport] mapRenderCallback chamado');
 
-        const markers = [];
+        if (typeof window.maplibregl === 'undefined') {
+            console.error('[GeneralReport] MapLibre GL JS não está carregado');
+            const container = document.getElementById('rep-map-all');
+            if (container) {
+                container.innerHTML = '<p style="text-align:center; padding:20px; color: #999;">Erro ao carregar mapa.</p>';
+            }
+            return;
+        }
+
+        const maplibregl = window.maplibregl;
+        const mapContainer = document.getElementById('rep-map-all');
+
+        if (!mapContainer) {
+            console.error('[GeneralReport] Container #rep-map-all não encontrado');
+            return;
+        }
+
+        console.log('[GeneralReport] Inicializando mapa em #rep-map-all');
+        const map = new maplibregl.Map({
+            container: mapContainer,
+            style: {
+                version: 8,
+                sources: {
+                    'satellite': {
+                        type: 'raster',
+                        tiles: ['https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'],
+                        tileSize: 256,
+                        attribution: '© Google'
+                    }
+                },
+                layers: [{
+                    id: 'satellite-layer',
+                    type: 'raster',
+                    source: 'satellite',
+                    minzoom: 0,
+                    maxzoom: 20
+                }]
+            },
+            center: [-47.92, -15.78], // [lng, lat]
+            zoom: 4
+        });
+
+        // Criar GeoJSON para markers
+        const features = [];
         trees.forEach(t => {
             if (t.coordY && t.coordX) {
                 let lat = parseFloat(t.coordY);
@@ -477,21 +429,74 @@ export async function generateGeneralReport(trees) {
 
                 if (!isNaN(lat) && !isNaN(lng)) {
                     const color = getRiskColor(t.risco);
-                    const marker = L.circleMarker([lat, lng], {
-                        radius: 6,
-                        color: 'white',
-                        weight: 1,
-                        fillColor: color,
-                        fillOpacity: 0.9
-                    }).bindTooltip(`<b>ID: ${t.id}</b>`, { direction: 'top' });
-                    markers.push(marker);
+                    features.push({
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [lng, lat]
+                        },
+                        properties: {
+                            id: t.id,
+                            especie: t.especie, // Add especie for label layer
+                            color: color
+                        }
+                    });
                 }
             }
         });
-        
-        if (markers.length > 0) {
-            const featureGroup = L.featureGroup(markers).addTo(map);
-            map.fitBounds(featureGroup.getBounds(), { padding: [40, 40] });
+
+        const geoJson = {
+            type: 'FeatureCollection',
+            features: features
+        };
+
+        map.on('load', () => {
+            map.addSource('report-trees', {
+                type: 'geojson',
+                data: geoJson
+            });
+
+            map.addLayer({
+                id: 'report-tree-markers',
+                type: 'circle',
+                source: 'report-trees',
+                paint: {
+                    'circle-radius': 6,
+                    'circle-color': 'white',
+                    'circle-stroke-color': ['get', 'color'],
+                    'circle-stroke-width': 2,
+                    'circle-opacity': 0.9
+                }
+            });
+
+            // Adicionar labels (Simbologia GIS)
+            map.addLayer({
+                id: 'report-tree-labels',
+                type: 'symbol',
+                source: 'report-trees',
+                layout: {
+                    'text-field': ['get', 'especie'], // Nome da espécie
+                    'text-size': 10,
+                    'text-anchor': 'top',
+                    'text-justify': 'center',
+                    'text-offset': [0, 0.6]
+                },
+                paint: {
+                    'text-color': '#ffffff',
+                    'text-halo-color': '#000000',
+                    'text-halo-width': 2,
+                    'text-opacity': 0.9
+                }
+            });
+        });
+
+        // Fit bounds to all markers
+        if (features.length > 0) {
+            const bounds = new maplibregl.LngLatBounds();
+            features.forEach(feature => {
+                bounds.extend(feature.geometry.coordinates);
+            });
+            map.fitBounds(bounds, { padding: { top: 40, bottom: 40, left: 40, right: 40 } });
         }
     };
 
@@ -505,147 +510,170 @@ export async function generateGeneralReport(trees) {
 export async function generateIndividualReport(tree) {
     if (!tree) return;
 
-    const imageUrl = await blobToDataURL(await getImageFromDB(tree.id));
+    let imageUrl = tree.image || tree.image_url || tree.photoUrl;
+    if (!imageUrl) {
+        try {
+            imageUrl = await blobToDataURL(await getImageFromDB(tree.id));
+        } catch (e) {
+            console.error(`Erro ao carregar imagem para árvore ${tree.id}: `, e);
+        }
+    }
     const riskColor = getRiskColor(tree.risco);
     const riskFactorsHTML = getRiskFactorsHTML(tree.riskFactors);
 
     const reportHTML = `
         <style>
-            @page {
-                size: A4;
-                margin: 15mm 10mm 10mm 15mm; /* Margens Reduzidas pela Metade: Sup/Esq 1.5cm, Inf/Dir 1cm */
-            }
-
+            /* Reset & Base */
+            html, body { margin: 0; padding: 0; background: white; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #111; line-height: 1.3; }
+            @page { size: A4; margin: 10mm 15mm; }
+            
+            /* Preview */
+            #report-preview-overlay { background: #f5f5f5 !important; padding: 40px 0; }
+            .report-wrapper-preview { width: 210mm; min-height: 297mm; margin: 0 auto; background: white; padding: 10mm; box-shadow: 0 10px 30px rgba(0,0,0,0.1); box-sizing: border-box; }
+            
             @media print {
-                html, body {
-                    margin: 0;
-                    padding: 0;
-                    background: white;
-                    color: black;
-                    font-family: 'Times New Roman', serif;
-                    font-size: 12pt;
-                }
-                
-                table.report-container {
-                    width: 100%;
-                    border-collapse: collapse;
-                }
-
-                thead, tfoot {
-                    display: table-header-group;
-                }
-
-                tfoot {
-                    display: table-footer-group;
-                }
-
-                .footer {
-                    position: fixed;
-                    bottom: 0;
-                    width: 100%;
-                    text-align: right;
-                    font-size: 10pt;
-                    color: #555;
-                }
-
-                .page-number::after {
-                    content: counter(page);
-                }
-                
-                .arb-card, .report-table tr {
-                    page-break-inside: avoid;
-                    break-inside: avoid;
-                }
-                .section-header {
-                     page-break-after: avoid;
-                }
-                .arb-card, .report-table, .a4-paper {
-                    box-shadow: none !important;
-                    border-color: #ccc;
-                }
+                .report-wrapper-preview { width: 100%; padding: 0; margin: 0; box-shadow: none; }
+                body { background: white; }
+                .no-print { display: none !important; }
+                .page-break { page-break-before: always; }
             }
-            body { font-family: sans-serif; }
-            .section-header { margin-top: 25px; font-size: 1.2rem; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-            .arb-card { border: 1px solid #ddd; border-radius: 6px; margin-top: 15px; }
-            .arb-card-body { padding: 15px; line-height: 1.8; }
+
+            /* Header */
+            .report-header { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; border-bottom: 2px solid #000 !important; border-image: none !important; padding-bottom: 8px !important; margin-bottom: 15px !important; }
+            .header-logo h2 { margin: 0; color: #000; font-size: 24pt; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+            .header-logo span { color: #2e7d32; }
+            .header-info p { margin: 0; font-size: 9pt; color: #666; text-align: right; }
+
+            /* Page Break Fix for Container */
+            .report-container > tbody > tr { page-break-inside: auto !important; }
+            .report-container > thead > tr { page-break-inside: auto !important; }
+
+            /* Sections */
+            .section-header { 
+                width: 100%;
+                margin-top: 15px !important;
+                margin-bottom: 8px !important;
+                font-size: 11pt !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                color: #000 !important;
+                background: none !important;
+                border-bottom: 1px solid #000 !important;
+                padding-bottom: 3px !important;
+                letter-spacing: 0.5px !important;
+                border-radius: 0 !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            /* Layout Grid */
+            .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
+            
+            /* Images & Map */
+            .feature-image { width: 100%; height: 250px; object-fit: cover; background: #eee; border-radius: 2px; }
+            #rep-map-single { width: 100%; height: 250px; background: #eee; border: 1px solid #ddd; border-radius: 2px; page-break-inside: avoid; }
+
+            /* Key-Value Info */
+            .info-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+            .info-table td { padding: 6px 0; border-bottom: 1px solid #eee; vertical-align: top; }
+            .info-label { font-weight: 600; color: #555; width: 120px; font-size: 8.5pt; }
+            .info-value { color: #000; }
+
+            /* Risk Box */
+            .risk-box { padding: 12px; background: #fafafa; border-left: 4px solid #333; margin-top: 8px; page-break-inside: avoid; }
+            .factors-list { margin: 8px 0 0 0; padding-left: 20px; color: #444; font-size: 9pt; }
+
+            /* Badges */
+            .badge { display: inline-block; padding: 3px 8px; border-radius: 2px; font-weight: 700; text-transform: uppercase; color: white; font-size: 7.5pt; letter-spacing: 0.5px; }
+            .badge.low { background: #2e7d32; }
+            .badge.medium { background: #f57c00; }
+            .badge.high { background: #c62828; }
+            .badge.extreme { background: #000; }
+
+            .footer { margin-top: 20px; text-align: right; font-size: 8pt; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
         </style>
 
-        <table class="report-container">
-            <thead>
-                <tr>
-                    <td>
-                        <div class="report-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0d47a1; padding-bottom: 10px;">
-                            <div>
-                                <h2 style="color: #0d47a1; font-weight: 800; font-size: 1.8rem; margin: 0;">Arbor<span style="color: #1b5e20;">IA</span></h2>
-                                <p style="font-size: 1.1rem; color: #37474f; font-weight: 500; margin: 0;">Ficha Técnica Individual - ID ${tree.id}</p>
-                            </div>
-                            <div style="text-align: right;">
-                                <p style="font-size: 0.85rem; color: #546e7a; margin: 0;"><strong>Emissão:</strong> ${new Date().toLocaleDateString('pt-BR', { dateStyle: 'long' })}</p>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </thead>
-            
-            <tbody>
-                <tr>
-                    <td>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-                            <div class="arb-card" style="margin: 0;">
-                                ${imageUrl 
-                                    ? `<img src="${imageUrl}" alt="Foto de ${tree.especie}" style="width: 100%; height: 300px; object-fit: cover; border-radius: 6px;">` 
-                                    : `<div style="text-align:center; padding: 20px; height: 300px; display:flex; align-items:center; justify-content:center; background: #f5f5f5; border-radius: 6px; color: #999;">Sem imagem</div>`
-                                }
-                            </div>
-                            <div id="rep-map-single" style="border: 1px solid #ccc; border-radius: 6px; min-height: 300px;"></div>
-                        </div>
+        <div class="report-wrapper-preview">
+            <div class="report-header">
+                <div class="header-logo">
+                    <h2>Arbor<span>IA</span></h2>
+                    <div style="font-size: 10pt; font-weight: 500; color: #333; margin-top: 5px;">Ficha Técnica Individual</div>
+                </div>
+                <div class="header-info">
+                    <p><strong>ID da Árvore:</strong> #${tree.id}</p>
+                    <p><strong>Emissão:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>
+                </div>
+            </div>
 
-                        <h3 class="section-header">📋 Dados Dendrométricos e Localização</h3>
-                        <div class="arb-card" style="margin-top: 0;">
-                            <div class="arb-card-body">
-                                <p><strong>Espécie:</strong> ${tree.especie}</p>
-                                <p><strong>Local:</strong> ${tree.local || 'Não informado'}</p>
-                                <p><strong>Avaliador:</strong> ${tree.avaliador || 'Não informado'}</p>
-                                <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
-                                <p><strong>Altura Estimada:</strong> ${tree.altura || 'N/A'} m</p>
-                                <p><strong>DAP:</strong> ${tree.dap || 'N/A'} cm</p>
-                                <p><strong>Coordenadas:</strong> ${tree.coordY || 'N/A'}, ${tree.coordX || 'N/A'}</p>
-                                <hr style="border:0; border-top:1px solid #eee; margin: 12px 0;">
-                                <p><strong>Nível de Risco:</strong> <span style="font-weight:bold; color:${riskColor};">${tree.risco}</span></p>
-                            </div>
-                        </div>
+            <div class="grid-2">
+                <div>
+                     ${imageUrl
+            ? `<img src="${imageUrl}" class="feature-image" alt="${tree.especie}">`
+            : `<div class="feature-image" style="display:flex;align-items:center;justify-content:center;color:#ccc;">Sem Foto</div>`
+        }
+                </div>
+                <div>
+                     <div id="rep-map-single"></div>
+                </div>
+            </div>
 
-                        <h3 class="section-header">⚠️ Fatores de Risco Identificados (TRAQ)</h3>
-                        <div class="arb-card" style="margin-top: 0;">
-                            <div class="arb-card-body">${riskFactorsHTML}</div>
+            <div class="grid-2">
+                <div>
+                    <h3 class="section-header">Dados da Árvore</h3>
+                    <table class="info-table">
+                        <tr><td class="info-label">Espécie:</td><td class="info-value" style="font-style:italic;">${tree.especie}</td></tr>
+                        <tr><td class="info-label">Altura (Est.):</td><td class="info-value">${tree.altura || '-'} m</td></tr>
+                        <tr><td class="info-label">DAP:</td><td class="info-value">${tree.dap || '-'} cm</td></tr>
+                        <tr><td class="info-label">Coordenadas:</td><td class="info-value">${tree.coordY || ''}, ${tree.coordX || ''}</td></tr>
+                        <tr><td class="info-label">Localização:</td><td class="info-value">${tree.local || 'Não informado'}</td></tr>
+                        <tr><td class="info-label">Avaliador:</td><td class="info-value">${tree.avaliador || '-'}</td></tr>
+                    </table>
+                </div>
+                
+                <div>
+                    <h3 class="section-header">Avaliação de Risco</h3>
+                    <div class="risk-box" style="border-left-color: ${riskColor};">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span style="font-weight:700; color:#333;">Classificação de Risco</span>
+                            <span class="badge" style="background-color:${riskColor}">${tree.risco}</span>
                         </div>
-                        
-                        <h3 class="section-header">📝 Observações de Campo</h3>
-                        <div class="arb-card" style="margin-top: 0;">
-                            <div class="arb-card-body">
-                                <p style="margin:0; line-height: 1.6;">${tree.observacoes || 'Nenhuma observação.'}</p>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
+                        <div style="font-size:9pt; font-weight:600; text-transform:uppercase; color:#555;">Fatores Agravantes</div>
+                        ${riskFactorsHTML}
+                    </div>
 
-            <tfoot>
-                <tr>
-                    <td>
-                        <div class="footer" style="width: 100%; text-align: right; font-size: 10pt;">
-                            Página <span class="page-number"></span>
-                        </div>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
+                    <h3 class="section-header" style="margin-top:20px;">Observações</h3>
+                    <div style="font-size:10pt; color:#333; line-height:1.5; background:#f9f9f9; padding:10px; border-radius:2px;">
+                        ${tree.observacoes || 'Nenhuma observação registrada.'}
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                ArborIA - Sistema de Inventário Arbóreo
+            </div>
+        </div>
     `;
 
     const mapRenderCallback = () => {
-        const L = window.L;
+        console.log('[IndividualReport] mapRenderCallback chamado');
+
+        if (typeof window.maplibregl === 'undefined') {
+            console.error('[IndividualReport] MapLibre GL JS não está carregado');
+            const container = document.getElementById('rep-map-single');
+            if (container) {
+                container.innerHTML = '<p style="text-align:center; padding:20px; color: #999;">Erro ao carregar mapa.</p>';
+            }
+            return;
+        }
+
+        const maplibregl = window.maplibregl;
         const mapContainer = document.getElementById('rep-map-single');
-        
+
+        if (!mapContainer) {
+            console.error('[IndividualReport] Container #rep-map-single não encontrado');
+            return;
+        }
+
         if (tree.coordY && tree.coordX) {
             let lat = parseFloat(tree.coordY);
             let lng = parseFloat(tree.coordX);
@@ -657,23 +685,70 @@ export async function generateIndividualReport(tree) {
             }
 
             if (!isNaN(lat) && !isNaN(lng)) {
-                const map = L.map(mapContainer).setView([lat, lng], 18);
-                L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
-                    attribution: '© Google Maps',
-                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-                }).addTo(map);
-                
+                const map = new maplibregl.Map({
+                    container: mapContainer,
+                    style: {
+                        version: 8,
+                        sources: {
+                            'satellite': {
+                                type: 'raster',
+                                tiles: ['https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'],
+                                tileSize: 256,
+                                attribution: '© Google'
+                            }
+                        },
+                        layers: [{
+                            id: 'satellite-layer',
+                            type: 'raster',
+                            source: 'satellite',
+                            minzoom: 0,
+                            maxzoom: 20
+                        }]
+                    },
+                    center: [lng, lat],
+                    zoom: 18
+                });
+
                 const color = getRiskColor(tree.risco);
-                L.circleMarker([lat, lng], {
-                    radius: 10,
-                    color: 'white',
-                    weight: 3,
-                    fillColor: color,
-                    fillOpacity: 0.9
-                }).addTo(map)
-                    .bindPopup(`<b>${tree.especie}</b><br>ID: ${tree.id}<br>Risco: ${tree.risco}`).openPopup();
+                map.on('load', () => {
+                    map.addSource('single-tree', {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            geometry: {
+                                type: 'Point',
+                                coordinates: [lng, lat]
+                            },
+                            properties: {
+                                especie: tree.especie,
+                                id: tree.id,
+                                risco: tree.risco,
+                                color: color
+                            }
+                        }
+                    });
+
+                    map.addLayer({
+                        id: 'single-tree-marker',
+                        type: 'circle',
+                        source: 'single-tree',
+                        paint: {
+                            'circle-radius': 10,
+                            'circle-color': 'white',
+                            'circle-stroke-color': ['get', 'color'],
+                            'circle-stroke-width': 3,
+                            'circle-opacity': 0.9
+                        }
+                    });
+
+                    // Adicionar popup
+                    new maplibregl.Popup({ closeButton: false })
+                        .setLngLat([lng, lat])
+                        .setHTML(`< b > ${tree.especie}</b > <br>ID: ${tree.id}<br>Risco: ${tree.risco}`)
+                        .addTo(map);
+                });
             } else {
-                 mapContainer.innerHTML = '<p style="text-align:center; padding:20px; color: #999;">Coordenadas inválidas.</p>';
+                mapContainer.innerHTML = '<p style="text-align:center; padding:20px; color: #999;">Coordenadas inválidas.</p>';
             }
         } else {
             mapContainer.innerHTML = '<p style="text-align:center; padding:20px; color: #999;">Coordenadas não disponíveis.</p>';

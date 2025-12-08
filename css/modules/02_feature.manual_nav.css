@@ -23,8 +23,10 @@
 /* --- GRID DE ÍCONES (Mobile "Launcher") --- */
 .topicos-container {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 Colunas exatas */
-  gap: 15px; /* Espaçamento entre ícones */
+  grid-template-columns: repeat(3, 1fr);
+  /* 3 Colunas exatas */
+  gap: 15px;
+  /* Espaçamento entre ícones */
   padding-bottom: 20px;
 }
 
@@ -32,29 +34,36 @@
 .topico-btn {
   background: var(--color-bg-card);
   border: none;
-  border-radius: 24px; /* Mais arredondado, estilo iOS */
+  border-radius: 24px;
+  /* Mais arredondado, estilo iOS */
   padding: 15px 5px;
-  
+
   /* Layout Flex Vertical (Ícone em cima, Texto embaixo) */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
-  
+
   /* Visual */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Sombra mais suave */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  /* Sombra mais suave */
   cursor: pointer;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-  min-height: 110px; /* Altura fixa para uniformidade */
+  min-height: 110px;
+  /* Altura fixa para uniformidade */
   position: relative;
   overflow: hidden;
 }
 
 /* Estado Ativo/Toque */
+/* Estado Ativo/Toque */
 .topico-btn:active {
-  transform: scale(0.95);
-  background-color: #f0f2f5; /* Feedback de toque mais sutil */
+  transform: scale(0.96);
+  background-color: #e8f5e9;
+  /* Light green tint for immediate feedback */
+  box-shadow: 0 0 0 2px var(--color-forest);
+  /* Clear active border indicator */
 }
 
 /* Ícones (PNG) */
@@ -63,24 +72,28 @@
   height: 42px;
   object-fit: contain;
   pointer-events: none;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); /* Sombra no ícone para "pop" */
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  /* Sombra no ícone para "pop" */
   margin-bottom: 2px;
 }
 
 /* Texto do Botão */
 .topico-btn span,
 .topico-btn {
-  font-size: 0.75rem; /* Texto pequeno estilo App */
+  font-size: 0.75rem;
+  /* Texto pequeno estilo App */
   font-weight: 600;
   color: var(--color-text-main);
   text-align: center;
   line-height: 1.2;
-  word-wrap: break-word; /* Quebra palavras longas se necessário */
+  word-wrap: break-word;
+  /* Quebra palavras longas se necessário */
 }
 
 /* Separador Visual (Linha) */
 .nav-separator {
-  grid-column: 1 / -1; /* Ocupa toda a largura */
+  grid-column: 1 / -1;
+  /* Ocupa toda a largura */
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--color-border), transparent);
   margin: 10px 0;
@@ -89,15 +102,17 @@
 /* --- BOTÃO VOLTAR (Header de Navegação) --- */
 /* Aparece apenas quando entramos em uma seção no Mobile */
 #back-btn-container {
-  display: none; /* JS controla o display: flex */
+  display: none;
+  /* JS controla o display: flex */
   align-items: center;
   padding: 10px 1rem;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--color-border);
-  
+
   position: sticky;
-  top: var(--header-height); /* Logo abaixo do Header Principal */
+  top: var(--header-height);
+  /* Logo abaixo do Header Principal */
   z-index: 900;
 }
 
@@ -116,6 +131,7 @@
 
 /* --- DESKTOP (Sidebar Layout) --- */
 @media (min-width: 769px) {
+
   /* Sidebar Fixa */
   .mapa-navegacao {
     background: var(--color-bg-card);
@@ -124,9 +140,11 @@
     box-shadow: var(--shadow-sm);
     height: fit-content;
     position: sticky;
-    top: 90px; /* Espaço do header */
+    top: 90px;
+    /* Espaço do header */
     max-height: calc(100vh - 100px);
-    overflow-y: auto; /* Scroll interno se a tela for pequena verticalmente */
+    overflow-y: auto;
+    /* Scroll interno se a tela for pequena verticalmente */
   }
 
   .mapa-navegacao h2 {
@@ -145,25 +163,34 @@
 
   /* Botão Estilo Lista (Horizontal) */
   .topico-btn {
-    flex-direction: row; /* Ícone ao lado do texto */
+    flex-direction: row;
+    /* Ícone ao lado do texto */
     align-items: center;
     justify-content: flex-start;
-    min-height: auto; /* Altura automática */
+    min-height: auto;
+    /* Altura automática */
     padding: 10px 12px;
-    background: transparent; /* Fundo transparente até hover */
+    background: transparent;
+    /* Fundo transparente até hover */
     box-shadow: none;
     border-radius: 8px;
     gap: 12px;
   }
 
   .topico-btn:hover {
-    background-color: #e0f2f1; /* Verde bem claro */
+    background-color: #e0f2f1;
+    /* Verde bem claro */
   }
 
-  /* Estado Ativo (Desktop precisa de indicador de "onde estou") */
+  /* Estado Ativo (Desktop) */
   .topico-btn.active {
-    background-color: #b2dfdb;
+    background-color: rgba(var(--color-forest-rgb), 0.15);
+    /* Tinted background via variable */
     color: var(--color-forest);
+    border-left: 4px solid var(--color-forest);
+    /* Clear indicator */
+    border-radius: 4px;
+    /* Slightly less rounded to match list feel */
   }
 
   .topico-btn.active span {
@@ -172,9 +199,11 @@
   }
 
   .topico-btn img {
-    width: 24px; /* Ícone menor no desktop */
+    width: 24px;
+    /* Ícone menor no desktop */
     height: 24px;
-    filter: none; /* Remove sombra pesada */
+    filter: none;
+    /* Remove sombra pesada */
     margin-bottom: 0;
   }
 
@@ -187,7 +216,7 @@
     background: var(--color-border);
     margin: 10px 0;
   }
-  
+
   /* Oculta container de voltar no Desktop (sempre visível) */
   #back-btn-container {
     display: none !important;

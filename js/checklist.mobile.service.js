@@ -517,7 +517,7 @@ const showCurrentStepCard = () => {
         max-height: 60vh !important;
         overflow-y: auto !important;
       `;
-      
+
       // Renderiza o conteúdo apenas do card que se torna ativo
       switch (checklistState.currentStep) {
         case 1:
@@ -720,6 +720,53 @@ const transferDataToForm = () => {
   if (mitigationInput) {
     mitigationInput.value = checklistState.mitigationAction;
   }
+
+  // Adicionando os campos TRAQ calculados
+  // Estes campos são usados para preencher os valores de falha provável e alvo
+  // que serão armazenados no objeto treeData
+  window.currentRiskAssessment = window.currentRiskAssessment || {};
+  window.currentRiskAssessment.failureProb = checklistState.failureProb;
+  window.currentRiskAssessment.impactProb = checklistState.impactProb;
+  window.currentRiskAssessment.targetCategory = checklistState.targetCategory;
+  window.currentRiskAssessment.mitigationAction = checklistState.mitigationAction;
+
+  // Adicionando os campos TRAQ ao formulário para que sejam transferidos corretamente
+  // (form já está definido acima)
+  if (form) {
+    // Adiciona campos ocultos com os valores TRAQ calculados
+    let failureProbField = form.querySelector('input[name="failure_prob"]');
+    if (!failureProbField) {
+      failureProbField = document.createElement('input');
+      failureProbField.type = 'hidden';
+      failureProbField.name = 'failure_prob';
+      failureProbField.id = 'failure-prob-field';
+      form.appendChild(failureProbField);
+    }
+    failureProbField.value = checklistState.failureProb;
+
+    let targetTypeField = form.querySelector('input[name="target_type"]');
+    if (!targetTypeField) {
+      targetTypeField = document.createElement('input');
+      targetTypeField.type = 'hidden';
+      targetTypeField.name = 'target_type';
+      targetTypeField.id = 'target-type-field';
+      form.appendChild(targetTypeField);
+    }
+    targetTypeField.value = checklistState.impactProb; // impactProb é o tipo de alvo calculado
+  }
+
+  // Atualizar os valores TRAQ no objeto global para que sejam usados na criação da árvore
+  window.currentRiskAssessment = {
+    ...window.currentRiskAssessment,
+    failureProb: checklistState.failureProb,
+    targetType: checklistState.impactProb, // Armazenando como targetType
+    targetCategory: checklistState.targetCategory,
+    riskFactors: checklistState.riskFactors,
+    totalScore: checklistState.totalScore,
+    riskLevel: checklistState.riskLevel,
+    residualRisk: checklistState.residualRisk,
+    mitigationAction: checklistState.mitigationAction
+  };
 };
 
 // ============================================================
@@ -739,12 +786,12 @@ const openChecklist = () => {
     height: window.innerHeight,
     isMobile: window.innerWidth <= 768
   });
-  
+
   setupEventListeners();
 
   // Força a visibilidade do container com múltiplas abordagens
   els.container.classList.add("active");
-  
+
   // Define estilos inline para sobrescrever qualquer CSS
   els.container.style.cssText = `
     display: flex !important;
@@ -765,7 +812,7 @@ const openChecklist = () => {
     box-sizing: border-box !important;
     margin: 0 !important;
   `;
-  
+
   checklistState.isActive = true;
 
   document.body.style.overflow = "hidden";
@@ -799,7 +846,7 @@ const openChecklist = () => {
 const closeChecklist = () => {
   const els = getElements();
   if (!els) return;
-  
+
   els.container.classList.remove("active");
   els.container.style.cssText = `
     display: none !important;
@@ -807,7 +854,7 @@ const closeChecklist = () => {
     opacity: 0 !important;
     pointer-events: none !important;
   `;
-  
+
   checklistState.isActive = false;
 
   document.body.style.overflow = "";
@@ -890,7 +937,7 @@ export const ChecklistMobileService = {
       console.log("Display:", container.style.display);
       console.log("Z-index:", container.style.zIndex || window.getComputedStyle(container).zIndex);
       console.log("Position:", container.style.position || window.getComputedStyle(container).position);
-      
+
       // Debug dos elementos internos
       const wrapper = container.querySelector('.mobile-checklist-wrapper-fullscreen');
       console.log("Wrapper:", wrapper ? wrapper : "NÃO ENCONTRADO");
@@ -898,14 +945,14 @@ export const ChecklistMobileService = {
         console.log("Wrapper visível:", wrapper.offsetParent !== null);
         console.log("Wrapper display:", wrapper.style.display || window.getComputedStyle(wrapper).display);
       }
-      
+
       const stepper = document.getElementById("risk-stepper");
       console.log("Stepper:", stepper ? stepper : "NÃO ENCONTRADO");
       if (stepper) {
         console.log("Stepper visível:", stepper.offsetParent !== null);
         console.log("Stepper display:", stepper.style.display || window.getComputedStyle(stepper).display);
       }
-      
+
       const cards = [
         document.getElementById("question-card"),
         document.getElementById("target-card"),
@@ -920,7 +967,7 @@ export const ChecklistMobileService = {
           console.log(`  Opacity: ${card.style.opacity || window.getComputedStyle(card).opacity}`);
         }
       });
-      
+
       console.log("========================");
     } else {
       console.error("Container não encontrado no DOM");
@@ -946,7 +993,7 @@ export const ChecklistMobileService = {
         justify-content: flex-start !important;
         padding: 10px !important;
       `;
-      
+
       // Força wrapper
       const wrapper = container.querySelector('.mobile-checklist-wrapper-fullscreen');
       if (wrapper) {
@@ -960,7 +1007,7 @@ export const ChecklistMobileService = {
           max-width: 500px !important;
         `;
       }
-      
+
       // Força stepper
       const stepper = document.getElementById("risk-stepper");
       if (stepper) {
@@ -972,7 +1019,7 @@ export const ChecklistMobileService = {
           justify-content: space-between !important;
         `;
       }
-      
+
       // Força primeiro card
       const firstCard = document.getElementById("question-card");
       if (firstCard) {
@@ -992,7 +1039,7 @@ export const ChecklistMobileService = {
           z-index: 10 !important;
         `;
       }
-      
+
       // Força navegação
       const nav = container.querySelector('.mobile-checklist-nav');
       if (nav) {
@@ -1004,7 +1051,7 @@ export const ChecklistMobileService = {
           justify-content: space-between !important;
         `;
       }
-      
+
       console.log("Modal forçado a aparecer com todos os elementos");
       ChecklistMobileService.debug();
     } else {

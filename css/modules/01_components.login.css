@@ -11,13 +11,15 @@
     --white: #ffffff;
 }
 
-body, html {
+body,
+html {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
     font-family: 'Poppins', sans-serif;
-    overflow: hidden; /* Evita barras de rolagem na visualização principal */
+    overflow: hidden;
+    /* Evita barras de rolagem na visualização principal */
 }
 
 .login-container {
@@ -33,15 +35,18 @@ body, html {
     color: var(--white);
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Alinha o conteúdo 'brand-content' ao topo */
+    align-items: flex-start;
+    /* Alinha o conteúdo 'brand-content' ao topo */
     padding: 40px;
-    position: relative; /* Para positioning de elementos internos se necessário */
+    position: relative;
+    /* Para positioning de elementos internos se necessário */
 }
 
 .brand-content {
     text-align: left;
     max-width: 400px;
-    padding-top: 30px; /* Adiciona um padding no topo para afastar do limite */
+    padding-top: 30px;
+    /* Adiciona um padding no topo para afastar do limite */
 }
 
 .brand-content .logo {
@@ -53,7 +58,8 @@ body, html {
 
 .brand-content .logo i {
     font-size: 48px;
-    color: var(--cyan-vibrant); /* Cor azul para o ícone */
+    color: var(--cyan-vibrant);
+    /* Cor azul para o ícone */
 }
 
 /* Modificação Solicitada: Correção de Contraste no Texto ArborIA */
@@ -61,18 +67,24 @@ body, html {
     font-size: 48px;
     font-weight: 700;
     margin: 0;
-    color: var(--white); /* Alterado de --teal-dark para --white para alto contraste */
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Sombra para garantir legibilidade sobre gradiente */
+    color: var(--white);
+    /* Alterado de --teal-dark para --white para alto contraste */
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    /* Sombra para garantir legibilidade sobre gradiente */
 }
 
 /* Modificação Solicitada: Destaque visual para o slogan/tagline */
 .brand-content .tagline {
-    font-size: 22px; /* Aumentado levemente */
+    font-size: 22px;
+    /* Aumentado levemente */
     margin-bottom: 40px;
-    font-weight: 600; /* Mais peso para leitura */
+    font-weight: 600;
+    /* Mais peso para leitura */
     color: var(--white);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4); /* Sombra para destaque do fundo */
-    background-color: rgba(255, 255, 255, 0.15); /* Pílula sutil */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    /* Sombra para destaque do fundo */
+    background-color: rgba(255, 255, 255, 0.15);
+    /* Pílula sutil */
     padding: 8px 20px;
     border-radius: 50px;
     display: inline-block;
@@ -96,7 +108,8 @@ body, html {
 
 .brand-content .feature-list i {
     font-size: 24px;
-    width: 30px; /* Alinhamento dos ícones */
+    width: 30px;
+    /* Alinhamento dos ícones */
 }
 
 /* Painel Direito (Formulário de Login) */
@@ -124,12 +137,17 @@ body, html {
 
 .login-form-container .input-group,
 .register-form-container .input-group {
-    display: flex; /* Use flexbox for alignment */
-    align-items: center; /* Vertically center items */
+    display: flex;
+    /* Use flexbox for alignment */
+    align-items: center;
+    /* Vertically center items */
     margin-bottom: 20px;
-    border: 1px solid var(--grey-light); /* Move border to input-group for visual consistency */
-    border-radius: 999px; /* rounded-full */
-    padding: 0 20px; /* Adjust padding for the group */
+    border: 1px solid var(--grey-light);
+    /* Move border to input-group for visual consistency */
+    border-radius: 999px;
+    /* rounded-full */
+    padding: 0 20px;
+    /* Adjust padding for the group */
 }
 
 .login-form-container .input-group i,
@@ -140,20 +158,28 @@ body, html {
     /* transform: translateY(-50%); */
     /* left: 20px; */
     color: var(--grey-dark);
-    margin-right: 10px; /* Space between icon and input */
+    margin-right: 10px;
+    /* Space between icon and input */
 }
 
 .login-form-container .input-group input,
 .register-form-container .input-group input {
-    flex-grow: 1; /* Allow input to take remaining space */
-    width: auto; /* Override 100% width */
-    padding: 15px 0; /* Adjust padding as border and horizontal padding are on parent */
-    border: none; /* Remove border from input, it's on the parent group */
-    border-radius: 0; /* Remove border-radius from input */
+    flex-grow: 1;
+    /* Allow input to take remaining space */
+    width: auto;
+    /* Override 100% width */
+    padding: 15px 0;
+    /* Adjust padding as border and horizontal padding are on parent */
+    border: none;
+    /* Remove border from input, it's on the parent group */
+    border-radius: 0;
+    /* Remove border-radius from input */
     font-size: 16px;
     color: var(--grey-dark);
-    box-sizing: border-box; /* Garante que padding não afete a largura total */
-    outline: none; /* Remove outline on focus */
+    box-sizing: border-box;
+    /* Garante que padding não afete a largura total */
+    outline: none;
+    /* Remove outline on focus */
 }
 
 .login-form-container .input-group #togglePassword,
@@ -162,28 +188,34 @@ body, html {
     /* These are now part of the flex container */
     /* left: auto; */
     /* right: 20px; */
-    margin-left: 10px; /* Space from the input field */
+    margin-left: 10px;
+    /* Space from the input field */
     cursor: pointer;
 }
 
-.login-form-container .login-btn {
+.login-form-container .login-btn,
+.register-form-container .login-btn {
     width: 100%;
     padding: 15px;
     border: none;
-    border-radius: 999px; /* rounded-full */
-    background-color: var(--cyan-vibrant);
+    border-radius: 999px;
+    /* rounded-full */
+    background: linear-gradient(90deg, #1565c0 0%, #2e7d32 100%);
+    /* Identity Gradient */
     color: var(--white);
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     margin-top: 10px;
-    box-shadow: 0 4px 15px rgba(0, 188, 212, 0.4);
+    box-shadow: 0 4px 15px rgba(21, 101, 192, 0.4);
     transition: all 0.3s ease;
 }
 
-.login-form-container .login-btn:hover {
+.login-form-container .login-btn:hover,
+.register-form-container .login-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 188, 212, 0.5);
+    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.5);
+    filter: brightness(1.1);
 }
 
 .login-form-container .forgot-password-link {
@@ -246,7 +278,8 @@ body, html {
 }
 
 .login-form-container .secondary-btn {
-    background-color: var(--teal-light); /* Uma cor diferente para o botão secundário */
+    background: var(--teal-light);
+    /* Override gradient with solid color */
     box-shadow: 0 4px 15px rgba(0, 137, 123, 0.4);
 }
 
@@ -284,138 +317,185 @@ body, html {
 
 /* Responsividade */
 @media (max-width: 900px) {
-    body, html {
-        overflow-x: hidden; /* Prevent horizontal scroll */
-        overflow-y: auto; /* Allow vertical scroll for the entire page */
+
+    body,
+    html {
+        overflow-x: hidden;
+        /* Prevent horizontal scroll */
+        overflow-y: auto;
+        /* Allow vertical scroll for the entire page */
     }
 
     .login-container {
         flex-direction: column;
-        height: auto; /* Allow content to dictate height */
-        min-height: 100vh; /* Ensure it covers full viewport initially */
-        position: relative; /* For absolute positioning of children */
+        height: auto;
+        /* Allow content to dictate height */
+        min-height: 100vh;
+        /* Ensure it covers full viewport initially */
+        position: relative;
+        /* For absolute positioning of children */
     }
 
     .login-panel-left {
-        flex: none; /* Remove flex sizing */
+        flex: none;
+        /* Remove flex sizing */
         width: 100%;
-        height: 65vh; /* Gradient takes up upper part */
-        min-height: 300px; /* Minimum height for gradient */
-        position: sticky; /* Make it sticky */
+        height: 65vh;
+        /* Gradient takes up upper part */
+        min-height: 300px;
+        /* Minimum height for gradient */
+        position: sticky;
+        /* Make it sticky */
         top: 0;
-        z-index: 1; /* Ensure it's behind the white panel */
+        z-index: 1;
+        /* Ensure it's behind the white panel */
         /* Ensure content is centered even on mobile */
         display: flex;
-        flex-direction: column; /* Stack content vertically */
-        justify-content: flex-start; /* FIX: Alinha ao topo para garantir visibilidade */
-        align-items: flex-start; /* Aligns content to the top */
-        padding: 40px 20px 20px 20px; /* FIX: Padding superior aumentado para afastar da borda */
+        flex-direction: column;
+        /* Stack content vertically */
+        justify-content: flex-start;
+        /* FIX: Alinha ao topo para garantir visibilidade */
+        align-items: flex-start;
+        /* Aligns content to the top */
+        padding: 40px 20px 20px 20px;
+        /* FIX: Padding superior aumentado para afastar da borda */
         box-sizing: border-box;
     }
 
     .brand-content {
-        max-width: 90%; /* Adjust for smaller screens */
-        text-align: left; /* Modificado de center para left */
-        margin: 0; /* Removido margin: 0 auto para alinhamento à esquerda */
+        max-width: 90%;
+        /* Adjust for smaller screens */
+        text-align: left;
+        /* Modificado de center para left */
+        margin: 0;
+        /* Removido margin: 0 auto para alinhamento à esquerda */
     }
 
     .brand-content .logo h1 {
-        font-size: 40px; /* Smaller logo title */
+        font-size: 40px;
+        /* Smaller logo title */
     }
 
     .brand-content .tagline {
-        font-size: 18px; /* Smaller tagline */
-        margin-bottom: 20px; /* FIX: Reduzido de 40px para 20px para economizar espaço vertical */
+        font-size: 18px;
+        /* Smaller tagline */
+        margin-bottom: 20px;
+        /* FIX: Reduzido de 40px para 20px para economizar espaço vertical */
         /* Removidos estilos de "pílula" */
         background-color: transparent;
         padding: 0;
         border-radius: 0;
-        display: block; /* Para que o text-shadow funcione melhor */
+        display: block;
+        /* Para que o text-shadow funcione melhor */
         backdrop-filter: none;
         border: none;
     }
 
     /* Modificação Solicitada: Tópicos de Funcionalidades Mobile */
     .brand-content .feature-list {
-        max-width: 300px; /* Definir uma largura máxima para o bloco */
-        margin: 0 auto; /* Centralizar o bloco horizontalmente */
-        padding: 0; /* Remover padding padrão da lista se houver */
-        list-style: none; /* Remover marcadores de lista */
+        max-width: 300px;
+        /* Definir uma largura máxima para o bloco */
+        margin: 0 auto;
+        /* Centralizar o bloco horizontalmente */
+        padding: 0;
+        /* Remover padding padrão da lista se houver */
+        list-style: none;
+        /* Remover marcadores de lista */
     }
 
     .brand-content .feature-list li {
         display: flex;
-        align-items: flex-start; /* Alinhar o topo do ícone com o topo do texto */
-        margin-bottom: 15px; /* Espaçamento entre os itens - ajustado de 12px para 15px */
-        
+        align-items: flex-start;
+        /* Alinhar o topo do ícone com o topo do texto */
+        margin-bottom: 15px;
+        /* Espaçamento entre os itens - ajustado de 12px para 15px */
+
         /* Removidos estilos de "cartão" */
         background-color: transparent;
         backdrop-filter: none;
         border-radius: 0;
         padding: 0;
-        width: auto; /* Ajusta largura ao conteúdo, não fit-content */
-        margin-left: 0; /* Removido auto para alinhar à esquerda do bloco centralizado */
-        margin-right: 0; /* Removido auto para alinhar à esquerda do bloco centralizado */
-        box-shadow: none; /* Já estava none, garantindo */
+        width: auto;
+        /* Ajusta largura ao conteúdo, não fit-content */
+        margin-left: 0;
+        /* Removido auto para alinhar à esquerda do bloco centralizado */
+        margin-right: 0;
+        /* Removido auto para alinhar à esquerda do bloco centralizado */
+        box-shadow: none;
+        /* Já estava none, garantindo */
     }
-    
+
     /* Garante que o ícone e o texto estejam alinhados verticalmente dentro do box */
     .brand-content .feature-list li i {
-        margin-right: 10px; /* Espaço entre ícone e texto */
-        width: 24px; /* Largura fixa para alinhar textos */
+        margin-right: 10px;
+        /* Espaço entre ícone e texto */
+        width: 24px;
+        /* Largura fixa para alinhar textos */
         text-align: center;
-        color: var(--white); /* Garante que o ícone é branco */
+        color: var(--white);
+        /* Garante que o ícone é branco */
     }
 
     .brand-content .feature-list li span {
-        text-align: left; /* Alinhar o texto à esquerda dentro do seu contêiner */
-        color: var(--white); /* Cor do texto */
-        font-size: 16px; /* Ajuste de tamanho da fonte se necessário */
-        line-height: 1.4; /* Ajuste de line-height se necessário */
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Sombra sutil para legibilidade */
+        text-align: left;
+        /* Alinhar o texto à esquerda dentro do seu contêiner */
+        color: var(--white);
+        /* Cor do texto */
+        font-size: 16px;
+        /* Ajuste de tamanho da fonte se necessário */
+        line-height: 1.4;
+        /* Ajuste de line-height se necessário */
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        /* Sombra sutil para legibilidade */
     }
 
     .login-panel-right {
-        flex: none; /* Remove flex sizing */
+        flex: none;
+        /* Remove flex sizing */
         position: absolute;
         bottom: 0;
         left: 0;
         right: 0;
         width: 100%;
-        min-height: 50vh; /* Start partially covering gradient */
+        min-height: 50vh;
+        /* Start partially covering gradient */
         background-color: var(--white);
-        border-top-left-radius: 30px; /* Rounded top corners */
+        border-top-left-radius: 30px;
+        /* Rounded top corners */
         border-top-right-radius: 30px;
-        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3); /* More prominent shadow */
-        z-index: 2; /* Ensure it's above the gradient */
-        transform: translateY(20%); /* Start slightly lower, adjust based on content */
-        transition: transform 0.4s ease-out; /* Smooth transition for slide up */
-        padding: 40px 20px; /* Adjust padding for mobile */
-        box-sizing: border-box; /* Include padding in width/height */
-        overflow-y: auto; /* Allow scrolling inside the white panel if content is too long */
-        max-height: 90vh; /* Prevent it from taking up entire screen on scroll */
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
+        /* More prominent shadow */
+        z-index: 2;
+        /* Ensure it's above the gradient */
+        transform: translateY(20%);
+        /* Start slightly lower, adjust based on content */
+        transition: transform 0.4s ease-out;
+        /* Smooth transition for slide up */
+        padding: 40px 20px;
+        /* Adjust padding for mobile */
+        box-sizing: border-box;
+        /* Include padding in width/height */
+        overflow-y: auto;
+        /* Allow scrolling inside the white panel if content is too long */
+        max-height: 90vh;
+        /* Prevent it from taking up entire screen on scroll */
     }
 
     .mobile-scroll-spacer {
-        height: 40vh; /* This creates the scroll space */
+        height: 40vh;
+        /* This creates the scroll space */
         width: 100%;
-        flex-shrink: 0; /* Prevents it from shrinking */
+        flex-shrink: 0;
+        /* Prevents it from shrinking */
     }
 
-    .login-form-container, .register-form-container {
-        max-width: 100%; /* Forms take full width within panel-right */
-        padding: 0 10px; /* Inner padding for forms */
+    .login-form-container,
+    .register-form-container {
+        max-width: 100%;
+        /* Forms take full width within panel-right */
+        padding: 0 10px;
+        /* Inner padding for forms */
     }
 }
 
 /* Estilos específicos para o botão de registro */
-#register-btn {
-    background-color: var(--teal-light);
-    box-shadow: 0 4px 15px rgba(0, 137, 123, 0.4);
-    text-align: center;
-}
-
-#register-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 137, 123, 0.5);
-}

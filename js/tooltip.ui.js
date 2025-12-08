@@ -119,8 +119,7 @@ export const TooltipUI = {
         this.elements.backdrop.addEventListener('click', () => this.hideTooltip());
         this.elements.closeButton.addEventListener('click', () => this.hideTooltip());
         
-        this.elements.card.addEventListener('mouseenter', () => clearTimeout(this._hideTimer));
-        this.elements.card.addEventListener('mouseleave', () => this.hideTooltip());
+        // Remove listeners automáticos de fechamento no card
 
         // Fecha com a tecla ESC
         document.addEventListener('keydown', (e) => {
@@ -136,8 +135,6 @@ export const TooltipUI = {
         document.body.addEventListener('focusin', this._handleTooltipEvent.bind(this));
         document.body.addEventListener('focusout', this._handleTooltipEvent.bind(this));
         document.body.addEventListener('click', this._handleTooltipEvent.bind(this)); // Mantém click para compatibilidade touch
-
-        
     },
 
     _handleTooltipEvent(e) {
@@ -159,25 +156,23 @@ export const TooltipUI = {
                 return;
             }
 
-            // Atraso para hover, imediato para foco
-            const delay = e.type === 'mouseover' ? 300 : 0;
+            // Atraso reduzido para hover para evitar flickering, imediato para foco
+            const delay = e.type === 'mouseover' ? 50 : 0;
             this._hoverTimer = setTimeout(() => {
                 this.showTooltip(termText, definition);
             }, delay);
 
-        } else if (e.type === 'mouseout' || e.type === 'focusout') {
+        } else if (e.type === 'focusout') {
             clearTimeout(this._hoverTimer);
-            this._hideTimer = setTimeout(() => {
-                this.hideTooltip();
-            }, 200); // Delay para permitir mover para o card
+            // Não fecha automaticamente no mouseout, apenas no focusout para acessibilidade
 
         } else if (e.type === 'click') {
+            e.preventDefault(); // Previne comportamento padrão do clique
             clearTimeout(this._hoverTimer);
             clearTimeout(this._hideTimer);
             this.showTooltip(termText, definition);
         }
     },
-
     showTooltip(title, definition) {
         let description = '';
         let imageUrl = null;
@@ -193,7 +188,6 @@ export const TooltipUI = {
 
         if(this.elements.title) this.elements.title.textContent = title;
         if(this.elements.text) this.elements.text.textContent = description;
-        
         if (this.elements.imageContainer) {
             this.elements.imageContainer.innerHTML = '';
             if (imageUrl) {

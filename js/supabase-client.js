@@ -142,6 +142,10 @@ export const ApiService = {
           risco: row.risco,
           riscoClass: row.riscoclass,
 
+          // Campos TRAQ - Falha provável e Alvo
+          failureProb: row.failureprob,
+          targetType: row.targettype,
+
           // Mídia
           hasPhoto: row.hasphoto || false,
           photoUrl: row.image_url || null,
@@ -157,6 +161,84 @@ export const ApiService = {
     } catch (error) {
       console.error("[Supabase] ❌ Erro ao buscar árvores:", error);
       return { data: [], error: error.message };
+    }
+  },
+
+  /**
+   * Busca uma árvore específica por ID
+   * Usa CoordinatesService para processar coordenadas automaticamente
+   */
+  async getTree(treeId) {
+    if (!_supabase) return { data: null, error: "Offline" };
+
+    try {
+      const { data: dbData, error } = await _supabase
+        .from("arvores")
+        .select("*")
+        .eq("id", treeId)
+        .is("deleted_at", null)
+        .single(); // Usar single() pois estamos buscando uma árvore específica
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Registro não encontrado
+          return { data: null, error: null };
+        }
+        console.error("[Supabase] ❌ Erro ao buscar árvore:", error);
+        return { data: null, error };
+      }
+
+      if (!dbData) {
+        return { data: null, error: null };
+      }
+
+      // Processar coordenadas usando o serviço centralizado
+      const coords = CoordinatesService.prepareFromDatabase(dbData);
+
+      const mappedTree = {
+        id: dbData.id,
+        data: dbData.data,
+        especie: dbData.especie,
+        nome: dbData.nome,
+        local: dbData.local,
+        avaliador: dbData.avaliador,
+        observacoes: dbData.observacoes,
+
+        // Medidas dendrométricas
+        dap: dbData.dap,
+        altura: dbData.altura,
+
+        // Coordenadas (todas as versões para compatibilidade)
+        ...coords,
+
+        // Campos TRAQ
+        pontuacao: dbData.pontuacao,
+        riskFactors: dbData.riskfactors,
+        riskLevel: dbData.risklevel,
+        residualRisk: dbData.residualrisk,
+        mitigation: dbData.mitigation,
+        targetCategory: dbData.targetcategory,
+        risco: dbData.risco,
+        riscoClass: dbData.riscoclass,
+
+        // Campos TRAQ - Falha provável e Alvo
+        failureProb: dbData.failureprob,
+        targetType: dbData.targettype,
+
+        // Mídia
+        hasPhoto: dbData.hasphoto || false,
+        photoUrl: dbData.image_url || null,
+
+        // Timestamps
+        created_at: dbData.created_at,
+        updated_at: dbData.updated_at,
+      };
+
+      console.log(`[Supabase] ✓ Árvore ${treeId} carregada`);
+      return { data: mappedTree, error: null };
+    } catch (error) {
+      console.error("[Supabase] ❌ Erro ao buscar árvore:", error);
+      return { data: null, error: error.message };
     }
   },
 
@@ -221,6 +303,10 @@ export const ApiService = {
         targetcategory: treeData.targetCategory,
         risco: treeData.risco,
         riscoclass: treeData.riscoClass,
+
+        // Campos TRAQ - Falha provável e Alvo
+        failureprob: treeData.failureProb,
+        targettype: treeData.targetType,
 
         // Mídia
         hasphoto: !!treeData.hasPhoto,
@@ -334,6 +420,10 @@ export const ApiService = {
           risco: treeData.risco,
           riscoclass: treeData.riscoClass,
 
+          // Campos TRAQ - Falha provável e Alvo
+          failureprob: treeData.failureProb,
+          targettype: treeData.targetType,
+
           // Mídia
           hasphoto: !!treeData.hasPhoto,
           image_url: treeData.photoUrl,
@@ -404,6 +494,10 @@ export const ApiService = {
           targetCategory: row.targetcategory,
           risco: row.risco,
           riscoClass: row.riscoclass,
+
+          // Campos TRAQ - Falha provável e Alvo
+          failureProb: row.failureprob,
+          targetType: row.targettype,
 
           // Mídia
           hasPhoto: row.hasphoto || false,
@@ -493,6 +587,359 @@ export const ApiService = {
   },
 
   // ---------------------------------------------------
+  // OPERAÇÕES COM PLANOS DE INTERVENÇÃO
+  // ---------------------------------------------------
+
+  /**
+   * Salva um plano de intervenção no banco de dados
+   * Cada árvore pode ter apenas um plano por usuário
+   */
+  async savePlan(planData) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não autenticado" };
+
+      // Verificar se já existe um plano para esta árvore
+      const existingResult = await this.checkExistingPlan(planData.treeId);
+      if (existingResult.error) throw existingResult.error;
+
+      const dbPayload = {
+        id: planData.id,
+        tree_id: planData.treeId,
+        user_id: user.id,
+        intervention_type: planData.interventionType,
+        techniques: planData.techniques || [],
+        justification: planData.justification,
+        tools: planData.tools || [],
+        epis: planData.epis || [],
+        team_composition: planData.teamComposition,
+        schedule: planData.schedule,
+        durations: planData.durations,
+        responsible: planData.responsible,
+        responsible_title: planData.responsibleTitle,
+        waste_destination: planData.wasteDestination,
+        execution_instructions: planData.executionInstructions,
+        failure_prob: planData.failureProb,  // Adicionando campo de falha provável
+        target_type: planData.targetType,    // Adicionando campo de alvo
+        updated_at: new Date().toISOString()
+      };
+
+      let result;
+      if (existingResult.data) {
+        // Update existing plan - remove id from payload to avoid constraint issues
+        const updatePayload = { ...dbPayload };
+        delete updatePayload.id; // Don't include id in update payload
+        result = await _supabase
+          .from('planos_intervencao')
+          .update(updatePayload)
+          .eq('id', existingResult.data.id);
+      } else {
+        // Insert new plan
+        result = await _supabase
+          .from('planos_intervencao')
+          .insert(dbPayload);
+      }
+
+      if (result.error) throw result.error;
+
+      console.log('[Supabase] ✓ Plano salvo:', planData.id);
+      return { data: result.data, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao salvar plano:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Carrega planos de intervenção do usuário logado
+   */
+  async getUserPlans() {
+    if (!_supabase) return { data: [], error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { data: [], error: "Usuário não autenticado" };
+
+      const { data, error } = await _supabase
+        .from('planos_intervencao')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Mapear dados do banco para formato da aplicação
+      const mappedPlans = data.map(row => ({
+        id: row.id,
+        treeId: row.tree_id,
+        interventionType: row.intervention_type,
+        techniques: row.techniques || [],
+        justification: row.justification,
+        tools: row.tools || [],
+        epis: row.epis || [],
+        teamComposition: row.team_composition,
+        schedule: row.schedule,
+        durations: row.durations,
+        responsible: row.responsible,
+        responsibleTitle: row.responsible_title,
+        wasteDestination: row.waste_destination,
+        executionInstructions: row.execution_instructions,
+        failureProb: row.failure_prob,      // Adicionando campo de falha provável
+        targetType: row.target_type,        // Adicionando campo de alvo
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+
+      return { data: mappedPlans, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao carregar planos:', error);
+      return { data: [], error };
+    }
+  },
+
+  /**
+   * Carrega um plano específico por ID
+   */
+  async getPlan(planId) {
+    if (!_supabase) return { data: null, error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { data: null, error: "Usuário não autenticado" };
+
+      const { data, error } = await _supabase
+        .from('planos_intervencao')
+        .select('*')
+        .eq('id', planId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      // Mapear para formato da aplicação
+      const plan = {
+        id: data.id,
+        treeId: data.tree_id,
+        interventionType: data.intervention_type,
+        techniques: data.techniques || [],
+        justification: data.justification,
+        tools: data.tools || [],
+        epis: data.epis || [],
+        teamComposition: data.team_composition,
+        schedule: data.schedule,
+        durations: data.durations,
+        responsible: data.responsible,
+        responsibleTitle: data.responsible_title,
+        wasteDestination: data.waste_destination,
+        executionInstructions: data.execution_instructions,
+        failureProb: data.failure_prob,      // Adicionando campo de falha provável
+        targetType: data.target_type,        // Adicionando campo de alvo
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+
+      return { data: plan, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao carregar plano:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Verifica se já existe plano para uma árvore específica
+   */
+  async checkExistingPlan(treeId) {
+    if (!_supabase) return { data: null, error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { data: null, error: "Usuário não autenticado" };
+
+      // Usar maybeSingle() em vez de single() para evitar erro 406
+      const { data, error } = await _supabase
+        .from('planos_intervencao')
+        .select('id, updated_at')
+        .eq('tree_id', treeId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      return { data: data || null, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao verificar plano existente:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Exclui um plano de intervenção
+   */
+  async deletePlan(planId) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não autenticado" };
+
+      const { error } = await _supabase
+        .from('planos_intervencao')
+        .delete()
+        .eq('id', planId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      console.log('[Supabase] ✓ Plano excluído:', planId);
+      return { error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao excluir plano:', error);
+      return { error };
+    }
+  },
+
+  /**
+   * Atualiza um plano existente (usado para atualizar schedule após recalcular datas)
+   */
+  async updatePlan(planId, updates) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não autenticado" };
+
+      const { data, error } = await _supabase
+        .from('planos_intervencao')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', planId)
+        .eq('user_id', user.id)
+        .select();
+
+      if (error) throw error;
+
+      console.log('[Supabase] ✓ Plano atualizado:', planId);
+      return { data, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao atualizar plano:', error);
+      return { data: null, error };
+    }
+  },
+
+  // ---------------------------------------------------
+  // OPERAÇÕES COM DEPENDÊNCIAS DE PLANOS
+  // ---------------------------------------------------
+
+  /**
+   * Salva uma dependência entre planos
+   */
+  async saveDependency(dependencyData) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não autenticado" };
+
+      const dbPayload = {
+        user_id: user.id,
+        from_plan_id: dependencyData.from,
+        to_plan_id: dependencyData.to,
+        dependency_type: dependencyData.type,
+        lag_days: dependencyData.lag || 0
+      };
+
+      const { data, error } = await _supabase
+        .from('plan_dependencies')
+        .upsert(dbPayload, {
+          onConflict: 'user_id,from_plan_id,to_plan_id'
+        })
+        .select();
+
+      if (error) throw error;
+
+      console.log('[Supabase] ✓ Dependência salva');
+      return { data, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao salvar dependência:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Carrega dependências do usuário logado
+   */
+  async getUserDependencies() {
+    if (!_supabase) return { data: [], error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { data: [], error: "Usuário não autenticado" };
+
+      const { data, error } = await _supabase
+        .from('plan_dependencies')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Mapear para formato da aplicação
+      const mappedDeps = data.map(row => ({
+        from: row.from_plan_id,
+        to: row.to_plan_id,
+        type: row.dependency_type,
+        lag: row.lag_days,
+        createdAt: row.created_at
+      }));
+
+      console.log(`[Supabase] ✓ ${mappedDeps.length} dependências carregadas`);
+      return { data: mappedDeps, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao carregar dependências:', error);
+      return { data: [], error };
+    }
+  },
+
+  /**
+   * Remove uma dependência
+   */
+  async deleteDependency(fromPlanId, toPlanId) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não autenticado" };
+
+      const { error } = await _supabase
+        .from('plan_dependencies')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('from_plan_id', fromPlanId)
+        .eq('to_plan_id', toPlanId);
+
+      if (error) throw error;
+
+      console.log('[Supabase] ✓ Dependência removida');
+      return { error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao remover dependência:', error);
+      return { error };
+    }
+  },
+
+  // ---------------------------------------------------
   // REALTIME
   // ---------------------------------------------------
 
@@ -543,6 +990,575 @@ export const ApiService = {
   },
 
   // ---------------------------------------------------
+  // OPERAÇÕES COM PROJETOS
+  // ---------------------------------------------------
+
+  /**
+   * Cria um novo projeto
+   */
+  async createProject(projectData) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não autenticado" };
+
+      const dbPayload = {
+        user_id: user.id,
+        name: projectData.name,
+        description: projectData.description,
+        status: projectData.status || 'ativo',
+        start_date: projectData.startDate,
+        end_date: projectData.endDate,
+      };
+
+      const { data, error } = await _supabase
+        .from('projetos')
+        .insert(dbPayload)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('[Supabase] ✓ Projeto criado:', data.id);
+      return { data: this._mapProject(data), error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao criar projeto:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Lista projetos do usuário com filtros opcionais
+   */
+  async getProjects(filters = {}) {
+    if (!_supabase) return { data: [], error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { data: [], error: "Usuário não autenticado" };
+
+      let query = _supabase
+        .from('projetos_com_estatisticas')
+        .select('*')
+        .eq('user_id', user.id);
+
+      // Aplicar filtros
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters.startDateFrom) {
+        query = query.gte('start_date', filters.startDateFrom);
+      }
+      if (filters.startDateTo) {
+        query = query.lte('start_date', filters.startDateTo);
+      }
+
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const mappedProjects = data.map(p => this._mapProject(p));
+      console.log(`[Supabase] ✓ ${mappedProjects.length} projetos carregados`);
+      return { data: mappedProjects, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao carregar projetos:', error);
+      return { data: [], error };
+    }
+  },
+
+  /**
+   * Busca um projeto específico por ID
+   */
+  async getProject(projectId) {
+    if (!_supabase) return { data: null, error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { data: null, error: "Usuário não autenticado" };
+
+      const { data, error } = await _supabase
+        .from('projetos_com_estatisticas')
+        .select('*')
+        .eq('id', projectId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      return { data: this._mapProject(data), error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao carregar projeto:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Atualiza um projeto existente
+   */
+  async updateProject(projectId, updates) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não autenticado" };
+
+      const dbPayload = {};
+      if (updates.name !== undefined) dbPayload.name = updates.name;
+      if (updates.description !== undefined) dbPayload.description = updates.description;
+      if (updates.status !== undefined) dbPayload.status = updates.status;
+      if (updates.startDate !== undefined) dbPayload.start_date = updates.startDate;
+      if (updates.endDate !== undefined) dbPayload.end_date = updates.endDate;
+
+      const { data, error } = await _supabase
+        .from('projetos')
+        .update(dbPayload)
+        .eq('id', projectId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('[Supabase] ✓ Projeto atualizado:', projectId);
+      return { data: this._mapProject(data), error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao atualizar projeto:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Exclui um projeto (e todas suas atividades em cascata)
+   */
+  async deleteProject(projectId) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não autenticado" };
+
+      const { error } = await _supabase
+        .from('projetos')
+        .delete()
+        .eq('id', projectId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      console.log('[Supabase] ✓ Projeto excluído:', projectId);
+      return { error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao excluir projeto:', error);
+      return { error };
+    }
+  },
+
+  // ---------------------------------------------------
+  // OPERAÇÕES COM ATIVIDADES
+  // ---------------------------------------------------
+
+  /**
+   * Cria uma nova atividade em um projeto
+   */
+  async createActivity(activityData) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não autenticado" };
+
+      const dbPayload = {
+        project_id: activityData.projectId,
+        plan_id: activityData.planId || null,
+        title: activityData.title,
+        description: activityData.description,
+        status: activityData.status || 'pendente',
+        priority: activityData.priority || 2,
+        assigned_to: activityData.assignedTo,
+        start_date: activityData.startDate,
+        end_date: activityData.endDate,
+      };
+
+      const { data, error } = await _supabase
+        .from('atividades')
+        .insert(dbPayload)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('[Supabase] ✓ Atividade criada:', data.id);
+      return { data: this._mapActivity(data), error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao criar atividade:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Lista atividades de um projeto
+   */
+  async getActivities(projectId, filters = {}) {
+    if (!_supabase) return { data: [], error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { data: [], error: "Usuário não autenticado" };
+
+      let query = _supabase
+        .from('atividades')
+        .select('*')
+        .eq('project_id', projectId);
+
+      // Aplicar filtros
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters.priority) {
+        query = query.eq('priority', filters.priority);
+      }
+
+      query = query.order('start_date', { ascending: true });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const mappedActivities = data.map(a => this._mapActivity(a));
+      console.log(`[Supabase] ✓ ${mappedActivities.length} atividades carregadas`);
+      return { data: mappedActivities, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao carregar atividades:', error);
+      return { data: [], error };
+    }
+  },
+
+  /**
+   * Busca uma atividade específica
+   */
+  async getActivity(activityId) {
+    if (!_supabase) return { data: null, error: "Offline" };
+
+    try {
+      const { data, error } = await _supabase
+        .from('atividades')
+        .select('*')
+        .eq('id', activityId)
+        .single();
+
+      if (error) throw error;
+
+      return { data: this._mapActivity(data), error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao carregar atividade:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Atualiza uma atividade existente
+   */
+  async updateActivity(activityId, updates) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const dbPayload = {};
+      if (updates.title !== undefined) dbPayload.title = updates.title;
+      if (updates.description !== undefined) dbPayload.description = updates.description;
+      if (updates.status !== undefined) dbPayload.status = updates.status;
+      if (updates.priority !== undefined) dbPayload.priority = updates.priority;
+      if (updates.assignedTo !== undefined) dbPayload.assigned_to = updates.assignedTo;
+      if (updates.startDate !== undefined) dbPayload.start_date = updates.startDate;
+      if (updates.endDate !== undefined) dbPayload.end_date = updates.endDate;
+
+      const { data, error } = await _supabase
+        .from('atividades')
+        .update(dbPayload)
+        .eq('id', activityId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('[Supabase] ✓ Atividade atualizada:', activityId);
+      return { data: this._mapActivity(data), error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao atualizar atividade:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Atualiza o status de uma atividade (registra no histórico automaticamente via trigger)
+   */
+  async updateActivityStatus(activityId, newStatus, comments = null) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { error: "Usuário não autenticado" };
+
+      // Atualizar status (trigger registrará automaticamente no histórico)
+      const { data: activity, error: updateError } = await _supabase
+        .from('atividades')
+        .update({ status: newStatus })
+        .eq('id', activityId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      // Se houver comentários, atualizar o último registro do histórico
+      if (comments) {
+        const { error: historyError } = await _supabase
+          .from('atividades_historico')
+          .update({ comments: comments })
+          .eq('atividade_id', activityId)
+          .eq('new_status', newStatus)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (historyError) {
+          console.warn('[Supabase] ⚠️ Erro ao adicionar comentário ao histórico:', historyError);
+        }
+      }
+
+      console.log('[Supabase] ✓ Status atualizado:', activityId, '->', newStatus);
+      return { data: this._mapActivity(activity), error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao atualizar status:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Exclui uma atividade
+   */
+  async deleteActivity(activityId) {
+    if (!_supabase) return { error: "Offline" };
+
+    try {
+      const { error } = await _supabase
+        .from('atividades')
+        .delete()
+        .eq('id', activityId);
+
+      if (error) throw error;
+
+      console.log('[Supabase] ✓ Atividade excluída:', activityId);
+      return { error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao excluir atividade:', error);
+      return { error };
+    }
+  },
+
+  /**
+   * Busca histórico de uma atividade
+   */
+  async getActivityHistory(activityId) {
+    if (!_supabase) return { data: [], error: "Offline" };
+
+    try {
+      const { data, error } = await _supabase
+        .from('atividades_historico')
+        .select('*')
+        .eq('atividade_id', activityId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const mappedHistory = data.map(h => ({
+        id: h.id,
+        activityId: h.atividade_id,
+        userId: h.user_id,
+        oldStatus: h.old_status,
+        newStatus: h.new_status,
+        comments: h.comments,
+        createdAt: h.created_at,
+      }));
+
+      return { data: mappedHistory, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao carregar histórico:', error);
+      return { data: [], error };
+    }
+  },
+
+  // ---------------------------------------------------
+  // DASHBOARD E ESTATÍSTICAS
+  // ---------------------------------------------------
+
+  /**
+   * Busca estatísticas para o dashboard
+   */
+  async getDashboardStats() {
+    if (!_supabase) return { data: null, error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { data: null, error: "Usuário não autenticado" };
+
+      // Contar projetos ativos
+      const { count: activosCount } = await _supabase
+        .from('projetos')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('status', 'ativo');
+
+      // Contar atividades pendentes (de todos os projetos ativos)
+      const { count: pendentesCount } = await _supabase
+        .from('atividades')
+        .select('*, projetos!inner(user_id)', { count: 'exact', head: true })
+        .eq('projetos.user_id', user.id)
+        .eq('status', 'pendente');
+
+      // Atividades atrasadas (data passada e não concluídas)
+      const today = new Date().toISOString().split('T')[0];
+      const { count: atrasadasCount } = await _supabase
+        .from('atividades')
+        .select('*, projetos!inner(user_id)', { count: 'exact', head: true })
+        .eq('projetos.user_id', user.id)
+        .lt('end_date', today)
+        .neq('status', 'concluido')
+        .neq('status', 'cancelado');
+
+      // Projetos concluídos no mês atual
+      const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+      const { count: concluidosMesCount } = await _supabase
+        .from('projetos')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('status', 'concluido')
+        .gte('updated_at', firstDayOfMonth);
+
+      // Próximas 5 atividades urgentes
+      const { data: proximasAtividades } = await _supabase
+        .from('atividades')
+        .select('*, projetos!inner(user_id, name)')
+        .eq('projetos.user_id', user.id)
+        .in('status', ['pendente', 'em_andamento'])
+        .order('start_date', { ascending: true })
+        .order('priority', { ascending: false })
+        .limit(5);
+
+      const stats = {
+        projectsActive: activosCount || 0,
+        activitiesPending: pendentesCount || 0,
+        activitiesOverdue: atrasadasCount || 0,
+        projectsCompletedThisMonth: concluidosMesCount || 0,
+        upcomingActivities: proximasAtividades?.map(a => ({
+          ...this._mapActivity(a),
+          projectName: a.projetos?.name
+        })) || [],
+      };
+
+      console.log('[Supabase] ✓ Estatísticas do dashboard carregadas');
+      return { data: stats, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao carregar estatísticas:', error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Busca dados para o gráfico Gantt de um projeto
+   */
+  async getProjectTimeline(projectId) {
+    if (!_supabase) return { data: [], error: "Offline" };
+
+    try {
+      const user = await this.getUser();
+      if (!user) return { data: [], error: "Usuário não autenticado" };
+
+      const { data: activities, error } = await _supabase
+        .from('atividades')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('start_date', { ascending: true });
+
+      if (error) throw error;
+
+      // Formatar para o formato esperado pela biblioteca Gantt
+      const timelineData = activities.map(a => ({
+        id: a.id,
+        title: a.title,
+        startDate: a.start_date,
+        endDate: a.end_date,
+        status: a.status,
+        priority: a.priority,
+        assignedTo: a.assigned_to,
+        progress: a.status === 'concluido' ? 100 : a.status === 'em_andamento' ? 50 : 0,
+      }));
+
+      return { data: timelineData, error: null };
+
+    } catch (error) {
+      console.error('[Supabase] ❌ Erro ao carregar timeline:', error);
+      return { data: [], error };
+    }
+  },
+
+  // ---------------------------------------------------
+  // FUNÇÕES AUXILIARES DE MAPEAMENTO
+  // ---------------------------------------------------
+
+  _mapProject(row) {
+    return {
+      id: row.id,
+      userId: row.user_id,
+      name: row.name,
+      description: row.description,
+      status: row.status,
+      startDate: row.start_date,
+      endDate: row.end_date,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      // Estatísticas (se vier da view)
+      totalActivities: row.total_atividades || 0,
+      activitiesCompleted: row.atividades_concluidas || 0,
+      activitiesPending: row.atividades_pendentes || 0,
+      activitiesInProgress: row.atividades_em_andamento || 0,
+      activitiesBlocked: row.atividades_bloqueadas || 0,
+      activitiesOverdue: row.atividades_atrasadas || 0,
+    };
+  },
+
+  _mapActivity(row) {
+    return {
+      id: row.id,
+      projectId: row.project_id,
+      planId: row.plan_id,
+      title: row.title,
+      description: row.description,
+      status: row.status,
+      priority: row.priority,
+      assignedTo: row.assigned_to,
+      startDate: row.start_date,
+      endDate: row.end_date,
+      completedAt: row.completed_at,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  },
+
+  // ---------------------------------------------------
   // UTILITÁRIOS
   // ---------------------------------------------------
 
@@ -550,3 +1566,4 @@ export const ApiService = {
     return SUPABASE_URL;
   },
 };
+

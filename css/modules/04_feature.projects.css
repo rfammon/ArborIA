@@ -1,0 +1,193 @@
+/* ===================================
+   04 - PROJECT MANAGEMENT MODULE
+   =================================== */
+
+/* Project KPI Cards */
+.project-kpi-card {
+    padding: 1.5rem;
+    border-radius: 12px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease;
+}
+
+.project-kpi-card:hover {
+    transform: translateY(-3px);
+}
+
+.kpi-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+}
+
+.kpi-label {
+    font-size: 0.9rem;
+    opacity: 0.95;
+    font-weight: 500;
+}
+
+/* Project Cards */
+.project-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+    border-left: 4px solid #4caf50;
+    overflow: hidden;
+}
+
+.project-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.project-status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+}
+
+/* Progress Bar */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+    transition: width 0.3s ease;
+}
+
+/* Mini Badges */
+.mini-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    color: white;
+    font-weight: 600;
+}
+
+/* Activity Status Badges */
+.activity-status-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-pendente {
+    background: #ff9800;
+    color: white;
+}
+
+.status-em_andamento {
+    background: #2196f3;
+    color: white;
+}
+
+.status-concluido {
+    background: #4caf50;
+    color: white;
+}
+
+.status-cancelado {
+    background: #757575;
+    color: white;
+}
+
+.status-bloqueado {
+    background: #d32f2f;
+    color: white;
+}
+
+/* Activities Table */
+.activities-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.activities-table thead {
+    background: #f5f5f5;
+}
+
+.activities-table th,
+.activities-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.activities-table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.activities-table tbody tr {
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+
+.activities-table tbody tr:hover {
+    background: #f9f9f9;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.loading-spinner:before {
+    content: "⏳ ";
+    margin-right: 0.5rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .kpi-value {
+        font-size: 2rem;
+    }
+
+    .project-card {
+        padding: 1rem;
+    }
+
+    .activities-table {
+        font-size: 0.85rem;
+    }
+
+    .activities-table th,
+    .activities-table td {
+        padding: 0.5rem;
+    }
+}

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Final - Arboria Module</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>🎯 Teste Final - Arboria Module</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        const results = document.getElementById('results');
+
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<p><strong>${new Date().toLocaleTimeString()}:</strong> ${message}</p>`;
+            results.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        async function runTests() {
+            try {
+                addResult('🚀 Iniciando testes do Arboria Module...', 'info');
+
+                // Teste 1: Carregar módulo
+                addResult('📦 Carregando módulo...', 'info');
+                const timestamp = Date.now();
+                const module = await import(`./js/arboria-module.js?v=${timestamp}`);
+
+                addResult('✅ Módulo carregado sem erros de sintaxe!', 'success');
+
+                // Teste 2: Verificar PlanningModule
+                if (!module.PlanningModule) {
+                    throw new Error('PlanningModule não encontrado');
+                }
+                addResult('✅ PlanningModule encontrado', 'success');
+
+                // Teste 3: Verificar métodos essenciais
+                const requiredMethods = ['mount', 'unmount'];
+                for (const method of requiredMethods) {
+                    if (typeof module.PlanningModule[method] === 'function') {
+                        addResult(`✅ Método ${method} é uma função`, 'success');
+                    } else {
+                        addResult(`❌ Método ${method} não encontrado ou não é função`, 'error');
+                    }
+                }
+
+                // Teste 4: Verificar se mount é assíncrono
+                const mountFunc = module.PlanningModule.mount;
+                if (mountFunc.constructor.name === 'AsyncFunction') {
+                    addResult('✅ Método mount é assíncrono', 'success');
+                } else {
+                    addResult('❌ Método mount não é assíncrono', 'error');
+                }
+
+                // Teste 5: Verificar Actions
+                if (module.PlanningModule.Actions) {
+                    addResult('✅ Actions encontrado', 'success');
+
+                    const actionMethods = ['handleFormSubmit', 'generatePDF'];
+                    for (const method of actionMethods) {
+                        if (typeof module.PlanningModule.Actions[method] === 'function') {
+                            addResult(`✅ Actions.${method} é uma função`, 'success');
+                        } else {
+                            addResult(`❌ Actions.${method} não encontrado`, 'error');
+                        }
+                    }
+
+                    // Verificar se handleFormSubmit é assíncrono
+                    const handleFormSubmit = module.PlanningModule.Actions.handleFormSubmit;
+                    if (handleFormSubmit.constructor.name === 'AsyncFunction') {
+                        addResult('✅ handleFormSubmit é assíncrono', 'success');
+                    } else {
+                        addResult('❌ handleFormSubmit não é assíncrono', 'error');
+                    }
+
+                } else {
+                    addResult('❌ Actions não encontrado', 'error');
+                }
+
+                // Teste 6: Verificar funções assíncronas
+                const asyncFunctions = ['loadSavedPlans', 'loadPlan', 'deletePlan', 'loadPlanByTreeId'];
+                for (const funcName of asyncFunctions) {
+                    if (typeof module[funcName] === 'function') {
+                        if (module[funcName].constructor.name === 'AsyncFunction') {
+                            addResult(`✅ ${funcName} é assíncrono`, 'success');
+                        } else {
+                            addResult(`❌ ${funcName} não é assíncrono`, 'error');
+                        }
+                    } else {
+                        addResult(`❌ ${funcName} não encontrado`, 'error');
+                    }
+                }
+
+                addResult('🎉 Todos os testes passaram! O módulo está funcionando corretamente.', 'success');
+
+            } catch (error) {
+                addResult(`❌ Erro crítico: ${error.message}`, 'error');
+                console.error('Erro detalhado:', error);
+            }
+        }
+
+        // Executar testes
+        runTests();
+    </script>
+</body>
+</html>

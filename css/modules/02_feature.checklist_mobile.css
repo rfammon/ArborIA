@@ -14,7 +14,8 @@
     backdrop-filter: blur(8px);
     z-index: 9999 !important;
     padding: 10px;
-    display: none; /* Controlado via JS (flex quando ativo) */
+    display: none;
+    /* Controlado via JS (flex quando ativo) */
 
     /* Scroll Behavior Fixes */
     overflow-y: auto;
@@ -41,7 +42,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    position: relative; /* Importante para contexto */
+    position: relative;
+    /* Importante para contexto */
     margin: 0 auto;
     padding: 10px;
     box-sizing: border-box;
@@ -80,7 +82,8 @@
     width: 100%;
     margin: 40px 0 20px 0;
     padding: 0 10px;
-    flex-shrink: 0; /* Impede encolhimento */
+    flex-shrink: 0;
+    /* Impede encolhimento */
 }
 
 .step-item {
@@ -125,11 +128,9 @@
 }
 
 .step-item.active .step-circle {
-    background: linear-gradient(
-        135deg,
-        var(--color-forest, #2e7d32),
-        var(--color-tech, #00acc1)
-    );
+    background: linear-gradient(135deg,
+            var(--color-forest, #2e7d32),
+            var(--color-tech, #00acc1));
     border-color: #00e676;
     color: white;
     transform: scale(1.1);
@@ -145,6 +146,7 @@
 .step-item.completed .step-circle::after {
     content: "✓";
 }
+
 .step-item.completed .step-circle span {
     display: none;
 }
@@ -170,14 +172,16 @@
 .flashcard-carousel-container {
     position: relative;
     width: 100%;
-    flex: 1; /* Ocupa o espaço disponível */
+    flex: 1;
+    /* Ocupa o espaço disponível */
     margin: 20px 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    min-height: 0; /* Importante para flexbox com overflow */
+    min-height: 0;
+    /* Importante para flexbox com overflow */
 }
 
 .mobile-checklist-card,
@@ -209,7 +213,8 @@
     transition:
         opacity 0.3s ease-in-out,
         transform 0.3s ease-in-out;
-    pointer-events: none; /* Desativa interação em cards ocultos */
+    pointer-events: none;
+    /* Desativa interação em cards ocultos */
 }
 
 /* Card que saiu para a esquerda */
@@ -222,7 +227,8 @@
 .mobile-checklist-card.is-active {
     transform: translate(-50%, -50%) scale(1);
     opacity: 1;
-    pointer-events: auto; /* Permite interação */
+    pointer-events: auto;
+    /* Permite interação */
     z-index: 10;
 }
 
@@ -236,7 +242,8 @@
 .mobile-checklist-card.is-active {
     transform: translate(-50%, -50%) scale(1);
     opacity: 1;
-    pointer-events: auto; /* Permite interação */
+    pointer-events: auto;
+    /* Permite interação */
     z-index: 10;
 }
 
@@ -322,7 +329,8 @@
 .interaction-label {
     font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.6);
-    min-height: 1.2em; /* Evita pulo de layout */
+    min-height: 1.2em;
+    /* Evita pulo de layout */
 }
 
 /* Big Toggle Switch */
@@ -379,20 +387,21 @@
 .slider-icon-no {
     color: rgba(255, 255, 255, 0.4);
 }
+
 .slider-icon-yes {
     color: rgba(255, 255, 255, 0.4);
 }
 
-input:checked + .big-slider {
+input:checked+.big-slider {
     background-color: rgba(255, 87, 34, 0.2);
     border-color: #ff5722;
 }
 
-input:checked + .big-slider .slider-icon-yes {
+input:checked+.big-slider .slider-icon-yes {
     color: #ff5722;
 }
 
-input:checked + .big-slider:before {
+input:checked+.big-slider:before {
     transform: translateX(36px);
     background-color: #ff5722;
 }
@@ -414,8 +423,8 @@ input[type="text"],
 input[type="number"],
 textarea {
     background-color: rgba(255, 255, 255, 0.1) !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #080808 !important;
+    border: 1px solid #84a8aa !important;
     padding: 10px !important;
     border-radius: 8px !important;
     font-size: 1rem !important;
@@ -434,7 +443,7 @@ textarea:focus {
 
 /* Labels para campos de formulário */
 label {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: rgba(58, 58, 58, 0.9) !important;
     font-weight: 600 !important;
     margin-bottom: 8px !important;
     display: block !important;
@@ -650,9 +659,11 @@ label {
         height: 30px;
         font-size: 0.8rem;
     }
+
     .step-label {
         font-size: 0.6rem;
     }
+
     .mobile-checklist-card,
     #question-card,
     #target-card,
@@ -662,6 +673,7 @@ label {
         max-height: 70vh;
         width: 95%;
     }
+
     .flashcard-question-text {
         font-size: 1.1rem;
     }
@@ -675,7 +687,7 @@ label {
         opacity: 1 !important;
         pointer-events: auto !important;
     }
-    
+
     #checklist-flashcard-view {
         position: fixed !important;
         top: 0 !important;

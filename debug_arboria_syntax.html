@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Sintaxe Arboria Module</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Teste de Sintaxe - Arboria Module</h1>
+
+    <div class="test-result info">
+        <h3>📋 Diagnóstico do Erro</h3>
+        <p><strong>Erro reportado:</strong> "Unexpected reserved word" na linha 1012</p>
+        <p><strong>Causa provável:</strong> Função não assíncrona tentando usar <code>await</code></p>
+        <p><strong>Correção aplicada:</strong> Função <code>handleFormSubmit</code> tornada assíncrona</p>
+    </div>
+
+    <div class="test-result">
+        <h3>🧪 Testes de Validação</h3>
+        <button onclick="testModuleLoading()">Testar Carregamento do Módulo</button>
+        <button onclick="testFunctionDefinitions()">Testar Definições de Função</button>
+        <button onclick="clearCacheAndReload()">Limpar Cache e Recarregar</button>
+    </div>
+
+    <div class="test-result">
+        <h3>💡 Soluções para o Erro</h3>
+        <ol>
+            <li><strong>Limpar cache do navegador:</strong> Ctrl+F5 ou Cmd+Shift+R</li>
+            <li><strong>Forçar reload:</strong> Clique no botão "Limpar Cache e Recarregar"</li>
+            <li><strong>Verificar console:</strong> Abra DevTools (F12) e veja se há outros erros</li>
+            <li><strong>Testar funcionalidade:</strong> Tente criar um plano após limpar cache</li>
+        </ol>
+    </div>
+
+    <div id="test-output"></div>
+
+    <script type="module">
+        let arboriaModule = null;
+
+        function addResult(message, type = 'info') {
+            const output = document.getElementById('test-output');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<p>${message}</p>`;
+            output.appendChild(div);
+        }
+
+        window.testModuleLoading = async function() {
+            try {
+                addResult('🔄 Tentando carregar arboria-module.js...', 'info');
+
+                // Tentar importar o módulo
+                const module = await import('./js/arboria-module.js?v=' + Date.now());
+                arboriaModule = module;
+
+                addResult('✅ Módulo carregado com sucesso!', 'success');
+
+                // Verificar se PlanningModule existe
+                if (module.PlanningModule) {
+                    addResult('✅ PlanningModule encontrado', 'success');
+                } else {
+                    addResult('❌ PlanningModule não encontrado', 'error');
+                }
+
+            } catch (error) {
+                addResult(`❌ Erro ao carregar módulo: ${error.message}`, 'error');
+                console.error('Erro detalhado:', error);
+            }
+        };
+
+        window.testFunctionDefinitions = function() {
+            if (!arboriaModule) {
+                addResult('❌ Execute "Testar Carregamento do Módulo" primeiro', 'error');
+                return;
+            }
+
+            try {
+                addResult('🔄 Verificando definições de função...', 'info');
+
+                // Verificar se as funções críticas existem
+                const requiredFunctions = ['mount', 'unmount'];
+                const planningModule = arboriaModule.PlanningModule;
+
+                for (const func of requiredFunctions) {
+                    if (typeof planningModule[func] === 'function') {
+                        addResult(`✅ Função ${func} definida corretamente`, 'success');
+                    } else {
+                        addResult(`❌ Função ${func} não encontrada`, 'error');
+                    }
+                }
+
+                // Verificar Actions
+                if (planningModule.Actions && typeof planningModule.Actions.handleFormSubmit === 'function') {
+                    addResult('✅ Actions.handleFormSubmit é uma função', 'success');
+                } else {
+                    addResult('❌ Actions.handleFormSubmit não é uma função', 'error');
+                }
+
+            } catch (error) {
+                addResult(`❌ Erro na verificação: ${error.message}`, 'error');
+            }
+        };
+
+        window.clearCacheAndReload = function() {
+            // Limpar cache forçando reload
+            addResult('🔄 Limpando cache e recarregando...', 'info');
+
+            // Adicionar timestamp para forçar reload
+            const links = document.querySelectorAll('link[rel="stylesheet"], script[src]');
+            links.forEach(link => {
+                const url = new URL(link.href || link.src, window.location);
+                url.searchParams.set('t', Date.now());
+                if (link.href) link.href = url.toString();
+                if (link.src) link.src = url.toString();
+            });
+
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 1000);
+        };
+
+        // Executar teste básico ao carregar
+        setTimeout(() => {
+            addResult('ℹ️ Clique nos botões acima para testar a correção', 'info');
+        }, 500);
+    </script>
+</body>
+</html>

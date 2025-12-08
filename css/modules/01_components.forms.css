@@ -2,17 +2,20 @@
 form {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem; /* Espaçamento entre fieldsets ou grupos */
+    gap: 1.5rem;
+    /* Espaçamento entre fieldsets ou grupos */
 }
 
 fieldset {
     border: 1px solid var(--color-light-gray);
     border-radius: var(--radius-md);
     padding: 1.5rem;
-    margin: 0; /* Override default margin */
+    margin: 0;
+    /* Override default margin */
     display: flex;
     flex-direction: column;
-    gap: 1rem; /* Espaçamento interno entre elementos do fieldset */
+    gap: 1rem;
+    /* Espaçamento interno entre elementos do fieldset */
 }
 
 legend {
@@ -20,14 +23,16 @@ legend {
     font-weight: bold;
     color: var(--color-primary-dark);
     padding: 0 0.5rem;
-    margin-left: -0.5rem; /* Alinha o texto da legend com o padding do fieldset */
+    margin-left: -0.5rem;
+    /* Alinha o texto da legend com o padding do fieldset */
 }
 
 /* Estrutura de grid para labels e inputs */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 1rem; /* Espaçamento entre itens no grid */
+    gap: 1rem;
+    /* Espaçamento entre itens no grid */
 }
 
 @media (min-width: 768px) {
@@ -35,13 +40,14 @@ legend {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 1.5rem;
     }
+
     /* Permite que o último item ocupe a largura total se necessário */
-    .form-grid > *:last-child:nth-child(odd) {
+    .form-grid>*:last-child:nth-child(odd) {
         grid-column: span 2;
     }
 }
 
-.form-grid > div {
+.form-grid>div {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -49,7 +55,7 @@ legend {
 
 label {
     font-weight: 600;
-    color: var(--color-text-dark);
+    color: var(--color-text-main);
     font-size: 0.95rem;
     margin-bottom: 0.25rem;
 }
@@ -64,13 +70,26 @@ select {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     font-size: 1rem;
-    color: var(--color-text-dark);
+    color: var(--color-text-main);
     background-color: var(--color-white);
     transition:
         border-color 0.2s ease-in-out,
         box-shadow 0.2s ease-in-out;
     vertical-align: middle;
     text-align: left;
+}
+
+::placeholder {
+    color: var(--color-text-muted);
+    opacity: 1;
+}
+
+:-ms-input-placeholder {
+    color: var(--color-text-muted);
+}
+
+::-ms-input-placeholder {
+    color: var(--color-text-muted);
 }
 
 input[type="text"]:focus,
@@ -80,7 +99,8 @@ textarea:focus,
 select:focus {
     border-color: var(--color-accent);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(var(--color-accent-rgb), 0.2);
+    box-shadow: 0 0 0 3px rgba(0, 191, 165, 0.2);
+    /* Fixed RGB for accent #00bfa5 */
 }
 
 textarea {
@@ -94,6 +114,7 @@ textarea {
 #risk-calculator-form {
     opacity: 1 !important;
     visibility: visible !important;
+    color: var(--color-text-main) !important;
 }
 
 #risk-calculator-form fieldset {
@@ -106,7 +127,7 @@ textarea {
     visibility: visible !important;
 }
 
-#risk-calculator-form .form-grid > div {
+#risk-calculator-form .form-grid>div {
     opacity: 1 !important;
     visibility: visible !important;
 }
@@ -117,23 +138,24 @@ textarea {
 #risk-calculator-form input[type="date"],
 #risk-calculator-form textarea,
 #risk-calculator-form select {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: #1a202c !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    padding: 10px !important;
-    border-radius: 8px !important;
+    background-color: var(--color-white) !important;
+    color: var(--color-text-main) !important;
+    border: 1px solid var(--color-border) !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: var(--radius-sm) !important;
     font-size: 1rem !important;
+    box-shadow: var(--shadow-sm);
 }
 
 /* --- CORREÇÃO ESPECÍFICA PARA MITIGATION-ACTION --- */
 /* Garante que o dropdown de mitigação tenha texto visível */
 
 #mitigation-action {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    padding: 10px !important;
-    border-radius: 8px !important;
+    background-color: var(--color-white) !important;
+    color: var(--color-text-main) !important;
+    border: 1px solid var(--color-border) !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: var(--radius-sm) !important;
     font-size: 1rem !important;
     opacity: 1 !important;
     visibility: visible !important;
@@ -141,20 +163,18 @@ textarea {
 
 /* Options dentro do dropdown */
 #mitigation-action option {
-    background-color: #1a202c !important;
-    color: #ffffff !important;
-    opacity: 1 !important;
-    visibility: visible !important;
+    background-color: var(--color-white) !important;
+    color: var(--color-text-main) !important;
     padding: 8px !important;
 }
 
 /* Focus states */
 #mitigation-action:focus {
-    background-color: rgba(255, 255, 255, 0.15) !important;
+    background-color: var(--color-white) !important;
     border-color: #00e676 !important;
     outline: none !important;
     box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2) !important;
-    color: #ffffff !important;
+    color: var(--color-text-main) !important;
 }
 
 #mitigation-action:focus option {
@@ -173,10 +193,10 @@ textarea {
 /* Estilo adequado à identidade visual do ArborIA */
 
 #mitigation-action-desktop {
-    background: var(--gradient-surface) !important;
+    background: var(--color-white) !important;
     color: var(--color-text-main) !important;
-    border: 2px solid var(--color-border) !important;
-    padding: 12px 16px !important;
+    border: 1px solid var(--color-border) !important;
+    padding: 0.75rem 1rem !important;
     border-radius: var(--radius-sm) !important;
     font-size: 1rem !important;
     font-weight: 500 !important;
@@ -231,10 +251,8 @@ textarea {
 }
 
 #risk-calculator-form label {
-    color: #2d3748 !important;
-    opacity: 1 !important;
-    visibility: visible !important;
     font-weight: 600 !important;
+    color: var(--color-text-main) !important;
 }
 
 /* Botões do formulário */
@@ -301,9 +319,42 @@ textarea {
 }
 
 /* Botão remover foto */
+/* Botão remover foto (Estilo Sutil) */
 #remove-photo-btn {
-    opacity: 1 !important;
-    visibility: visible !important;
+    background-color: transparent !important;
+    color: var(--color-danger, #d32f2f) !important;
+    border: 1px solid rgba(211, 47, 47, 0.3) !important;
+    padding: 0.4rem 0.8rem !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    box-shadow: none !important;
+    transition: all 0.2s ease !important;
+    margin-top: 0.5rem;
+}
+
+#remove-photo-btn:hover {
+    background-color: rgba(211, 47, 47, 0.05) !important;
+    border-color: var(--color-danger, #d32f2f) !important;
+    transform: none !important;
+}
+
+#remove-photo-btn i {
+    font-size: 0.9rem !important;
+}
+
+/* Override CRÍTICO para permitir ocultar o botão */
+/* Vence a regra global #risk-calculator-form button */
+#risk-calculator-form #remove-photo-btn[style*="display: none"],
+#remove-photo-btn[style*="display: none"],
+#remove-photo-btn.hidden {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
 }
 
 /* --- CORREÇÕES GLOBAIS PARA ÍCONES --- */
@@ -573,74 +624,83 @@ input[type="file"][style*="opacity: 1 !important"][style*="visibility: visible !
 /* --- CORES DOS FILTROS DE RISCO NO MAPA --- */
 /* Garante que as cores dos filtros correspondam às classes de risco */
 
-#filter-alto + label .legend-dot {
-    background-color: #d32f2f !important; /* Vermelho - Alto Risco */
+#filter-alto+label .legend-dot {
+    background-color: #d32f2f !important;
+    /* Vermelho - Alto Risco */
 }
 
-#filter-medio + label .legend-dot {
-    background-color: #f57c00 !important; /* Laranja - Médio Risco */
+#filter-medio+label .legend-dot {
+    background-color: #f57c00 !important;
+    /* Laranja - Médio Risco */
 }
 
-#filter-baixo + label .legend-dot {
-    background-color: #2e7d32 !important; /* Verde - Baixo Risco */
+#filter-baixo+label .legend-dot {
+    background-color: #2e7d32 !important;
+    /* Verde - Baixo Risco */
 }
 
 /* Cores dos textos dos filtros para corresponder aos riscos */
-#filter-alto + label {
-    color: #d32f2f !important; /* Vermelho - Alto Risco */
+#filter-alto+label {
+    color: #d32f2f !important;
+    /* Vermelho - Alto Risco */
     font-weight: 700 !important;
 }
 
-#filter-medio + label {
-    color: #f57c00 !important; /* Laranja - Médio Risco */
+#filter-medio+label {
+    color: #f57c00 !important;
+    /* Laranja - Médio Risco */
     font-weight: 700 !important;
 }
 
-#filter-baixo + label {
-    color: #2e7d32 !important; /* Verde - Baixo Risco */
+#filter-baixo+label {
+    color: #2e7d32 !important;
+    /* Verde - Baixo Risco */
     font-weight: 700 !important;
 }
 
 /* Filtro "Todos" mantém cor padrão */
-#filter-todos + label {
+#filter-todos+label {
     color: #2d3748 !important;
     font-weight: 600 !important;
 }
 
 /* Estados hover para melhor UX */
-#filter-alto:hover + label,
-#filter-alto:checked + label {
-    color: #b71c1c !important; /* Vermelho mais escuro */
+#filter-alto:hover+label,
+#filter-alto:checked+label {
+    color: #b71c1c !important;
+    /* Vermelho mais escuro */
     font-weight: 800 !important;
 }
 
-#filter-medio:hover + label,
-#filter-medio:checked + label {
-    color: #e65100 !important; /* Laranja mais escuro */
+#filter-medio:hover+label,
+#filter-medio:checked+label {
+    color: #e65100 !important;
+    /* Laranja mais escuro */
     font-weight: 800 !important;
 }
 
-#filter-baixo:hover + label,
-#filter-baixo:checked + label {
-    color: #1b5e20 !important; /* Verde mais escuro */
+#filter-baixo:hover+label,
+#filter-baixo:checked+label {
+    color: #1b5e20 !important;
+    /* Verde mais escuro */
     font-weight: 800 !important;
 }
 
 /* Estados hover para os dots */
-#filter-alto:hover + label .legend-dot,
-#filter-alto:checked + label .legend-dot {
+#filter-alto:hover+label .legend-dot,
+#filter-alto:checked+label .legend-dot {
     background-color: #b71c1c !important;
     box-shadow: 0 0 8px rgba(211, 47, 47, 0.4) !important;
 }
 
-#filter-medio:hover + label .legend-dot,
-#filter-medio:checked + label .legend-dot {
+#filter-medio:hover+label .legend-dot,
+#filter-medio:checked+label .legend-dot {
     background-color: #e65100 !important;
     box-shadow: 0 0 8px rgba(245, 124, 0, 0.4) !important;
 }
 
-#filter-baixo:hover + label .legend-dot,
-#filter-baixo:checked + label .legend-dot {
+#filter-baixo:hover+label .legend-dot,
+#filter-baixo:checked+label .legend-dot {
     background-color: #1b5e20 !important;
     box-shadow: 0 0 8px rgba(46, 125, 50, 0.4) !important;
 }
@@ -648,15 +708,15 @@ input[type="file"][style*="opacity: 1 !important"][style*="visibility: visible !
 /* --- FORÇAR CORES INLINE DO HTML --- */
 /* Garante que as cores definidas inline no HTML sejam respeitadas */
 
-#filter-alto + label .legend-dot[style*="background-color"] {
+#filter-alto+label .legend-dot[style*="background-color"] {
     background-color: #d32f2f !important;
 }
 
-#filter-medio + label .legend-dot[style*="background-color"] {
+#filter-medio+label .legend-dot[style*="background-color"] {
     background-color: #f57c00 !important;
 }
 
-#filter-baixo + label .legend-dot[style*="background-color"] {
+#filter-baixo+label .legend-dot[style*="background-color"] {
     background-color: #2e7d32 !important;
 }
 
@@ -672,17 +732,17 @@ input[type="file"][style*="opacity: 1 !important"][style*="visibility: visible !
 }
 
 /* Estados checked para garantir visibilidade */
-#filter-alto:checked + label,
-#filter-medio:checked + label,
-#filter-baixo:checked + label,
-#filter-todos:checked + label {
+#filter-alto:checked+label,
+#filter-medio:checked+label,
+#filter-baixo:checked+label,
+#filter-todos:checked+label {
     opacity: 1 !important;
     visibility: visible !important;
 }
 
 /* Estilo para campos obrigatórios */
-input:required:not(:placeholder-shown) + label::after,
-select:required:not(:placeholder-shown) + label::after {
+input:required:not(:placeholder-shown)+label::after,
+select:required:not(:placeholder-shown)+label::after {
     content: " *";
     color: var(--color-danger);
     margin-left: 0.25rem;
@@ -692,15 +752,17 @@ select:required:not(:placeholder-shown) + label::after {
 .form-switch {
     position: relative;
     display: inline-block;
-    width: 50px; /* Largura do switch */
-    height: 28px; /* Altura do switch */
+    width: 50px;
+    /* Largura do switch */
+    height: 28px;
+    /* Altura do switch */
     cursor: pointer;
     vertical-align: middle;
 }
 
 .form-switch .switch-label {
     font-weight: 600;
-    color: var(--color-text-dark);
+    color: var(--color-text-main);
 }
 
 .form-switch input {
@@ -716,15 +778,18 @@ select:required:not(:placeholder-shown) + label::after {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--color-text-muted); /* Cor de fundo para 'Não' */
+    background-color: var(--color-text-muted);
+    /* Cor de fundo para 'Não' */
     transition: 0.4s;
-    border-radius: 28px; /* Totalmente arredondado */
+    border-radius: 28px;
+    /* Totalmente arredondado */
 }
 
 .form-switch .slider:before {
     position: absolute;
     content: "";
-    height: 20px; /* Tamanho do círculo interno */
+    height: 20px;
+    /* Tamanho do círculo interno */
     width: 20px;
     left: 4px;
     bottom: 4px;
@@ -734,16 +799,18 @@ select:required:not(:placeholder-shown) + label::after {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.form-switch input:checked + .slider {
-    background-color: var(--color-forest); /* Verde para 'Sim' */
+.form-switch input:checked+.slider {
+    background-color: var(--color-forest);
+    /* Verde para 'Sim' */
 }
 
-.form-switch input:focus + .slider {
+.form-switch input:focus+.slider {
     box-shadow: 0 0 1px var(--color-forest);
 }
 
-.form-switch input:checked + .slider:before {
-    transform: translateX(22px); /* Movimento do círculo */
+.form-switch input:checked+.slider:before {
+    transform: translateX(22px);
+    /* Movimento do círculo */
 }
 
 /* Estilos para validação de erro */
@@ -755,7 +822,8 @@ select:required:not(:placeholder-shown) + label::after {
 .input-error-message {
     color: var(--color-danger);
     font-size: 0.85rem;
-    margin-top: -0.5rem; /* Ajusta a mensagem para ficar mais próxima do input */
+    margin-top: -0.5rem;
+    /* Ajusta a mensagem para ficar mais próxima do input */
     margin-bottom: 0.5rem;
     padding-left: 0.2rem;
 }
@@ -771,12 +839,15 @@ textarea[readonly] {
 .risk-fieldset {
     background-color: var(--color-white);
     box-shadow: var(--shadow-sm);
-    border-radius: var(--radius-md); /* Adicionado aqui também */
+    border-radius: var(--radius-md);
+    /* Adicionado aqui também */
 }
 
 .table-filter-container {
-    text-align: left; /* Garante que o conteúdo não seja centralizado */
-    margin-bottom: 1rem; /* Adiciona um pouco de espaço abaixo do filtro */
+    text-align: left;
+    /* Garante que o conteúdo não seja centralizado */
+    margin-bottom: 1rem;
+    /* Adiciona um pouco de espaço abaixo do filtro */
 }
 
 .risk-buttons-area {
@@ -802,28 +873,45 @@ textarea[readonly] {
 }
 
 .mobile-checklist-card {
-    background-color: var(--color-primary-dark);
+    background: var(--gradient-main);
+    /* Standard Identity Gradient */
     color: white;
-    padding: 2rem;
-    border-radius: var(--radius-md); /* Corrigido */
+    padding: 2rem 1.5rem;
+    border-radius: var(--radius-lg);
     text-align: center;
     max-width: 90%;
-    min-width: 300px;
-    box-shadow: var(--shadow-lg);
-    margin-bottom: 1rem;
+    width: 340px;
+    box-shadow: var(--shadow-floating);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .mobile-checklist-card h4 {
     margin-top: 0;
-    color: var(--color-white);
-    opacity: 0.7;
-    font-size: 0.9rem;
+    color: var(--color-accent);
+    /* Highlight step number */
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+    background: rgba(0, 0, 0, 0.2);
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
 }
 
 .mobile-checklist-card .checklist-card-question {
-    font-size: 1.4rem;
-    margin: 1rem 0;
+    font-size: 1.3rem;
+    /* Slightly smaller for better fit */
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 1.5rem 0;
     display: block;
+    min-height: 80px;
+    /* Prevent layout jump */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .mobile-checklist-card .checklist-card-peso {
@@ -848,7 +936,8 @@ textarea[readonly] {
     background-color: var(--color-accent);
     color: var(--color-dark);
     border: none;
-    border-radius: var(--radius-md); /* Corrigido */
+    border-radius: var(--radius-md);
+    /* Corrigido */
     cursor: pointer;
     font-size: 1rem;
     font-weight: bold;
@@ -889,7 +978,8 @@ textarea[readonly] {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--color-danger); /* Cor para 'Não' */
+    background-color: var(--color-text-muted);
+    /* Neutral when off */
     transition: 0.4s;
     border-radius: 34px;
 }
@@ -904,17 +994,19 @@ textarea[readonly] {
     background-color: white;
     transition: 0.4s;
     border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-input:checked + .toggle-slider {
-    background-color: var(--color-success); /* Cor para 'Sim' */
+input:checked+.toggle-slider {
+    background-color: var(--color-forest);
+    /* Brand Green for Yes */
 }
 
-input:focus + .toggle-slider {
-    box-shadow: 0 0 1px var(--color-success);
+input:focus+.toggle-slider {
+    box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.3);
 }
 
-input:checked + .toggle-slider:before {
+input:checked+.toggle-slider:before {
     transform: translateX(26px);
 }
 
@@ -945,7 +1037,8 @@ input:checked + .toggle-slider:before {
 
 .risk-table td:last-child {
     text-align: center;
-    width: 60px; /* Para o checkbox */
+    width: 60px;
+    /* Para o checkbox */
 }
 
 .risk-table input[type="checkbox"] {

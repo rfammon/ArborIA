@@ -225,6 +225,10 @@ export async function handleAddTreeSubmit(event) {
       risco: initialRisk,
       riscoClass: classificationClass,
 
+      // CAMPOS ADICIONAIS PARA A METODOLOGIA TRAQ - PREENCHIDOS COM VALORES CALCULADOS
+      failureProb: failureProb,  // A probabilidade de falha calculada pela metodologia TRAQ
+      targetType: impactProb,    // O tipo de alvo em formato descritivo (Muito Baixo, Baixo, Médio, Alto)
+
       // Campos de Foto (inicialmente preserva o que tinha ou define defaults)
       hasPhoto: existingTree ? existingTree.hasPhoto : false,
       photoUrl: existingTree ? existingTree.photoUrl : null,
@@ -577,7 +581,7 @@ export async function handleEditTree(id) {
   if (op) {
     try {
       URL.revokeObjectURL(op.src);
-    } catch (e) {}
+    } catch (e) { }
     op.remove();
   }
   const rb = document.getElementById("remove-photo-btn");
@@ -624,7 +628,7 @@ export function clearPhotoPreview() {
   if (op && pc) {
     try {
       URL.revokeObjectURL(op.src);
-    } catch (e) {}
+    } catch (e) { }
     op.remove();
   }
   if (rb) rb.style.display = "none";

@@ -1,0 +1,77 @@
+/**
+ * TAB SYSTEM - Prevents content leakage between tabs
+ * Ensures strict isolation of tab content
+ */
+
+/* --- BASE TAB STYLES --- */
+.sub-tab-content {
+    display: none !important;
+    opacity: 0;
+    visibility: hidden;
+    position: absolute;
+    left: -9999px;
+    pointer-events: none;
+}
+
+/* Active tab should be visible and in flow */
+.sub-tab-content.active {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: static !important;
+    left: auto !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure all children respect parent visibility */
+.sub-tab-content:not(.active) * {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Sub-navigation buttons */
+.sub-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 0;
+}
+
+.sub-nav-btn {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    bottom: -2px;
+}
+
+.sub-nav-btn:hover {
+    color: var(--color-text-main);
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.sub-nav-btn.active {
+    color: var(--color-tech);
+    border-bottom-color: var(--color-tech);
+    font-weight: 600;
+}
+
+.sub-nav-btn .badge {
+    display: inline-block;
+    background-color: var(--color-forest);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+    min-width: 20px;
+    text-align: center;
+}

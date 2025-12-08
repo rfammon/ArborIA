@@ -8,7 +8,7 @@ import * as utils from './utils.js'; // Assuming utils.js has necessary helper f
 function convertToLatLon(tree) {
     if (tree.coordX === 'N/A' || tree.coordY === 'N/A') return null;
     if (typeof window.proj4 === 'undefined') {
-        
+        console.error("Proj4js not loaded");
         return null;
     }
 
@@ -25,18 +25,18 @@ function convertToLatLon(tree) {
         const ll = window.proj4(def, "EPSG:4326", [e, n]);
         return [ll[1], ll[0]]; // Leaflet uses [latitude, longitude]
     } catch (e) {
-        
+        console.error("Error converting coordinates:", e);
         return null;
     }
 }
 
-let reportMap = null; // To hold the Leaflet map instance
+let reportMap = null; // To hold the MapLibre map instance
 
 // Function to initialize and populate the map
 async function initializeReportMap(trees) {
     const mapContainer = document.getElementById('report-map-container');
     if (!mapContainer) {
-        
+        console.error("Map container not found");
         return;
     }
 
@@ -47,51 +47,124 @@ async function initializeReportMap(trees) {
     // Clear existing map if any
     if (reportMap) {
         reportMap.remove();
+        reportMap = null;
     }
 
     // Initialize map - default view (e.g., Brazil center)
-    reportMap = L.map('report-map-container', {
-        center: [-14.235, -51.925], // Center of Brazil
-        zoom: 4,
-        zoomControl: true,
-        attributionControl: false // Disable default attribution
+    // Using Google Hybrid Tiles correctly formatted for MapLibre
+    reportMap = new maplibregl.Map({
+        container: 'report-map-container',
+        style: {
+            version: 8,
+            sources: {
+                'google-hybrid': {
+                    type: 'raster',
+                    tiles: [
+                        'https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                        'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                        'https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                        'https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+                    ],
+                    tileSize: 256,
+                    attribution: '© Google Maps'
+                }
+            },
+            layers: [{
+                id: 'google-hybrid-layer',
+                type: 'raster',
+                source: 'google-hybrid',
+                minzoom: 0,
+                maxzoom: 22
+            }]
+        },
+        center: [-51.925, -14.235], // [lng, lat]
+        zoom: 4
     });
 
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        // attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(reportMap);
+    // Criar GeoJSON para markers
+    const features = [];
+    const bounds = new maplibregl.LngLatBounds();
 
-    const markers = [];
     trees.forEach(tree => {
         const latLon = convertToLatLon(tree);
         if (latLon) {
-            const marker = L.marker(latLon).addTo(reportMap);
-            marker.bindPopup(`<b>ID: ${tree.id}</b><br>${tree.especie}<br>${tree.local}<br>Risco: ${tree.risco}`);
-            markers.push(latLon);
+            features.push({
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: [latLon[1], latLon[0]] // [lng, lat]
+                },
+                properties: {
+                    id: tree.id,
+                    especie: tree.especie,
+                    local: tree.local,
+                    risco: tree.risco
+                }
+            });
+            bounds.extend([latLon[1], latLon[0]]);
         }
     });
 
-    if (markers.length > 0) {
-        const bounds = L.latLngBounds(markers);
-        reportMap.fitBounds(bounds, { padding: [50, 50] });
-    } else {
-        // If no trees, center map to Brazil
-        reportMap.setView([-14.235, -51.925], 4);
-    }
+    reportMap.on('load', () => {
+        const geoJson = {
+            type: 'FeatureCollection',
+            features: features
+        };
+
+        // Add source for trees
+        if (!reportMap.getSource('report-trees')) {
+            reportMap.addSource('report-trees', {
+                type: 'geojson',
+                data: geoJson
+            });
+        }
+
+        // Add layer for tree markers
+        if (!reportMap.getLayer('report-tree-markers')) {
+            reportMap.addLayer({
+                id: 'report-tree-markers',
+                type: 'circle',
+                source: 'report-trees',
+                paint: {
+                    'circle-radius': 6,
+                    'circle-color': [
+                        'match',
+                        ['get', 'risco'],
+                        'Baixo Risco', '#4caf50',
+                        'Médio Risco', '#ff9800',
+                        'Alto Risco', '#f44336',
+                        'Crítico', '#b71c1c',
+                        '#9e9e9e' // default color
+                    ],
+                    'circle-stroke-color': '#ffffff',
+                    'circle-stroke-width': 2
+                }
+            });
+        }
+
+        if (!bounds.isEmpty()) {
+            reportMap.fitBounds(bounds, {
+                padding: {top: 50, bottom: 50, left: 50, right: 50},
+                maxZoom: 19 // Prevent zooming in too close if only one point
+            });
+        }
+    });
 
     // Invalidate size ensures map tiles render correctly after container might have been hidden/shown
-    reportMap.invalidateSize();
+    // MapLibre uses resize() instead of invalidateSize()
+    setTimeout(() => {
+        reportMap.resize();
+    }, 200);
 
     // Give map a moment to load tiles before html2canvas
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
 // Function to generate and populate the HTML report
 async function generateReportHTML() {
-    
+    console.log("Generating report HTML...");
     const registeredTrees = state.getRegisteredTrees();
+    console.log("Trees loaded:", registeredTrees.length);
     
     const treeCardsContainer = document.getElementById('tree-cards-container');
     const noTreesMessage = document.getElementById('no-trees-message');
@@ -160,7 +233,7 @@ async function generateReportHTML() {
         `;
 
         if (tree.hasPhoto) {
-            
+            // console.log(`Fetching photo for tree ${tree.id}`);
             const blob = await new Promise(resolve => db.getImageFromDB(tree.id, resolve));
             if (blob) {
                 const imageUrl = URL.createObjectURL(blob);
@@ -171,9 +244,9 @@ async function generateReportHTML() {
                         <div class="risk-badge ${getRiskBadgeClass(tree.risco)}">${tree.risco.toUpperCase()}</div>
                     </div>
                 `;
-                
+                // console.log(`Photo loaded for tree ${tree.id}`);
             } else {
-                
+                // console.log(`No photo blob found for tree ${tree.id}`);
             }
         }
 
@@ -203,7 +276,7 @@ async function generateReportHTML() {
             </div>
         `;
         treeCardsContainer.appendChild(treeCard);
-        
+        // console.log(`Card created for tree ${tree.id}`);
     }
 }
 
@@ -294,7 +367,7 @@ async function exportReportToPDF() {
         // Restore hidden elements
         elementsToHide.forEach(el => el.style.display = '');
     }).catch(error => {
-        
+        console.error("PDF generation error:", error);
         utils.showToast('Erro ao gerar PDF. Tente novamente.', 'error');
         // Restore hidden elements in case of error
         elementsToHide.forEach(el => el.style.display = '');
@@ -303,18 +376,17 @@ async function exportReportToPDF() {
 
 // Initialize the report generation when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', async () => {
-    
+    console.log("Report page loaded");
     
     // Make sure the database is initialized before trying to get images
     await db.initImageDB(); // Ensure DB is ready
     
     // Log localStorage content for debugging
     const storageKey = 'manualPodaData'; // Assuming this is the correct key from state.js
-    
+    // console.log("Storage content:", localStorage.getItem(storageKey));
     
     await state.loadDataFromStorage(); // Load tree data
     
-
     // Initial render of the report
     await generateReportHTML();
 
@@ -322,8 +394,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const generatePdfBtn = document.getElementById('generate-pdf-btn');
     if (generatePdfBtn) {
         generatePdfBtn.addEventListener('click', exportReportToPDF);
-        
+        console.log("PDF button listener attached");
     } else {
-        
+        console.error("PDF button not found");
     }
 });
