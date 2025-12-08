@@ -2756,12 +2756,21 @@ export class ProjectsModule {
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee;">
                                 <div style="flex: 1;">
                                     <div><strong>${from ? from.id : dep.from}</strong> → <strong>${to ? to.id : dep.to}</strong></div>
-                                    <div style="font-size: 0.85em; color: #666;">Tipo: <span style="color: ${colors[dep.type]}; font-weight: bold;">${dep.type}</span></div>
+                                    <div style="font-size: 0.85em; color: #666;">
+                                        Tipo: <span style="color: ${colors[dep.type]}; font-weight: bold;">${dep.type}</span>
+                                        ${dep.lag ? ` | Lag: ${dep.lag > 0 ? '+' : ''}${dep.lag} dias` : ''}
+                                    </div>
                                 </div>
-                                <button onclick="window.currentModule.removeDependency('${dep.from}', '${dep.to}')" 
-                                    style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
-                                    Remover
-                                </button>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="window.currentModule.editDependency('${dep.from}', '${dep.to}')" 
+                                        style="background: #2196F3; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
+                                        ✏️ Editar
+                                    </button>
+                                    <button onclick="window.currentModule.removeDependency('${dep.from}', '${dep.to}')" 
+                                        style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
+                                        🗑️ Remover
+                                    </button>
+                                </div>
                             </div>
                         `;
         }).join('')}
@@ -2776,6 +2785,104 @@ export class ProjectsModule {
         window.currentModule = this;
 
         modal.querySelector('#close-list-btn').onclick = () => {
+            document.body.removeChild(modal);
+        };
+    }
+
+    /**
+     * Edita uma dependência existente
+     */
+    editDependency(fromId, toId) {
+        console.log(`[editDependency] Editando: ${fromId} -> ${toId}`);
+
+        // Encontrar dependência
+        const dep = state.dependencies.find(d => d.from === fromId && d.to === toId);
+        if (!dep) {
+            showToast('Dependência não encontrada', 'error');
+            return;
+        }
+
+        // Criar modal de edição
+        const modal = document.createElement('div');
+        modal.id = 'edit-dep-modal';
+        modal.innerHTML = `
+            <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999; display: flex; align-items: center; justify-content: center;">
+                <div style="background: white; padding: 20px; border-radius: 8px; min-width: 500px;">
+                    <h3 style="margin: 0 0 15px 0;">✏️ Editar Dependência</h3>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">De:</label>
+                        <input type="text" value="${fromId}" disabled style="width: 100%; padding: 8px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Para:</label>
+                        <input type="text" value="${toId}" disabled style="width: 100%; padding: 8px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Tipo:</label>
+                        <select id="edit-type-select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="FS" ${dep.type === 'FS' ? 'selected' : ''}>FS - Finish to Start</option>
+                            <option value="SS" ${dep.type === 'SS' ? 'selected' : ''}>SS - Start to Start</option>
+                            <option value="FF" ${dep.type === 'FF' ? 'selected' : ''}>FF - Finish to Finish</option>
+                            <option value="SF" ${dep.type === 'SF' ? 'selected' : ''}>SF - Start to Finish</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Dias de Folga (Lag):</label>
+                        <input type="number" id="edit-lag-input" value="${dep.lag || 0}" min="-30" max="30" 
+                            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <small style="color: #666; font-size: 0.85em;">Positivo = atraso, Negativo = adiantamento</small>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="save-edit-btn" style="flex: 1; background: #4CAF50; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">Salvar</button>
+                        <button id="cancel-edit-btn" style="flex: 1; background: #999; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Eventos
+        modal.querySelector('#save-edit-btn').onclick = () => {
+            const newType = document.getElementById('edit-type-select').value;
+            const newLag = parseInt(document.getElementById('edit-lag-input').value) || 0;
+
+            // Atualizar dependência localmente
+            const depIndex = state.dependencies.findIndex(d => d.from === fromId && d.to === toId);
+            if (depIndex !== -1) {
+                state.dependencies[depIndex].type = newType;
+                state.dependencies[depIndex].lag = newLag;
+
+                // Salvar no banco de dados
+                if (state.apiService && state.apiService.saveDependency) {
+                    state.apiService.saveDependency(state.dependencies[depIndex]).then(result => {
+                        if (result.error) {
+                            console.error('[editDependency] Erro ao salvar:', result.error);
+                        } else {
+                            console.log('[editDependency] ✓ Atualizado no banco');
+                        }
+                    });
+                }
+
+                showToast('Dependência atualizada com sucesso', 'success');
+
+                // Recalcular datas
+                this.recalculatePlanDates();
+                this.updateGanttDependencies();
+
+                // Fechar modal de edição
+                document.body.removeChild(modal);
+
+                // Fechar e reabrir lista se estiver aberta
+                const listModal = document.getElementById('deps-list-modal');
+                if (listModal) {
+                    document.body.removeChild(listModal);
+                    setTimeout(() => this.showDependenciesList(), 100);
+                }
+            }
+        };
+
+        modal.querySelector('#cancel-edit-btn').onclick = () => {
             document.body.removeChild(modal);
         };
     }
